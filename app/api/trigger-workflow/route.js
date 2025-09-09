@@ -2,30 +2,46 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    // FIX: Destructure the body to match the payload sent from the frontend
-    const { authKey, workflow, data } = body;
+    // FIX: Parse the incoming request as FormData instead of JSON
+    const formData = await request.formData();
 
-    // Retrieve environment variables from Vercel
+    // Extract all the fields sent from the frontend
+    const authKey = formData.get('authKey');
+    const workflow = formData.get('workflow'); // e.g., 'football-social-automator'
+    const jsonDataString = formData.get('data');
+    const customBackgroundFile = formData.get('customBackground');
+
+    // Parse the stringified JSON data back into an object
+    const data = JSON.parse(jsonDataString);
+
+    // --- Security Check ---
     const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
     const APP_SECURITY_KEY = process.env.APP_SECURITY_KEY;
 
-    // --- Security Check ---
     if (!N8N_WEBHOOK_URL || !APP_SECURITY_KEY) {
-      console.error("Server configuration error: Missing N8N_WEBHOOK_URL or APP_SECURITY_KEY environment variables.");
+      console.error("Server configuration error: Missing environment variables.");
       throw new Error("Server configuration error.");
     }
-    // FIX: Validate using 'authKey' instead of 'password'
     if (authKey !== APP_SECURITY_KEY) {
       return NextResponse.json({ message: 'Authorization failed.' }, { status: 401 });
     }
     
+    // --- Prepare data to forward to n8n ---
+    const n8nFormData = new FormData();
+
+    // Re-append the JSON data for n8n to use
+    n8nFormData.append('data', JSON.stringify(data));
+
+    // Re-append the file if it exists for n8n to receive
+    if (customBackgroundFile) {
+      // n8n will receive this file under the field name 'customBackground'
+      n8nFormData.append('customBackground', customBackgroundFile);
+    }
+
     // --- Trigger the n8n workflow ---
-    // The 'data' object from the frontend is now forwarded directly to n8n
     const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data) // Send the nested data object
+        body: n8nFormData, // Forward the complete FormData
     });
 
     const n8nResult = await n8nResponse.json();
@@ -36,8 +52,7 @@ export async function POST(request) {
     }
 
     // --- Success Response ---
-    // FIX: Return the JSON data from n8n back to the frontend.
-    // This will include the 'previewUrl' needed for the UI.
+    // Return the JSON data from n8n (containing the previewUrl) back to the frontend
     return NextResponse.json(n8nResult, { status: 200 });
 
   } catch (error) {
