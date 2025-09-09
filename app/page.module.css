@@ -3,3 +3,10 @@
   padding: 2rem 3rem;
   overflow-y: auto; /* Allows content to scroll if it's too long */
 }
+
+/* --- Mobile Styles --- */
+@media (max-width: 768px) {
+  .main {
+    padding: 1.5rem; /* Reduce padding for smaller screens */
+  }
+}
