@@ -2,19 +2,13 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    // FIX: Parse the incoming request as FormData instead of JSON
     const formData = await request.formData();
-
-    // Extract all the fields sent from the frontend
     const authKey = formData.get('authKey');
-    const workflow = formData.get('workflow'); // e.g., 'football-social-automator'
+    const workflow = formData.get('workflow');
     const jsonDataString = formData.get('data');
     const customBackgroundFile = formData.get('customBackground');
-
-    // Parse the stringified JSON data back into an object
     const data = JSON.parse(jsonDataString);
 
-    // --- Security Check ---
     const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
     const APP_SECURITY_KEY = process.env.APP_SECURITY_KEY;
 
@@ -26,34 +20,39 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Authorization failed.' }, { status: 401 });
     }
     
-    // --- Prepare data to forward to n8n ---
     const n8nFormData = new FormData();
-
-    // Re-append the JSON data for n8n to use
     n8nFormData.append('data', JSON.stringify(data));
-
-    // Re-append the file if it exists for n8n to receive
     if (customBackgroundFile) {
-      // n8n will receive this file under the field name 'customBackground'
       n8nFormData.append('customBackground', customBackgroundFile);
     }
 
-    // --- Trigger the n8n workflow ---
     const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
-        body: n8nFormData, // Forward the complete FormData
+        body: n8nFormData,
     });
 
-    const n8nResult = await n8nResponse.json();
-
     if (!n8nResponse.ok) {
-        console.error("Error from n8n webhook:", n8nResult);
-        throw new Error(n8nResult.message || 'The n8n workflow returned an error.');
+        const errorResult = await n8nResponse.json().catch(() => ({ message: n8nResponse.statusText }));
+        console.error("Error from n8n webhook:", errorResult);
+        throw new Error(errorResult.message || 'The n8n workflow returned an error.');
     }
 
-    // --- Success Response ---
-    // Return the JSON data from n8n (containing the previewUrl) back to the frontend
-    return NextResponse.json(n8nResult, { status: 200 });
+    // --- FIX: Pass the binary data through directly ---
+
+    // 1. Get the binary data (the image) from n8n as a Blob
+    const imageBlob = await n8nResponse.blob();
+
+    // 2. Get the original Content-Type header from the n8n response (e.g., 'image/jpeg')
+    const contentType = n8nResponse.headers.get('content-type');
+
+    // 3. Create a new response to send to the web app, containing the image
+    //    and forwarding the correct Content-Type header.
+    return new NextResponse(imageBlob, {
+      status: 200,
+      headers: {
+        'Content-Type': contentType,
+      },
+    });
 
   } catch (error) {
     console.error("API Route Error:", error.message);
