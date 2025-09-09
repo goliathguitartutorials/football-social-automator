@@ -1,128 +1,159 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './SquadAnnouncement.module.css';
 
+// Define the two main states for our component's UI
+const VIEW_STATES = {
+  CONFIG: 'CONFIG', // The user is configuring the post
+  PREVIEW: 'PREVIEW', // The user is viewing the generated image
+};
+
 export default function SquadAnnouncement() {
-  const [playerList, setPlayerList] = useState('');
-  const [squadImage, setSquadImage] = useState(null);
+  // State for the data we fetch from n8n
+  const [players, setPlayers] = useState([]);
+  const [backgrounds, setBackgrounds] = useState([]);
+  const [dataIsLoading, setDataIsLoading] = useState(true);
+
+  // State for the form inputs
+  const [selectedPlayers, setSelectedPlayers] = useState(Array(16).fill(''));
+  const [selectedBackground, setSelectedBackground] = useState('');
+  const [customBackground, setCustomBackground] = useState(null);
   const [password, setPassword] = useState('');
+
+  // State for the UI and workflow
+  const [view, setView] = useState(VIEW_STATES.CONFIG);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  // This useEffect hook runs once when the component loads
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/get-app-data');
+        if (!response.ok) throw new Error('Failed to fetch initial data');
+        const data = await response.json();
 
-  const handleFileChange = (event) => {
-    setSquadImage(event.target.files[0]);
+        // Assuming n8n returns { players: [...], backgrounds: [...] }
+        setPlayers(data.players || []);
+        setBackgrounds(data.backgrounds || []);
+      } catch (error) {
+        setMessage(`Error: ${error.message}`);
+        setIsError(true);
+      } finally {
+        setDataIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []); // The empty array [] means this effect runs only once
+
+  const handleGeneratePreview = (e) => {
+    e.preventDefault();
+    // Logic to call trigger-workflow API will go here
+    // For now, we'll just log the data
+    console.log({
+      selectedPlayers,
+      selectedBackground,
+      customBackground,
+      password,
+    });
+    // We would set isGenerating to true, make the API call,
+    // then on success, setPreviewImage and change the view.
+    setMessage('Preview generation logic is not yet implemented.');
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!playerList && !squadImage) {
-      setMessage('Error: Please provide a player list or upload an image.');
-      setIsError(true);
-      return;
-    }
-
-    setIsLoading(true);
-    setMessage('');
-    setIsError(false);
-
-    // We use FormData to send both text and files
-    const formData = new FormData();
-    formData.append('postType', 'squad_announcement');
-    formData.append('password', password);
-    formData.append('playerList', playerList);
-    if (squadImage) {
-      formData.append('image', squadImage);
-    }
-
-    try {
-      // Note: We don't set Content-Type header, the browser does it for FormData
-      const response = await fetch('/api/trigger-workflow', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message);
-
-      setMessage('Success! Workflow triggered.');
-      setIsError(false);
-      setPlayerList('');
-      setSquadImage(null);
-      event.target.reset(); // Reset the form fields
-
-    } catch (error) {
-      setMessage(`Error: ${error.message}`);
-      setIsError(true);
-    } finally {
-      setIsLoading(false);
-    }
+  const handlePlayerSelect = (index, value) => {
+    const newSelectedPlayers = [...selectedPlayers];
+    newSelectedPlayers[index] = value;
+    setSelectedPlayers(newSelectedPlayers);
   };
 
-  return (
-    <div className={styles.formContainer}>
-      <h2 className={styles.title}>Create Squad Announcement</h2>
-      <form onSubmit={handleSubmit}>
-        <p className={styles.instructions}>
-          Provide the squad list in one of two ways:
-        </p>
-        
-        {/* Method 1: Text Area */}
-        <div className={styles.formGroup}>
-          <label htmlFor="playerList" className={styles.label}>
-            Method 1: Paste Player List
-          </label>
-          <textarea
-            id="playerList"
-            className={styles.textarea}
-            placeholder="Enter each player's full name on a new line..."
-            value={playerList}
-            onChange={(e) => setPlayerList(e.target.value)}
-          ></textarea>
+  // RENDER THE CONFIGURATION VIEW
+  if (view === VIEW_STATES.CONFIG) {
+    return (
+      <div className={styles.container}>
+        <h2 className={styles.title}>Squad Announcement</h2>
+        {dataIsLoading ? (
+          <p>Loading player and background data...</p>
+        ) : (
+          <form onSubmit={handleGeneratePreview}>
+            {/* Player Selection Section */}
+            <div className={styles.formSection}>
+              <h3 className={styles.sectionTitle}>Select Players (1-16)</h3>
+              <div className={styles.playerGrid}>
+                {selectedPlayers.map((player, index) => (
+                  <select
+                    key={index}
+                    value={player}
+                    onChange={(e) => handlePlayerSelect(index, e.target.value)}
+                    className={styles.selectInput}
+                  >
+                    <option value="">Player {index + 1}</option>
+                    {players.map((p) => (
+                      <option key={p.id || p.name} value={p.name}>{p.name}</option>
+                    ))}
+                  </select>
+                ))}
+              </div>
+            </div>
+
+            {/* Background Selection Section */}
+            <div className={styles.formSection}>
+              <h3 className={styles.sectionTitle}>Select Background</h3>
+              <select
+                value={selectedBackground}
+                onChange={(e) => setSelectedBackground(e.target.value)}
+                className={styles.selectInput}
+                disabled={!!customBackground} // Disable if a custom bg is chosen
+              >
+                <option value="">Choose a preset background</option>
+                {backgrounds.map((bg) => (
+                  <option key={bg.id || bg.name} value={bg.url}>{bg.name}</option>
+                ))}
+              </select>
+              <div className={styles.orSeparator}>OR</div>
+              <label htmlFor="customBg" className={styles.label}>Upload a custom background</label>
+              <input
+                id="customBg"
+                type="file"
+                accept="image/*"
+                className={styles.fileInput}
+                onChange={(e) => setCustomBackground(e.target.files[0])}
+              />
+            </div>
+            
+            {/* Authorization and Submission */}
+            <div className={styles.formSection}>
+              <label htmlFor="password" className={styles.label}>Authorization Key</label>
+              <input
+                id="password"
+                type="password"
+                className={styles.input}
+                placeholder="Enter secret key"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button type="submit" disabled={isGenerating} className={styles.submitButton}>
+                {isGenerating ? 'Generating...' : 'Generate Preview'}
+              </button>
+            </div>
+          </form>
+        )}
+        {message && <p>{message}</p>}
+      </div>
+    );
+  }
+
+  // RENDER THE PREVIEW VIEW
+  if (view === VIEW_STATES.PREVIEW) {
+    return (
+        <div className={styles.container}>
+            <h2 className={styles.title}>Preview & Confirm</h2>
+            {/* Image will go here */}
+            {/* Approve and Edit buttons will go here */}
         </div>
-
-        <div className={styles.orSeparator}>OR</div>
-
-        {/* Method 2: File Upload */}
-        <div className={styles.formGroup}>
-          <label htmlFor="squadImage" className={styles.label}>
-            Method 2: Upload Screenshot
-          </label>
-          <input
-            id="squadImage"
-            type="file"
-            accept="image/png, image/jpeg"
-            className={styles.fileInput}
-            onChange={handleFileChange}
-          />
-        </div>
-
-        {/* Password and Submit */}
-        <div className={styles.formGroup}>
-          <label htmlFor="password" className={styles.label}>
-            Authorization Key
-          </label>
-          <input
-            id="password"
-            type="password"
-            className={styles.input}
-            placeholder="Enter your secret key"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-
-        <button type="submit" disabled={isLoading} className={styles.submitButton}>
-          {isLoading ? 'Triggering...' : 'Generate Squad Post'}
-        </button>
-      </form>
-
-      {message && (
-        <p className={`${styles.message} ${isError ? styles.error : styles.success}`}>
-          {message}
-        </p>
-      )}
-    </div>
-  );
+    )
+  }
 }
