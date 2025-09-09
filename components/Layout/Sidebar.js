@@ -1,9 +1,8 @@
 'use client';
 import styles from './Sidebar.module.css';
 
-// We pass `activeView` and `setView` to control which form is shown
-export default function Sidebar({ activeView, setView }) {
-  // Array of our post types for easy mapping
+// The Sidebar now receives the authKey and a function to update it from the parent
+export default function Sidebar({ activeView, setView, authKey, setAuthKey }) {
   const postTypes = [
     { id: 'squad', label: 'Squad Announcement' },
     { id: 'result', label: 'Match Result' },
@@ -14,21 +13,38 @@ export default function Sidebar({ activeView, setView }) {
 
   return (
     <aside className={styles.sidebar}>
-      <h1 className={styles.logo}>Social Automator</h1>
-      <nav className={styles.nav}>
-        <ul>
-          {postTypes.map((post) => (
-            <li key={post.id}>
-              <button
-                className={activeView === post.id ? styles.active : ''}
-                onClick={() => setView(post.id)}
-              >
-                {post.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <div>
+        <h1 className={styles.logo}>Social Automator</h1>
+        <nav className={styles.nav}>
+          <ul>
+            {postTypes.map((post) => (
+              <li key={post.id}>
+                <button
+                  className={activeView === post.id ? styles.active : ''}
+                  onClick={() => setView(post.id)}
+                >
+                  {post.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+
+      {/* NEW: Permanent Authorization Section at the bottom */}
+      <div className={styles.authSection}>
+        <label htmlFor="authKey" className={styles.authLabel}>
+          Authorization Key
+        </label>
+        <input
+          id="authKey"
+          type="password"
+          className={styles.authInput}
+          placeholder="Enter secret key..."
+          value={authKey}
+          onChange={(e) => setAuthKey(e.target.value)}
+        />
+      </div>
     </aside>
   );
 }
