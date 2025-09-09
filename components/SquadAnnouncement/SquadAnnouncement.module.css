@@ -74,3 +74,17 @@
   background-color: #4B5563;
   cursor: not-allowed;
 }
+
+.notice {
+  background-color: var(--surface-dark);
+  padding: 2rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.error {
+  background-color: #5c2c2c; /* Muted red */
+  color: var(--text-primary);
+}
