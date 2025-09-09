@@ -4,31 +4,27 @@ import styles from './SquadAnnouncement.module.css';
 
 const VIEW_STATES = { CONFIG: 'CONFIG', PREVIEW: 'PREVIEW' };
 
-// The component now accepts the authKey as a prop from its parent
 export default function SquadAnnouncement({ authKey }) {
+  // State for the raw data from n8n
   const [players, setPlayers] = useState([]);
   const [backgrounds, setBackgrounds] = useState([]);
   const [dataIsLoading, setDataIsLoading] = useState(true);
 
+  // State for the user's selections in the form
   const [selectedPlayers, setSelectedPlayers] = useState(Array(16).fill(''));
   const [selectedBackground, setSelectedBackground] = useState('');
   const [customBackground, setCustomBackground] = useState(null);
-  
-  // The local password state is GONE
-  // const [password, setPassword] = useState('');
 
   const [view, setView] = useState(VIEW_STATES.CONFIG);
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
-  
-  // This hook now depends on `authKey`. It will re-run if the key changes.
+
   useEffect(() => {
-    // Don't try to fetch data if the auth key is not entered
     if (!authKey) {
       setDataIsLoading(false);
-      setPlayers([]); // Clear any old data
+      setPlayers([]);
       setBackgrounds([]);
       return;
     }
@@ -38,17 +34,22 @@ export default function SquadAnnouncement({ authKey }) {
       setMessage('');
       setIsError(false);
       try {
-        // We now use a POST request and send the key in the body
         const response = await fetch('/api/get-app-data', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ authKey }),
         });
-        
+
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Failed to fetch initial data');
-        
-        setPlayers(data.players || []);
+
+        // --- CHANGE HERE ---
+        // We now expect the raw array of player objects directly from n8n.
+        // For robustness, it's better if n8n returns { players: [...] }.
+        // This code handles both cases.
+        setPlayers(data.players || data || []);
+
+        // We'll keep this for when you add backgrounds to the n8n response
         setBackgrounds(data.backgrounds || []);
 
       } catch (error) {
@@ -59,17 +60,31 @@ export default function SquadAnnouncement({ authKey }) {
       }
     };
     fetchData();
-  }, [authKey]); // The dependency array ensures this runs when authKey is typed
+  }, [authKey]);
 
   const handleGeneratePreview = (e) => {
     e.preventDefault();
-    console.log({
-      selectedPlayers,
+
+    // --- NEW LOGIC HERE ---
+    // This is how we re-connect the selected player names with their sponsor data.
+    const playersWithSponsors = selectedPlayers
+      .filter(playerName => playerName) // Filter out any empty/unselected slots
+      .map(playerName => {
+        // Find the full player object from our state that matches the selected name
+        const playerObject = players.find(p => p.fullName === playerName);
+        return {
+          fullName: playerName,
+          sponsor: playerObject ? playerObject.Sponsor : 'N/A' // Return the player and their sponsor
+        };
+      });
+
+    console.log("Data to be sent for image generation:", {
+      playersWithSponsors, // This array now includes sponsor info
       selectedBackground,
       customBackground,
-      authKey, // We use the authKey from props
+      authKey,
     });
-    setMessage('Preview generation logic is not yet implemented.');
+    setMessage('Preview generation logic is not yet implemented. Check the browser console (F12) to see the prepared data.');
   };
 
   const handlePlayerSelect = (index, value) => {
@@ -77,8 +92,7 @@ export default function SquadAnnouncement({ authKey }) {
     newSelectedPlayers[index] = value;
     setSelectedPlayers(newSelectedPlayers);
   };
-  
-  // --- RENDER LOGIC ---
+
   let content;
   if (!authKey) {
     content = <p className={styles.notice}>Please enter the Authorization Key in the sidebar to load data.</p>;
@@ -89,20 +103,22 @@ export default function SquadAnnouncement({ authKey }) {
   } else {
     content = (
       <form onSubmit={handleGeneratePreview}>
-        {/* Player Selection Section */}
         <div className={styles.formSection}>
           <h3 className={styles.sectionTitle}>Select Players (1-16)</h3>
           <div className={styles.playerGrid}>
             {selectedPlayers.map((player, index) => (
               <select key={index} value={player} onChange={(e) => handlePlayerSelect(index, e.target.value)} className={styles.selectInput}>
                 <option value="">Player {index + 1}</option>
-                {players.map((p) => (<option key={p.id || p.name} value={p.name}>{p.name}</option>))}
+                {/* --- CHANGE HERE --- */}
+                {/* We now map over the player data using the correct keys: row_number and fullName */}
+                {players.map((p) => (
+                  <option key={p.row_number} value={p.fullName}>{p.fullName}</option>
+                ))}
               </select>
             ))}
           </div>
         </div>
 
-        {/* Background Selection Section */}
         <div className={styles.formSection}>
           <h3 className={styles.sectionTitle}>Select Background</h3>
           <select value={selectedBackground} onChange={(e) => setSelectedBackground(e.target.value)} className={styles.selectInput} disabled={!!customBackground}>
@@ -113,8 +129,7 @@ export default function SquadAnnouncement({ authKey }) {
           <label htmlFor="customBg" className={styles.label}>Upload a custom background</label>
           <input id="customBg" type="file" accept="image/*" className={styles.fileInput} onChange={(e) => setCustomBackground(e.target.files[0])}/>
         </div>
-        
-        {/* The password input is GONE from here */}
+
         <div className={styles.formSection}>
           <button type="submit" disabled={isGenerating} className={styles.submitButton}>
             {isGenerating ? 'Generating...' : 'Generate Preview'}
