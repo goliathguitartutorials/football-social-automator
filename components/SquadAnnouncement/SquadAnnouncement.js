@@ -5,7 +5,6 @@ import styles from './SquadAnnouncement.module.css';
 // ... (keep the VIEW_STATES constant)
 
 export default function SquadAnnouncement({ authKey }) {
-  // ... (keep all existing state variables)
   const [players, setPlayers] = useState([]);
   const [backgrounds, setBackgrounds] = useState([]);
   const [dataIsLoading, setDataIsLoading] = useState(true);
@@ -18,7 +17,7 @@ export default function SquadAnnouncement({ authKey }) {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
 
-  // ... (keep the useEffect for fetching data as is)
+  // ... (useEffect for fetching data is unchanged)
   useEffect(() => {
     if (!authKey) {
       setDataIsLoading(false);
@@ -53,12 +52,12 @@ export default function SquadAnnouncement({ authKey }) {
   }, [authKey]);
 
 
-  // ... (keep handleGeneratePreview as is, it's already correct)
   const handleGeneratePreview = async (e) => {
     e.preventDefault();
     setIsGenerating(true);
     setMessage('');
     setIsError(false);
+
     try {
       const playersWithSponsors = selectedPlayers
         .filter(playerName => playerName)
@@ -66,6 +65,7 @@ export default function SquadAnnouncement({ authKey }) {
           const playerObject = players.find(p => p.fullName === playerName);
           return { fullName: playerName, sponsor: playerObject ? playerObject.Sponsor : 'N/A' };
         });
+      
       const formData = new FormData();
       formData.append('authKey', authKey);
       formData.append('workflow', 'football-social-automator');
@@ -74,23 +74,33 @@ export default function SquadAnnouncement({ authKey }) {
         background: selectedBackground,
       };
       formData.append('data', JSON.stringify(jsonData));
+
       if (customBackground) {
         formData.append('customBackground', customBackground, customBackground.name);
       }
+
       const response = await fetch('/api/trigger-workflow', {
         method: 'POST',
         body: formData,
       });
-      const result = await response.json();
+
+      // FIX: The response handling is now changed for binary data
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to generate preview.');
+        // Try to get a text-based error message from the server if possible
+        const errorResult = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(errorResult.message || 'Failed to generate preview.');
       }
-      if (result.previewUrl) {
-        setPreviewImage(result.previewUrl);
-        setView('PREVIEW');
-      } else {
-        throw new Error('Workflow did not return a preview image URL.');
-      }
+
+      // 1. Get the binary data from the response as a "Blob"
+      const imageBlob = await response.blob();
+
+      // 2. Create a temporary, local URL for this Blob
+      const imageUrl = URL.createObjectURL(imageBlob);
+
+      // 3. Set this local URL as the preview image and switch views
+      setPreviewImage(imageUrl);
+      setView('PREVIEW');
+
     } catch (error) {
       setMessage(`Error: ${error.message}. Check the console for more details.`);
       setIsError(true);
@@ -99,8 +109,7 @@ export default function SquadAnnouncement({ authKey }) {
     }
   };
 
-
-  // ... (keep handlePlayerSelect and handleBackToEdit as is)
+  // ... (handlePlayerSelect, handleBackToEdit, and handleRemoveFile are unchanged)
   const handlePlayerSelect = (index, value) => {
     const newSelectedPlayers = [...selectedPlayers];
     newSelectedPlayers[index] = value;
@@ -112,11 +121,8 @@ export default function SquadAnnouncement({ authKey }) {
     setMessage('');
     setIsError(false);
   };
-
-  // NEW: Handler to clear the selected file
   const handleRemoveFile = () => {
     setCustomBackground(null);
-    // Also reset the file input visually
     const fileInput = document.getElementById('customBg');
     if(fileInput) fileInput.value = '';
   };
@@ -124,7 +130,7 @@ export default function SquadAnnouncement({ authKey }) {
 
   let content;
 
-  // ... (keep the `if (view === 'PREVIEW')` block as is)
+  // ... (The rest of the component's JSX rendering logic is unchanged)
   if (view === 'PREVIEW') {
     content = (
       <div className={styles.previewContainer}>
@@ -137,7 +143,6 @@ export default function SquadAnnouncement({ authKey }) {
       </div>
     );
   } else {
-    // ... (keep the start of the CONFIG view logic as is)
     if (!authKey) {
       content = <p className={styles.notice}>Please enter the Authorization Key in the sidebar to load data.</p>;
     } else if (dataIsLoading) {
@@ -152,7 +157,6 @@ export default function SquadAnnouncement({ authKey }) {
     } else {
       content = (
         <form onSubmit={handleGeneratePreview}>
-          {/* Player Selection Section is unchanged */}
           <div className={styles.formSection}>
             <h3 className={styles.sectionTitle}>Select Players (1-16)</h3>
             <div className={styles.playerGrid}>
@@ -166,8 +170,6 @@ export default function SquadAnnouncement({ authKey }) {
               ))}
             </div>
           </div>
-
-          {/* Background Selection Section is updated */}
           <div className={styles.formSection}>
             <h3 className={styles.sectionTitle}>Select Background</h3>
             <select value={selectedBackground} onChange={(e) => setSelectedBackground(e.target.value)} className={styles.selectInput} disabled={!!customBackground}>
@@ -177,8 +179,6 @@ export default function SquadAnnouncement({ authKey }) {
             <div className={styles.orSeparator}>OR</div>
             <label htmlFor="customBg" className={styles.label}>Upload a custom background</label>
             <input id="customBg" type="file" accept="image/*" className={styles.fileInput} onChange={(e) => setCustomBackground(e.target.files[0])}/>
-            
-            {/* NEW: Visual feedback for the selected file */}
             {customBackground && (
               <div className={styles.filePreview}>
                 <span>{customBackground.name}</span>
@@ -188,8 +188,6 @@ export default function SquadAnnouncement({ authKey }) {
               </div>
             )}
           </div>
-
-          {/* Form Submission Section is unchanged */}
           <div className={styles.formSection}>
             <button type="submit" disabled={isGenerating} className={styles.submitButton}>
               {isGenerating ? 'Generating...' : 'Generate Preview'}
@@ -201,8 +199,6 @@ export default function SquadAnnouncement({ authKey }) {
     }
   }
 
-
-  // ... (keep the final return statement as is)
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>Squad Announcement</h2>
