@@ -6,14 +6,14 @@ import Sidebar from '@/components/Layout/Sidebar';
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
 import MatchResult from '@/components/MatchResult/MatchResult';
 
-// A simple component to render the correct view based on state
-const MainContent = ({ view }) => {
+// We update MainContent to accept and pass down the authKey
+const MainContent = ({ view, authKey }) => {
   switch (view) {
     case 'squad':
-      return <SquadAnnouncement />;
+      // Pass the key down to the component that needs it
+      return <SquadAnnouncement authKey={authKey} />;
     case 'result':
       return <MatchResult />;
-    // Add cases for 'preview', 'signing', 'generic' here later
     default:
       return <p>Select a post type to begin.</p>;
   }
@@ -21,12 +21,19 @@ const MainContent = ({ view }) => {
 
 export default function HomePage() {
   const [activeView, setActiveView] = useState('squad');
+  // The state for the authorization key now lives here, in the parent component
+  const [authKey, setAuthKey] = useState('');
 
   return (
     <>
-      <Sidebar activeView={activeView} setView={setActiveView} />
+      <Sidebar
+        activeView={activeView}
+        setView={setActiveView}
+        authKey={authKey}
+        setAuthKey={setAuthKey}
+      />
       <main className={styles.main}>
-        <MainContent view={activeView} />
+        <MainContent view={activeView} authKey={authKey} />
       </main>
     </>
   );
