@@ -88,3 +88,27 @@
   background-color: #5c2c2c; /* Muted red */
   color: var(--text-primary);
 }
+
+/* --- Mobile Styles --- */
+@media (max-width: 768px) {
+  .title {
+    font-size: 1.5rem; /* Reduce title size */
+    margin-bottom: 1.5rem;
+  }
+
+  .formSection {
+    padding: 1rem; /* Reduce section padding */
+  }
+
+  .playerGrid {
+    /* On small tablets, show 2 columns */
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .playerGrid {
+    /* On phones, stack to a single column */
+    grid-template-columns: 1fr;
+  }
+}
