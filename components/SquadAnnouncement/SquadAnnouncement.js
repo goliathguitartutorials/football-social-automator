@@ -5,12 +5,16 @@ import styles from './SquadAnnouncement.module.css';
 const VIEW_STATES = { CONFIG: 'CONFIG', PREVIEW: 'PREVIEW' };
 
 export default function SquadAnnouncement({ authKey }) {
+  // State for the raw data from n8n
   const [players, setPlayers] = useState([]);
   const [backgrounds, setBackgrounds] = useState([]);
   const [dataIsLoading, setDataIsLoading] = useState(true);
+
+  // State for the user's selections in the form
   const [selectedPlayers, setSelectedPlayers] = useState(Array(16).fill(''));
   const [selectedBackground, setSelectedBackground] = useState('');
   const [customBackground, setCustomBackground] = useState(null);
+
   const [view, setView] = useState(VIEW_STATES.CONFIG);
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
@@ -19,7 +23,6 @@ export default function SquadAnnouncement({ authKey }) {
 
   useEffect(() => {
     if (!authKey) {
-      console.log("[EFFECT] No auth key provided. Skipping fetch.");
       setDataIsLoading(false);
       setPlayers([]);
       setBackgrounds([]);
@@ -30,8 +33,6 @@ export default function SquadAnnouncement({ authKey }) {
       setDataIsLoading(true);
       setMessage('');
       setIsError(false);
-      console.log("[FETCH] Auth key is present. Attempting to fetch data...");
-
       try {
         const response = await fetch('/api/get-app-data', {
           method: 'POST',
@@ -40,25 +41,14 @@ export default function SquadAnnouncement({ authKey }) {
         });
 
         const data = await response.json();
-        
-        // --- LOGGING POINT 1: RAW RESPONSE ---
-        console.log("[FETCH] Raw data received from /api/get-app-data:", data);
-
         if (!response.ok) {
           throw new Error(data.message || 'Failed to fetch initial data');
         }
 
-        const playersData = data.players || data || [];
-        
-        // --- LOGGING POINT 2: PARSED PLAYERS ---
-        console.log("[FETCH] Parsed playersData to be set in state:", playersData);
-        
-        setPlayers(playersData);
+        setPlayers(data.players || data || []);
         setBackgrounds(data.backgrounds || []);
 
       } catch (error) {
-        // --- LOGGING POINT 3: CATCHING ERRORS ---
-        console.error("[FETCH] An error occurred:", error);
         setMessage(`Error: ${error.message}`);
         setIsError(true);
       } finally {
@@ -68,19 +58,27 @@ export default function SquadAnnouncement({ authKey }) {
     fetchData();
   }, [authKey]);
 
-  // --- LOGGING POINT 4: COMPONENT RENDER ---
-  console.log("[RENDER] Component is rendering. Current 'players' state:", players);
-  
   const handleGeneratePreview = (e) => {
     e.preventDefault();
+    
     const playersWithSponsors = selectedPlayers
-      .filter(name => name)
-      .map(name => {
-        const playerObj = players.find(p => p.fullName === name);
-        return { fullName: name, sponsor: playerObj ? playerObj.Sponsor : 'N/A' };
+      .filter(playerName => playerName)
+      .map(playerName => {
+        const playerObject = players.find(p => p.fullName === playerName);
+        return {
+          fullName: playerName,
+          sponsor: playerObject ? playerObject.Sponsor : 'N/A'
+        };
       });
-    console.log("Data to be sent for image generation:", { playersWithSponsors, selectedBackground, customBackground, authKey });
-    setMessage('Preview generation logic is not yet implemented. Check console.');
+
+    // This is where we will eventually trigger the image generation webhook
+    console.log("Data to be sent for image generation:", {
+      playersWithSponsors,
+      selectedBackground,
+      customBackground,
+      authKey,
+    });
+    setMessage('Preview generation logic is not yet implemented.');
   };
 
   const handlePlayerSelect = (index, value) => {
@@ -105,11 +103,14 @@ export default function SquadAnnouncement({ authKey }) {
             {selectedPlayers.map((player, index) => (
               <select key={index} value={player} onChange={(e) => handlePlayerSelect(index, e.target.value)} className={styles.selectInput}>
                 <option value="">Player {index + 1}</option>
-                {players.map((p) => (<option key={p.row_number} value={p.fullName}>{p.fullName}</option>))}
+                {players.map((p) => (
+                  <option key={p.row_number} value={p.fullName}>{p.fullName}</option>
+                ))}
               </select>
             ))}
           </div>
         </div>
+
         <div className={styles.formSection}>
           <h3 className={styles.sectionTitle}>Select Background</h3>
           <select value={selectedBackground} onChange={(e) => setSelectedBackground(e.target.value)} className={styles.selectInput} disabled={!!customBackground}>
@@ -120,6 +121,7 @@ export default function SquadAnnouncement({ authKey }) {
           <label htmlFor="customBg" className={styles.label}>Upload a custom background</label>
           <input id="customBg" type="file" accept="image/*" className={styles.fileInput} onChange={(e) => setCustomBackground(e.target.files[0])}/>
         </div>
+
         <div className={styles.formSection}>
           <button type="submit" disabled={isGenerating} className={styles.submitButton}>
             {isGenerating ? 'Generating...' : 'Generate Preview'}
