@@ -1,21 +1,5 @@
 .main {
-  display: flex;
-  min-height: 100vh;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem;
-}
-
-.mainTitle {
-  font-size: 2.25rem;
-  font-weight: 800;
-  margin-bottom: 2rem;
-  text-align: center;
-}
-
-.container {
-  width: 100%;
-  max-width: 42rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border-radius: 0.5rem;
+  flex-grow: 1; /* Takes up the remaining space */
+  padding: 2rem 3rem;
+  overflow-y: auto; /* Allows content to scroll if it's too long */
 }
