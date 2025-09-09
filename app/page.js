@@ -2,24 +2,32 @@
 
 import { useState } from 'react';
 import styles from './page.module.css';
-import Navigation from '@/components/Navigation/Navigation';
+import Sidebar from '@/components/Layout/Sidebar';
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
 import MatchResult from '@/components/MatchResult/MatchResult';
 
+// A simple component to render the correct view based on state
+const MainContent = ({ view }) => {
+  switch (view) {
+    case 'squad':
+      return <SquadAnnouncement />;
+    case 'result':
+      return <MatchResult />;
+    // Add cases for 'preview', 'signing', 'generic' here later
+    default:
+      return <p>Select a post type to begin.</p>;
+  }
+};
+
 export default function HomePage() {
-  // State to track which tab is active. 'squad' is the default.
-  const [activeTab, setActiveTab] = useState('squad');
+  const [activeView, setActiveView] = useState('squad');
 
   return (
-    <main className={styles.main}>
-      <h1 className={styles.mainTitle}>Social Media Automator</h1>
-      <div className={styles.container}>
-        <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
-        
-        {/* Conditionally render the component based on the active tab */}
-        {activeTab === 'squad' && <SquadAnnouncement />}
-        {activeTab === 'result' && <MatchResult />}
-      </div>
-    </main>
+    <>
+      <Sidebar activeView={activeView} setView={setActiveView} />
+      <main className={styles.main}>
+        <MainContent view={activeView} />
+      </main>
+    </>
   );
 }
