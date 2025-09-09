@@ -64,12 +64,9 @@ export default function SquadAnnouncement({ authKey }) {
     setMessage('');
     setIsError(false);
 
-    // Define payload outside the try block for logging purposes
-    let payload = {};
-
     try {
       const playersWithSponsors = selectedPlayers
-        .filter(playerName => playerName) // Remove empty selections
+        .filter(playerName => playerName)
         .map(playerName => {
           const playerObject = players.find(p => p.fullName === playerName);
           return {
@@ -77,22 +74,31 @@ export default function SquadAnnouncement({ authKey }) {
             sponsor: playerObject ? playerObject.Sponsor : 'N/A'
           };
         });
+      
+      // FIX: Use FormData to handle file uploads
+      const formData = new FormData();
 
-      // Construct the payload to send to our API route
-      payload = {
-        authKey,
-        workflow: 'football-social-automator', // Specify the target n8n workflow
-        data: {
-          players: playersWithSponsors,
-          background: selectedBackground,
-          // Note: Custom background handling would require file upload logic here
-        }
+      // Append the simple text/JSON data
+      formData.append('authKey', authKey);
+      formData.append('workflow', 'football-social-automator');
+
+      // Stringify the complex data object and append it
+      const jsonData = {
+        players: playersWithSponsors,
+        background: selectedBackground,
       };
+      formData.append('data', JSON.stringify(jsonData));
+
+      // FIX: Append the file if it exists
+      if (customBackground) {
+        // The third argument is the filename
+        formData.append('customBackground', customBackground, customBackground.name);
+      }
 
       const response = await fetch('/api/trigger-workflow', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        // DO NOT set Content-Type header; the browser will do it automatically for FormData
+        body: formData,
       });
 
       const result = await response.json();
@@ -101,7 +107,6 @@ export default function SquadAnnouncement({ authKey }) {
         throw new Error(result.message || 'Failed to generate preview.');
       }
 
-      // Assuming the n8n workflow returns a URL for the generated image
       if (result.previewUrl) {
         setPreviewImage(result.previewUrl);
         setView(VIEW_STATES.PREVIEW);
@@ -110,10 +115,6 @@ export default function SquadAnnouncement({ authKey }) {
       }
 
     } catch (error) {
-      // NEW: Enhanced logging to the developer console
-      console.error("--- AUTHORIZATION OR WORKFLOW ERROR ---");
-      console.error("Error Message:", error.message);
-      console.error("Payload Sent:", payload);
       setMessage(`Error: ${error.message}. Check the console for more details.`);
       setIsError(true);
     } finally {
@@ -127,7 +128,6 @@ export default function SquadAnnouncement({ authKey }) {
     setSelectedPlayers(newSelectedPlayers);
   };
 
-  // Handler to return to the editing form from the preview
   const handleBackToEdit = () => {
     setView(VIEW_STATES.CONFIG);
     setPreviewImage(null);
@@ -144,13 +144,11 @@ export default function SquadAnnouncement({ authKey }) {
         {previewImage && <img src={previewImage} alt="Generated Squad Announcement" className={styles.previewImage} />}
         <div className={styles.previewActions}>
             <button onClick={handleBackToEdit} className={styles.backButton}>Back to Edit</button>
-            {/* The "Approve & Post" button will be implemented in a future step */}
             <button className={styles.submitButton} disabled>Approve & Post</button>
         </div>
       </div>
     );
   } else {
-    // This is the CONFIG view content
     if (!authKey) {
       content = <p className={styles.notice}>Please enter the Authorization Key in the sidebar to load data.</p>;
     } else if (dataIsLoading) {
@@ -187,7 +185,6 @@ export default function SquadAnnouncement({ authKey }) {
             </select>
             <div className={styles.orSeparator}>OR</div>
             <label htmlFor="customBg" className={styles.label}>Upload a custom background</label>
-            {/* FIX: The 'disabled' attribute has been removed from this input */}
             <input id="customBg" type="file" accept="image/*" className={styles.fileInput} onChange={(e) => setCustomBackground(e.target.files[0])}/>
           </div>
 
