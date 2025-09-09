@@ -1,6 +1,7 @@
 .sidebar {
   display: flex;
   flex-direction: column;
+  justify-content: space-between; /* This pushes the auth section to the bottom */
   width: 280px;
   background-color: var(--surface-dark);
   border-right: 1px solid var(--border-color);
@@ -46,9 +47,6 @@
   background-color: var(--accent-color);
   color: white;
   font-weight: 600;
-}
-
-  justify-content: space-between; /* Pushes the auth section to the bottom */
 }
 
 .authSection {
