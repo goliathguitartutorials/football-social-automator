@@ -8,8 +8,6 @@ export default function SquadAnnouncement({ authKey }) {
   const [players, setPlayers] = useState([]);
   const [backgrounds, setBackgrounds] = useState([]);
   const [dataIsLoading, setDataIsLoading] = useState(true);
-
-  // ... (other state variables remain the same)
   const [selectedPlayers, setSelectedPlayers] = useState(Array(16).fill(''));
   const [selectedBackground, setSelectedBackground] = useState('');
   const [customBackground, setCustomBackground] = useState(null);
@@ -44,7 +42,6 @@ export default function SquadAnnouncement({ authKey }) {
         const data = await response.json();
         
         // --- LOGGING POINT 1: RAW RESPONSE ---
-        // Let's see exactly what we got back from our API before we do anything else.
         console.log("[FETCH] Raw data received from /api/get-app-data:", data);
 
         if (!response.ok) {
@@ -54,7 +51,6 @@ export default function SquadAnnouncement({ authKey }) {
         const playersData = data.players || data || [];
         
         // --- LOGGING POINT 2: PARSED PLAYERS ---
-        // Let's see what the code thinks the player list is.
         console.log("[FETCH] Parsed playersData to be set in state:", playersData);
         
         setPlayers(playersData);
@@ -73,17 +69,16 @@ export default function SquadAnnouncement({ authKey }) {
   }, [authKey]);
 
   // --- LOGGING POINT 4: COMPONENT RENDER ---
-  // This will show us what the 'players' state is every time the component re-renders.
   console.log("[RENDER] Component is rendering. Current 'players' state:", players);
   
-  // The rest of the file (handleGeneratePreview, handlePlayerSelect, JSX) remains the same...
-
   const handleGeneratePreview = (e) => {
     e.preventDefault();
-    const playersWithSponsors = selectedPlayers.filter(name => name).map(name => {
-      const playerObj = players.find(p => p.fullName === name);
-      return { fullName: name, sponsor: playerObj ? playerObj.Sponsor : 'N/A' };
-    });
+    const playersWithSponsors = selectedPlayers
+      .filter(name => name)
+      .map(name => {
+        const playerObj = players.find(p => p.fullName === name);
+        return { fullName: name, sponsor: playerObj ? playerObj.Sponsor : 'N/A' };
+      });
     console.log("Data to be sent for image generation:", { playersWithSponsors, selectedBackground, customBackground, authKey });
     setMessage('Preview generation logic is not yet implemented. Check console.');
   };
@@ -118,4 +113,26 @@ export default function SquadAnnouncement({ authKey }) {
         <div className={styles.formSection}>
           <h3 className={styles.sectionTitle}>Select Background</h3>
           <select value={selectedBackground} onChange={(e) => setSelectedBackground(e.target.value)} className={styles.selectInput} disabled={!!customBackground}>
-            <option value="">Choose a preset background</op
+            <option value="">Choose a preset background</option>
+            {backgrounds.map((bg) => (<option key={bg.id || bg.name} value={bg.url}>{bg.name}</option>))}
+          </select>
+          <div className={styles.orSeparator}>OR</div>
+          <label htmlFor="customBg" className={styles.label}>Upload a custom background</label>
+          <input id="customBg" type="file" accept="image/*" className={styles.fileInput} onChange={(e) => setCustomBackground(e.target.files[0])}/>
+        </div>
+        <div className={styles.formSection}>
+          <button type="submit" disabled={isGenerating} className={styles.submitButton}>
+            {isGenerating ? 'Generating...' : 'Generate Preview'}
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <div className={styles.container}>
+      <h2 className={styles.title}>Squad Announcement</h2>
+      {content}
+    </div>
+  );
+}
