@@ -64,6 +64,9 @@ export default function SquadAnnouncement({ authKey }) {
     setMessage('');
     setIsError(false);
 
+    // Define payload outside the try block for logging purposes
+    let payload = {};
+
     try {
       const playersWithSponsors = selectedPlayers
         .filter(playerName => playerName) // Remove empty selections
@@ -76,7 +79,7 @@ export default function SquadAnnouncement({ authKey }) {
         });
 
       // Construct the payload to send to our API route
-      const payload = {
+      payload = {
         authKey,
         workflow: 'football-social-automator', // Specify the target n8n workflow
         data: {
@@ -98,7 +101,7 @@ export default function SquadAnnouncement({ authKey }) {
         throw new Error(result.message || 'Failed to generate preview.');
       }
 
-      // Assuming the n8n workflow returns a URL for the generated image [cite: 45]
+      // Assuming the n8n workflow returns a URL for the generated image
       if (result.previewUrl) {
         setPreviewImage(result.previewUrl);
         setView(VIEW_STATES.PREVIEW);
@@ -107,7 +110,11 @@ export default function SquadAnnouncement({ authKey }) {
       }
 
     } catch (error) {
-      setMessage(`Error: ${error.message}`);
+      // NEW: Enhanced logging to the developer console
+      console.error("--- AUTHORIZATION OR WORKFLOW ERROR ---");
+      console.error("Error Message:", error.message);
+      console.error("Payload Sent:", payload);
+      setMessage(`Error: ${error.message}. Check the console for more details.`);
       setIsError(true);
     } finally {
       setIsGenerating(false);
@@ -180,7 +187,8 @@ export default function SquadAnnouncement({ authKey }) {
             </select>
             <div className={styles.orSeparator}>OR</div>
             <label htmlFor="customBg" className={styles.label}>Upload a custom background</label>
-            <input id="customBg" type="file" accept="image/*" className={styles.fileInput} onChange={(e) => setCustomBackground(e.target.files[0])} disabled/>
+            {/* FIX: The 'disabled' attribute has been removed from this input */}
+            <input id="customBg" type="file" accept="image/*" className={styles.fileInput} onChange={(e) => setCustomBackground(e.target.files[0])}/>
           </div>
 
           <div className={styles.formSection}>
