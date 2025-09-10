@@ -1,208 +1,146 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import styles from './SquadAnnouncement.module.css';
-
-// ... (keep the VIEW_STATES constant)
+import { useAppData } from '@/hooks/useAppData'; // Import the new shared hook
 
 export default function SquadAnnouncement({ authKey }) {
-  const [players, setPlayers] = useState([]);
-  const [backgrounds, setBackgrounds] = useState([]);
-  const [dataIsLoading, setDataIsLoading] = useState(true);
+  // Use the new hook to get ALL app data. This is now the single source of truth.
+  const { players, backgrounds, loading, error } = useAppData(authKey);
+
+  // State for this component
   const [selectedPlayers, setSelectedPlayers] = useState(Array(16).fill(''));
   const [selectedBackground, setSelectedBackground] = useState('');
-  const [customBackground, setCustomBackground] = useState(null);
-  const [view, setView] = useState('CONFIG');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
-  const [message, setMessage] = useState('');
-  const [isError, setIsError] = useState(false);
+  const [homeTeamBadge, setHomeTeamBadge] = useState(''); // New field
+  const [awayTeamBadge, setAwayTeamBadge] = useState(''); // New field
+  
+  // UI State
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // We can add preview logic back in a later step if needed.
 
-  // ... (useEffect for fetching data is unchanged)
-  useEffect(() => {
-    if (!authKey) {
-      setDataIsLoading(false);
-      setPlayers([]);
-      setBackgrounds([]);
-      return;
-    }
-    const fetchData = async () => {
-      setDataIsLoading(true);
-      setMessage('');
-      setIsError(false);
-      try {
-        const response = await fetch('/api/get-app-data', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ authKey }),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to fetch initial data');
-        }
-        setPlayers(data.players || data || []);
-        setBackgrounds(data.backgrounds || []);
-      } catch (error) {
-        setMessage(`Error: ${error.message}`);
-        setIsError(true);
-      } finally {
-        setDataIsLoading(false);
-      }
-    };
-    fetchData();
-  }, [authKey]);
-
-
-  const handleGeneratePreview = async (e) => {
-    e.preventDefault();
-    setIsGenerating(true);
-    setMessage('');
-    setIsError(false);
-
-    try {
-      const playersWithSponsors = selectedPlayers
-        .filter(playerName => playerName)
-        .map(playerName => {
-          const playerObject = players.find(p => p.fullName === playerName);
-          return { fullName: playerName, sponsor: playerObject ? playerObject.Sponsor : 'N/A' };
-        });
-      
-      const formData = new FormData();
-      formData.append('authKey', authKey);
-      formData.append('workflow', 'football-social-automator');
-      const jsonData = {
-        players: playersWithSponsors,
-        background: selectedBackground,
-      };
-      formData.append('data', JSON.stringify(jsonData));
-
-      if (customBackground) {
-        formData.append('customBackground', customBackground, customBackground.name);
-      }
-
-      const response = await fetch('/api/trigger-workflow', {
-        method: 'POST',
-        body: formData,
-      });
-
-      // FIX: The response handling is now changed for binary data
-      if (!response.ok) {
-        // Try to get a text-based error message from the server if possible
-        const errorResult = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(errorResult.message || 'Failed to generate preview.');
-      }
-
-      // 1. Get the binary data from the response as a "Blob"
-      const imageBlob = await response.blob();
-
-      // 2. Create a temporary, local URL for this Blob
-      const imageUrl = URL.createObjectURL(imageBlob);
-
-      // 3. Set this local URL as the preview image and switch views
-      setPreviewImage(imageUrl);
-      setView('PREVIEW');
-
-    } catch (error) {
-      setMessage(`Error: ${error.message}. Check the console for more details.`);
-      setIsError(true);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  // ... (handlePlayerSelect, handleBackToEdit, and handleRemoveFile are unchanged)
   const handlePlayerSelect = (index, value) => {
     const newSelectedPlayers = [...selectedPlayers];
     newSelectedPlayers[index] = value;
     setSelectedPlayers(newSelectedPlayers);
   };
-  const handleBackToEdit = () => {
-    setView('CONFIG');
-    setPreviewImage(null);
-    setMessage('');
-    setIsError(false);
-  };
-  const handleRemoveFile = () => {
-    setCustomBackground(null);
-    const fileInput = document.getElementById('customBg');
-    if(fileInput) fileInput.value = '';
-  };
 
-
-  let content;
-
-  // ... (The rest of the component's JSX rendering logic is unchanged)
-  if (view === 'PREVIEW') {
-    content = (
-      <div className={styles.previewContainer}>
-        <h3 className={styles.sectionTitle}>Generated Preview</h3>
-        {previewImage && <img src={previewImage} alt="Generated Squad Announcement" className={styles.previewImage} />}
-        <div className={styles.previewActions}>
-            <button onClick={handleBackToEdit} className={styles.backButton}>Back to Edit</button>
-            <button className={styles.submitButton} disabled>Approve & Post</button>
-        </div>
-      </div>
-    );
-  } else {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!authKey) {
-      content = <p className={styles.notice}>Please enter the Authorization Key in the sidebar to load data.</p>;
-    } else if (dataIsLoading) {
-      content = <p className={styles.notice}>Loading player and background data...</p>;
-    } else if (isError && !isGenerating) {
-        content = (
-            <div>
-                <p className={`${styles.notice} ${styles.error}`}>{message}</p>
-                <button onClick={() => window.location.reload()} className={styles.backButton}>Refresh Page</button>
-            </div>
-        );
-    } else {
-      content = (
-        <form onSubmit={handleGeneratePreview}>
-          <div className={styles.formSection}>
-            <h3 className={styles.sectionTitle}>Select Players (1-16)</h3>
-            <div className={styles.playerGrid}>
-              {selectedPlayers.map((player, index) => (
-                <select key={index} value={player} onChange={(e) => handlePlayerSelect(index, e.target.value)} className={styles.selectInput}>
-                  <option value="">Player {index + 1}</option>
-                  {players.map((p) => (
-                    <option key={p.row_number} value={p.fullName}>{p.fullName}</option>
-                  ))}
-                </select>
-              ))}
-            </div>
-          </div>
-          <div className={styles.formSection}>
-            <h3 className={styles.sectionTitle}>Select Background</h3>
-            <select value={selectedBackground} onChange={(e) => setSelectedBackground(e.target.value)} className={styles.selectInput} disabled={!!customBackground}>
-              <option value="">Choose a preset background</option>
-              {backgrounds.map((bg) => (<option key={bg.id || bg.name} value={bg.url}>{bg.name}</option>))}
-            </select>
-            <div className={styles.orSeparator}>OR</div>
-            <label htmlFor="customBg" className={styles.label}>Upload a custom background</label>
-            <input id="customBg" type="file" accept="image/*" className={styles.fileInput} onChange={(e) => setCustomBackground(e.target.files[0])}/>
-            {customBackground && (
-              <div className={styles.filePreview}>
-                <span>{customBackground.name}</span>
-                <button type="button" onClick={handleRemoveFile} className={styles.removeFileButton}>
-                  &times;
-                </button>
-              </div>
-            )}
-          </div>
-          <div className={styles.formSection}>
-            <button type="submit" disabled={isGenerating} className={styles.submitButton}>
-              {isGenerating ? 'Generating...' : 'Generate Preview'}
-            </button>
-            {isError && <p className={`${styles.notice} ${styles.error}`}>{message}</p>}
-          </div>
-        </form>
-      );
+        alert('Please enter your Authorization Key.');
+        return;
     }
-  }
+    if (!selectedBackground) {
+        alert('Please select a background image.');
+        return;
+    }
+
+    setIsSubmitting(true);
+    
+    // Filter out empty player slots and get their sponsor info
+    const playersWithSponsors = selectedPlayers
+      .filter(playerName => playerName)
+      .map(playerName => {
+        const playerObject = players.find(p => p.fullName === playerName);
+        return { 
+          fullName: playerName, 
+          sponsor: playerObject ? playerObject.Sponsor : 'N/A' 
+        };
+      });
+
+    const payload = {
+        action: 'squad_announcement', // Action for the n8n workflow
+        players: playersWithSponsors,
+        background: selectedBackground,
+        home_team_badge: homeTeamBadge, // Send the badge URLs
+        away_team_badge: awayTeamBadge,
+    };
+
+    try {
+        const response = await fetch('/api/trigger-workflow', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authKey}`,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Something went wrong');
+        }
+
+        const result = await response.json();
+        console.log('Workflow triggered successfully:', result);
+        alert('Squad announcement generation started! Check n8n for progress.');
+
+    } catch (error) {
+        console.error('Submission error:', error);
+        alert(`Error: ${error.message}`);
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+  
+  if (loading) return <p>Loading assets...</p>;
+  if (error) return <p>Error loading assets: {error}</p>;
+  if (!authKey) return <p>Please enter your Authorization Key in the sidebar to load assets.</p>;
 
   return (
-    <div className={styles.container}>
+    <form className={styles.container} onSubmit={handleSubmit}>
       <h2 className={styles.title}>Squad Announcement</h2>
-      {content}
-    </div>
+
+      <div className={styles.formSection}>
+        <h3 className={styles.sectionTitle}>Select Players (1-16)</h3>
+        <div className={styles.playerGrid}>
+          {selectedPlayers.map((player, index) => (
+            <select key={index} value={player} onChange={(e) => handlePlayerSelect(index, e.target.value)} className={styles.selectInput}>
+              <option value="">Player {index + 1}</option>
+              {players.map((p) => (
+                <option key={p.row_number} value={p.fullName}>{p.fullName}</option>
+              ))}
+            </select>
+          ))}
+        </div>
+      </div>
+      
+      {/* Note: The badges for Squad Announcement are not yet fully implemented in the n8n workflow.
+          This UI is added now for consistency and future use. We will implement them fully next. */}
+      <div className={styles.formSection}>
+        <h3 className={styles.sectionTitle}>Select Team Badges</h3>
+        <p className={styles.notice}>Note: Badge selection is for future implementation.</p>
+        <div className={styles.badgeGrid}>
+            <div className={styles.formGroup}>
+                <label>Home Team Badge</label>
+                <input type="text" value={homeTeamBadge} onChange={(e) => setHomeTeamBadge(e.target.value)} placeholder="Enter home badge URL..." />
+            </div>
+            <div className={styles.formGroup}>
+                <label>Away Team Badge</label>
+                <input type="text" value={awayTeamBadge} onChange={(e) => setAwayTeamBadge(e.target.value)} placeholder="Enter away badge URL..." />
+            </div>
+        </div>
+      </div>
+
+      <div className={styles.formSection}>
+        <h3 className={styles.sectionTitle}>Select a Background</h3>
+        <div className={styles.backgroundGrid}>
+          {backgrounds.map((bg) => (
+            <div
+              key={bg.Link}
+              className={`${styles.backgroundItem} ${selectedBackground === bg.Link ? styles.selected : ''}`}
+              onClick={() => setSelectedBackground(bg.Link)}
+            >
+              <img src={bg.Link} alt={bg.Name} />
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <div className={styles.actions}>
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Generating...' : 'Generate Image'}
+        </button>
+      </div>
+    </form>
   );
 }
