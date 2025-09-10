@@ -2,63 +2,57 @@
 
 import React, { createContext, useState, useContext } from 'react';
 
-// Create the context
 const AppContext = createContext();
 
-// Create the provider component
 export function AppProvider({ children }) {
-  // State for authentication, data, loading, and errors
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // State to hold the key, the fetched data, and loading/error status
+  const [authKey, setAuthKey] = useState('');
   const [appData, setAppData] = useState({ players: [], backgrounds: [], badges: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // The core function to authenticate and fetch data
-  const authenticate = async (authKey) => {
+  // This function is called ONCE when the key is first validated
+  const fetchInitialData = async (key) => {
+    if (!key) return; // Don't run if the key is empty
+
     setLoading(true);
     setError(null);
-
-    // Clear previous data and session on new attempt
-    sessionStorage.removeItem('appData');
-    setIsAuthenticated(false);
+    
+    // Check session storage first
+    const cachedData = sessionStorage.getItem('appData');
+    if (cachedData) {
+      processData(JSON.parse(cachedData));
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch('/api/get-app-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ authKey }),
+        body: JSON.stringify({ authKey: key }),
       });
 
       if (response.status === 401) {
-        // NEW: Custom error message as you requested
-        throw new Error("You do not have sufficient credentials to use this app. Please contact support to discuss terms.");
+        throw new Error("Invalid Authorization Key. Data could not be loaded.");
       }
       if (!response.ok) {
-        throw new Error("An unexpected error occurred. Please try again.");
+        throw new Error("Failed to fetch app data from the server.");
       }
 
       const rawData = await response.json();
       processData(rawData);
-      sessionStorage.setItem('appData', JSON.stringify(rawData));
-      setIsAuthenticated(true); // SUCCESS!
+      sessionStorage.setItem('appData', JSON.stringify(rawData)); // Cache on success
 
     } catch (err) {
       setError(err.message);
-      setIsAuthenticated(false);
+      // Clear data on error
+      setAppData({ players: [], backgrounds: [], badges: [] });
     } finally {
       setLoading(false);
     }
   };
 
-  // Logout function to reset state
-  const logout = () => {
-    sessionStorage.removeItem('appData');
-    setIsAuthenticated(false);
-    setAppData({ players: [], backgrounds: [], badges: [] });
-    setError(null);
-  };
-
-  // Helper function to process the raw data from the API
   const processData = (rawData) => {
     const players = rawData.filter((item) => item.class === 'player');
     const assets = rawData.filter((item) => item.class === 'asset');
@@ -67,21 +61,33 @@ export function AppProvider({ children }) {
     badges.sort((a, b) => a.Name.localeCompare(b.Name));
     setAppData({ players, backgrounds, badges });
   };
+  
+  // This is the function the sidebar will call
+  const handleSetAuthKey = (key) => {
+    setAuthKey(key);
+    // As soon as a key is entered, we try to fetch the data
+    if (key) {
+      fetchInitialData(key);
+    } else {
+      // If key is cleared, clear data
+      sessionStorage.removeItem('appData');
+      setAppData({ players: [], backgrounds: [], badges: [] });
+      setError(null);
+    }
+  };
 
-  // Value provided to all child components
   const value = {
-    isAuthenticated,
+    authKey,
+    setAuthKey: handleSetAuthKey, // Use our new handler function
     appData,
     loading,
     error,
-    authenticate,
-    logout,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
-// Custom hook to easily use the context in any component
+// Custom hook remains the same
 export function useAppContext() {
   const context = useContext(AppContext);
   if (context === undefined) {
