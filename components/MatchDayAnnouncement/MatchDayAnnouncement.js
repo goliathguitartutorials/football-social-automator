@@ -6,23 +6,17 @@ import { useAppData } from '@/hooks/useAppData';
 export default function MatchDayAnnouncement({ authKey }) {
   const { backgrounds, badges, loading, error } = useAppData(authKey);
 
-  // View state: 'CONFIG' for the form, 'PREVIEW' for the image
   const [view, setView] = useState('CONFIG');
-  
-  // Form state
   const [homeTeamBadge, setHomeTeamBadge] = useState('');
   const [awayTeamBadge, setAwayTeamBadge] = useState('');
   const [matchDate, setMatchDate] = useState('');
   const [kickOffTime, setKickOffTime] = useState('');
   const [venue, setVenue] = useState('');
   const [selectedBackground, setSelectedBackground] = useState('');
-  
-  // Control state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [message, setMessage] = useState('');
 
-  // Step 1: Generate the preview image
   const handleGeneratePreview = async (event) => {
     event.preventDefault();
     if (!authKey) { alert('Please enter your Authorization Key.'); return; }
@@ -54,26 +48,34 @@ export default function MatchDayAnnouncement({ authKey }) {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Failed to generate preview.');
 
-      // This is the key part: It sets the URL and switches the view
-      setPreviewUrl(result.previewUrl);
+      // --- THIS IS THE FIX ---
+      // We are now navigating the full JSON object to find the correct URL
+      const imageUrl = result[0]?.data?.data?.content;
+      if (!imageUrl) {
+        throw new Error("Image URL not found in the API response.");
+      }
+      // --- END OF FIX ---
+
+      setPreviewUrl(imageUrl);
       setView('PREVIEW');
 
     } catch (error) {
       setMessage(`Error: ${error.message}`);
       console.error('Preview Generation Error:', error);
+      // Stay on the form view if there's an error
+      setView('CONFIG');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Step 2: Post the generated image to social media
   const handlePostToSocial = async () => {
     setIsSubmitting(true);
     setMessage('');
     
     const payload = {
-      action: 'post_image', // The new action for posting
-      imageUrl: previewUrl, // Send the URL to n8n
+      action: 'post_image',
+      imageUrl: previewUrl,
     };
 
     try {
