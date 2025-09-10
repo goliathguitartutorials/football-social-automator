@@ -1,22 +1,23 @@
 'use client';
 import { useState } from 'react';
 import styles from './SquadAnnouncement.module.css';
-import { useAppData } from '@/hooks/useAppData'; // Import the new shared hook
+// MODIFIED: We now import our global context hook.
+import { useAppContext } from '../../context/AppContext';
 
-export default function SquadAnnouncement({ authKey }) {
-  // Use the new hook to get ALL app data. This is now the single source of truth.
-  const { players, backgrounds, loading, error } = useAppData(authKey);
+// MODIFIED: The component no longer accepts any props.
+export default function SquadAnnouncement() {
+  // MODIFIED: We get all data and the authKey directly from the global context.
+  const { appData, authKey, loading, error } = useAppContext();
+  // We now get players, backgrounds, AND badges from the context.
+  const { players, backgrounds, badges } = appData;
 
-  // State for this component
+  // --- Component's internal state remains the same ---
   const [selectedPlayers, setSelectedPlayers] = useState(Array(16).fill(''));
   const [selectedBackground, setSelectedBackground] = useState('');
-  const [homeTeamBadge, setHomeTeamBadge] = useState(''); // New field
-  const [awayTeamBadge, setAwayTeamBadge] = useState(''); // New field
-  
-  // UI State
+  const [homeTeamBadge, setHomeTeamBadge] = useState('');
+  const [awayTeamBadge, setAwayTeamBadge] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // We can add preview logic back in a later step if needed.
-
+  
   const handlePlayerSelect = (index, value) => {
     const newSelectedPlayers = [...selectedPlayers];
     newSelectedPlayers[index] = value;
@@ -26,17 +27,16 @@ export default function SquadAnnouncement({ authKey }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!authKey) {
-        alert('Please enter your Authorization Key.');
-        return;
+      alert('Please enter your Authorization Key.');
+      return;
     }
     if (!selectedBackground) {
-        alert('Please select a background image.');
-        return;
+      alert('Please select a background image.');
+      return;
     }
 
     setIsSubmitting(true);
     
-    // Filter out empty player slots and get their sponsor info
     const playersWithSponsors = selectedPlayers
       .filter(playerName => playerName)
       .map(playerName => {
@@ -48,43 +48,45 @@ export default function SquadAnnouncement({ authKey }) {
       });
 
     const payload = {
-        action: 'squad_announcement', // Action for the n8n workflow
-        players: playersWithSponsors,
-        background: selectedBackground,
-        home_team_badge: homeTeamBadge, // Send the badge URLs
-        away_team_badge: awayTeamBadge,
+      action: 'squad_announcement',
+      players: playersWithSponsors,
+      background: selectedBackground,
+      home_team_badge: homeTeamBadge,
+      away_team_badge: awayTeamBadge,
     };
 
     try {
-        const response = await fetch('/api/trigger-workflow', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authKey}`,
-            },
-            body: JSON.stringify(payload),
-        });
+      const response = await fetch('/api/trigger-workflow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authKey}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Something went wrong');
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Something went wrong');
+      }
 
-        const result = await response.json();
-        console.log('Workflow triggered successfully:', result);
-        alert('Squad announcement generation started! Check n8n for progress.');
+      const result = await response.json();
+      console.log('Workflow triggered successfully:', result);
+      alert('Squad announcement generation started! Check n8n for progress.');
 
     } catch (error) {
-        console.error('Submission error:', error);
-        alert(`Error: ${error.message}`);
+      console.error('Submission error:', error);
+      alert(`Error: ${error.message}`);
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
   
-  if (loading) return <p>Loading assets...</p>;
-  if (error) return <p>Error loading assets: {error}</p>;
-  if (!authKey) return <p>Please enter your Authorization Key in the sidebar to load assets.</p>;
+  // MODIFIED: This section now correctly reflects the context's state.
+  if (loading) return <p className={styles.notice}>Loading assets...</p>;
+  if (error) return <p className={`${styles.notice} ${styles.error}`}>{error}</p>;
+  // This check is now based on actual data being present.
+  if (players.length === 0) return <p className={styles.notice}>Please enter your Authorization Key in the sidebar to load assets.</p>;
 
   return (
     <form className={styles.container} onSubmit={handleSubmit}>
@@ -104,20 +106,28 @@ export default function SquadAnnouncement({ authKey }) {
         </div>
       </div>
       
-      {/* Note: The badges for Squad Announcement are not yet fully implemented in the n8n workflow.
-          This UI is added now for consistency and future use. We will implement them fully next. */}
+      {/* UPGRADED: Badge selection now uses dropdowns for consistency. */}
       <div className={styles.formSection}>
         <h3 className={styles.sectionTitle}>Select Team Badges</h3>
-        <p className={styles.notice}>Note: Badge selection is for future implementation.</p>
         <div className={styles.badgeGrid}>
-            <div className={styles.formGroup}>
-                <label>Home Team Badge</label>
-                <input type="text" value={homeTeamBadge} onChange={(e) => setHomeTeamBadge(e.target.value)} placeholder="Enter home badge URL..." />
-            </div>
-            <div className={styles.formGroup}>
-                <label>Away Team Badge</label>
-                <input type="text" value={awayTeamBadge} onChange={(e) => setAwayTeamBadge(e.target.value)} placeholder="Enter away badge URL..." />
-            </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="homeTeamBadge">Home Team Badge</label>
+            <select id="homeTeamBadge" value={homeTeamBadge} onChange={(e) => setHomeTeamBadge(e.target.value)} required>
+              <option value="">Select a badge...</option>
+              {badges.map((badge) => (
+                <option key={`home-${badge.Link}`} value={badge.Link}>{badge.Name.replace(/.png/i, '').substring(14)}</option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="awayTeamBadge">Away Team Badge</label>
+            <select id="awayTeamBadge" value={awayTeamBadge} onChange={(e) => setAwayTeamBadge(e.target.value)} required>
+              <option value="">Select a badge...</option>
+              {badges.map((badge) => (
+                <option key={`away-${badge.Link}`} value={badge.Link}>{badge.Name.replace(/.png/i, '').substring(14)}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
