@@ -1,13 +1,15 @@
+/* MODIFIED: All styles have been updated to use CSS variables for consistency with MatchDayAnnouncement */
 .container {
   padding: 2rem;
-  background-color: #1a1d2e;
+  background-color: var(--surface-dark, #1a1d2e);
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-primary, #fff);
 }
 
-.title {
+/* MODIFIED: Title style now targets h2 for consistency */
+.container h2 {
   margin-top: 0;
-  border-bottom: 2px solid #4a5568;
+  border-bottom: 2px solid var(--border-color, #4a5568);
   padding-bottom: 0.5rem;
   margin-bottom: 1.5rem;
 }
@@ -18,31 +20,44 @@
 
 .sectionTitle {
   font-size: 1.25rem;
-  color: #a0aec0;
+  color: var(--text-secondary, #a0aec0);
   margin-bottom: 1rem;
 }
 
+/* MODIFIED: Notice style now matches MatchDayAnnouncement */
 .notice {
-    font-style: italic;
-    color: #a0aec0;
-    margin-top: -0.5rem;
-    margin-bottom: 1rem;
+  padding: 1rem;
+  text-align: center;
+  font-style: italic;
+  color: var(--text-secondary, #a0aec0);
 }
 
 .playerGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 1rem;
 }
 
-.selectInput, .formGroup input {
+/* MODIFIED: Selector now explicitly includes .formGroup select for the new badge dropdowns */
+.selectInput,
+.formGroup input,
+.formGroup select {
   width: 100%;
   padding: 0.75rem;
   border-radius: 6px;
-  border: 1px solid #4a5568;
-  background-color: #2d3748;
-  color: #fff;
+  border: 1px solid var(--border-color, #4a5568);
+  background-color: #374151;
+  color: var(--text-primary, #fff);
   font-size: 1rem;
+}
+
+/* NEW: Added focus styles for better accessibility and UX, matching MatchDayAnnouncement */
+.selectInput:focus,
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: var(--accent-color, #4299e1);
+  box-shadow: 0 0 0 2px var(--accent-color-hover, rgba(66, 153, 225, 0.5));
 }
 
 .formGroup {
@@ -53,7 +68,7 @@
 .formGroup label {
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: #a0aec0;
+  color: var(--text-secondary, #a0aec0);
 }
 
 .badgeGrid {
@@ -77,9 +92,10 @@
   aspect-ratio: 16 / 9;
 }
 
+/* MODIFIED: Using CSS variables for colors */
 .backgroundItem:hover {
   transform: scale(1.05);
-  border-color: #63b3ed;
+  border-color: var(--accent-color-hover, #63b3ed);
 }
 
 .backgroundItem img {
@@ -89,9 +105,10 @@
   display: block;
 }
 
+/* MODIFIED: Using CSS variables for colors */
 .backgroundItem.selected {
-  border-color: #48bb78;
-  box-shadow: 0 0 15px rgba(72, 187, 120, 0.6);
+  border-color: var(--accent-color, #48bb78);
+  box-shadow: 0 0 15px var(--accent-color-hover, rgba(72, 187, 120, 0.6));
   transform: scale(1.05);
 }
 
@@ -100,16 +117,21 @@
   text-align: right;
 }
 
+/* MODIFIED: Using CSS variables for colors and added hover state */
 .actions button {
   padding: 0.75rem 2rem;
   font-size: 1rem;
   font-weight: bold;
   color: #fff;
-  background-color: #3182ce;
+  background-color: var(--accent-color, #3182ce);
   border: none;
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s;
+}
+
+.actions button:hover {
+  background-color: var(--accent-color-hover, #2b6cb0);
 }
 
 .actions button:disabled {
