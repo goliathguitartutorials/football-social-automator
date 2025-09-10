@@ -54,8 +54,9 @@ export default function MatchDayAnnouncement({ authKey }) {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Failed to generate preview.');
 
+      // This is the key part: It sets the URL and switches the view
       setPreviewUrl(result.previewUrl);
-      setView('PREVIEW'); // Switch to the preview view
+      setView('PREVIEW');
 
     } catch (error) {
       setMessage(`Error: ${error.message}`);
@@ -89,8 +90,6 @@ export default function MatchDayAnnouncement({ authKey }) {
       if (!response.ok) throw new Error(result.error || 'Failed to post to social media.');
       
       setMessage('Successfully posted to social media!');
-      // Optional: Disable button after successful post
-      // setView('POSTED'); 
       
     } catch (error) {
       setMessage(`Error: ${error.message}`);
@@ -129,7 +128,6 @@ export default function MatchDayAnnouncement({ authKey }) {
   return (
     <form className={styles.container} onSubmit={handleGeneratePreview}>
       <h2>Match Day Announcement</h2>
-      {/* Form content from previous step, no changes needed here */}
       <div className={styles.formGrid}>
         <div className={styles.formGroup}>
           <label htmlFor="homeTeamBadge">Home Team Badge</label>
