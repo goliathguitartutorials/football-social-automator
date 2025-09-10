@@ -1,11 +1,16 @@
 'use client';
 import { useState } from 'react';
 import styles from './MatchDayAnnouncement.module.css';
-import { useAppData } from '@/hooks/useAppData';
+// MODIFIED: We now import our global context hook instead of the old one.
+import { useAppContext } from '../../context/AppContext'; 
 
-export default function MatchDayAnnouncement({ authKey }) {
-  const { backgrounds, badges, loading, error } = useAppData(authKey);
+// MODIFIED: The component no longer accepts any props.
+export default function MatchDayAnnouncement() {
+  // MODIFIED: We get all our data and the authKey directly from the global context.
+  const { appData, authKey, loading, error } = useAppContext();
+  const { backgrounds, badges } = appData; // Destructure the data object
 
+  // --- All the component's internal state remains the same ---
   const [view, setView] = useState('CONFIG');
   const [homeTeamBadge, setHomeTeamBadge] = useState('');
   const [awayTeamBadge, setAwayTeamBadge] = useState('');
@@ -17,6 +22,7 @@ export default function MatchDayAnnouncement({ authKey }) {
   const [previewUrl, setPreviewUrl] = useState('');
   const [message, setMessage] = useState('');
 
+  // --- No changes needed in your handler functions, they will now use the authKey from the context ---
   const handleGeneratePreview = async (event) => {
     event.preventDefault();
     if (!authKey) { alert('Please enter your Authorization Key.'); return; }
@@ -48,21 +54,17 @@ export default function MatchDayAnnouncement({ authKey }) {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Failed to generate preview.');
 
-      // --- THIS IS THE FIX ---
-      // We are now navigating the full JSON object to find the correct URL
       const imageUrl = result[0]?.data?.data?.content;
       if (!imageUrl) {
         throw new Error("Image URL not found in the API response.");
       }
-      // --- END OF FIX ---
-
+      
       setPreviewUrl(imageUrl);
       setView('PREVIEW');
 
     } catch (error) {
       setMessage(`Error: ${error.message}`);
       console.error('Preview Generation Error:', error);
-      // Stay on the form view if there's an error
       setView('CONFIG');
     } finally {
       setIsSubmitting(false);
@@ -107,10 +109,13 @@ export default function MatchDayAnnouncement({ authKey }) {
     setMessage('');
   };
 
+  // MODIFIED: This section now correctly reflects the context's state.
   if (loading) return <p className={styles.notice}>Loading assets...</p>;
-  if (error) return <p className={`${styles.notice} ${styles.error}`}>Error loading assets: {error}</p>;
-  if (!authKey) return <p className={styles.notice}>Please enter your Authorization Key to load assets.</p>;
+  if (error) return <p className={`${styles.notice} ${styles.error}`}>{error}</p>;
+  // This check is now more robust. If there are no badges, it means data isn't loaded.
+  if (badges.length === 0) return <p className={styles.notice}>Please enter your Authorization Key in the sidebar to load assets.</p>;
 
+  // --- No changes needed for the component's return JSX ---
   if (view === 'PREVIEW') {
     return (
       <div className={styles.previewContainer}>
@@ -181,7 +186,7 @@ export default function MatchDayAnnouncement({ authKey }) {
           {isSubmitting ? 'Generating...' : 'Generate Preview'}
         </button>
       </div>
-       {message && <p className={styles.message}>{message}</p>}
+        {message && <p className={styles.message}>{message}</p>}
     </form>
   );
 }
