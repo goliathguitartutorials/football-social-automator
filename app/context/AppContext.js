@@ -5,26 +5,25 @@ import React, { createContext, useState, useContext } from 'react';
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
-  // State to hold the key, the fetched data, and loading/error status
   const [authKey, setAuthKey] = useState('');
   const [appData, setAppData] = useState({ players: [], backgrounds: [], badges: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // NEW: State to track the authorization status for clear UI feedback
+  const [authStatus, setAuthStatus] = useState('idle'); // 'idle', 'success', 'error'
 
-  // This function is called ONCE when the key is first validated
-  const fetchInitialData = async (key) => {
-    if (!key) return; // Don't run if the key is empty
+  // MODIFIED: This function is now called MANUALLY by the new button
+  const authorizeAndFetchData = async (key) => {
+    if (!key) {
+      setError("Please enter a key.");
+      setAuthStatus('error');
+      return;
+    }
 
     setLoading(true);
     setError(null);
-    
-    // Check session storage first
-    const cachedData = sessionStorage.getItem('appData');
-    if (cachedData) {
-      processData(JSON.parse(cachedData));
-      setLoading(false);
-      return;
-    }
+    setAuthStatus('idle');
+    sessionStorage.removeItem('appData'); // Clear old cache on new attempt
 
     try {
       const response = await fetch('/api/get-app-data', {
@@ -34,7 +33,7 @@ export function AppProvider({ children }) {
       });
 
       if (response.status === 401) {
-        throw new Error("Invalid Authorization Key. Data could not be loaded.");
+        throw new Error("Authorization failed. Please check your key.");
       }
       if (!response.ok) {
         throw new Error("Failed to fetch app data from the server.");
@@ -42,12 +41,13 @@ export function AppProvider({ children }) {
 
       const rawData = await response.json();
       processData(rawData);
-      sessionStorage.setItem('appData', JSON.stringify(rawData)); // Cache on success
-
+      sessionStorage.setItem('appData', JSON.stringify(rawData));
+      setAuthStatus('success'); // SUCCESS!
+      
     } catch (err) {
       setError(err.message);
-      // Clear data on error
-      setAppData({ players: [], backgrounds: [], badges: [] });
+      setAuthStatus('error'); // FAILURE!
+      setAppData({ players: [], backgrounds: [], badges: [] }); // Clear data on error
     } finally {
       setLoading(false);
     }
@@ -62,32 +62,29 @@ export function AppProvider({ children }) {
     setAppData({ players, backgrounds, badges });
   };
   
-  // This is the function the sidebar will call
+  // MODIFIED: The main set function no longer triggers a fetch
   const handleSetAuthKey = (key) => {
     setAuthKey(key);
-    // As soon as a key is entered, we try to fetch the data
-    if (key) {
-      fetchInitialData(key);
-    } else {
-      // If key is cleared, clear data
-      sessionStorage.removeItem('appData');
-      setAppData({ players: [], backgrounds: [], badges: [] });
-      setError(null);
+    // When the user starts typing again, reset the status
+    if (authStatus !== 'idle') {
+        setAuthStatus('idle');
+        setError(null);
     }
   };
 
   const value = {
     authKey,
-    setAuthKey: handleSetAuthKey, // Use our new handler function
+    setAuthKey: handleSetAuthKey,
     appData,
     loading,
     error,
+    authStatus, // Expose the new status
+    authorizeAndFetchData, // Expose the manual fetch function
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
-// Custom hook remains the same
 export function useAppContext() {
   const context = useContext(AppContext);
   if (context === undefined) {
