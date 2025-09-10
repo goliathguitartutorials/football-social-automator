@@ -5,6 +5,7 @@ import styles from './page.module.css';
 import Sidebar from '@/components/Layout/Sidebar';
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
 import MatchResult from '@/components/MatchResult/MatchResult';
+import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnnouncement'; // Import the new component
 
 // We update MainContent to accept and pass down the authKey
 const MainContent = ({ view, authKey }) => {
@@ -12,6 +13,8 @@ const MainContent = ({ view, authKey }) => {
     case 'squad':
       // Pass the key down to the component that needs it
       return <SquadAnnouncement authKey={authKey} />;
+    case 'matchDay': // Add case for the new view
+      return <MatchDayAnnouncement authKey={authKey} />;
     case 'result':
       return <MatchResult />;
     default:
@@ -20,7 +23,7 @@ const MainContent = ({ view, authKey }) => {
 };
 
 export default function HomePage() {
-  const [activeView, setActiveView] = useState('squad');
+  const [activeView, setActiveView] = useState('matchDay'); // Set our new component as the default
   // The state for the authorization key now lives here, in the parent component
   const [authKey, setAuthKey] = useState('');
 
