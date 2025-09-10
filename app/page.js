@@ -5,38 +5,56 @@ import styles from './page.module.css';
 import Sidebar from '@/components/Layout/Sidebar';
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
 import MatchResult from '@/components/MatchResult/MatchResult';
-import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnnouncement'; // Import the new component
+import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnnouncement';
 
-// We update MainContent to accept and pass down the authKey
-const MainContent = ({ view, authKey }) => {
+// NEW: Import the context and the AuthGate
+import { useAppContext } from './context/AppContext';
+import AuthGate from '@/components/AuthGate/AuthGate';
+
+// MODIFIED: This component no longer needs authKey passed to it
+const MainContent = ({ view }) => {
   switch (view) {
     case 'squad':
-      // Pass the key down to the component that needs it
-      return <SquadAnnouncement authKey={authKey} />;
-    case 'matchDay': // Add case for the new view
-      return <MatchDayAnnouncement authKey={authKey} />;
+      // The child components will get their data from the context now
+      return <SquadAnnouncement />;
+    case 'matchDay':
+      return <MatchDayAnnouncement />;
     case 'result':
       return <MatchResult />;
     default:
-      return <p>Select a post type to begin.</p>;
+      // A better default view when authenticated
+      return (
+        <div style={{ textAlign: 'center', marginTop: '50px' }}>
+          <h2>Welcome!</h2>
+          <p>Select a post type from the sidebar to begin creating content.</p>
+        </div>
+      );
   }
 };
 
 export default function HomePage() {
-  const [activeView, setActiveView] = useState('matchDay'); // Set our new component as the default
-  // The state for the authorization key now lives here, in the parent component
-  const [authKey, setAuthKey] = useState('');
+  const [activeView, setActiveView] = useState('matchDay');
+  
+  // MODIFIED: We get isAuthenticated directly from our global context
+  const { isAuthenticated } = useAppContext();
+
+  // REMOVED: The authKey state is no longer needed here.
 
   return (
     <>
       <Sidebar
         activeView={activeView}
         setView={setActiveView}
-        authKey={authKey}
-        setAuthKey={setAuthKey}
+        // REMOVED: We no longer pass authKey state management props
       />
       <main className={styles.main}>
-        <MainContent view={activeView} authKey={authKey} />
+        {isAuthenticated ? (
+          // If the user is authenticated, show the main app
+          <MainContent view={activeView} />
+        ) : (
+          // Otherwise, show the authentication gate
+          <AuthGate />
+        )}
       </main>
     </>
   );
