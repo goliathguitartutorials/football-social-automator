@@ -5,10 +5,8 @@ import styles from './Sidebar.module.css';
 export default function Sidebar({ activeView, setView, authKey, setAuthKey }) {
   const postTypes = [
     { id: 'squad', label: 'Squad Announcement' },
-    { id: 'result', label: 'Match Result' },
-    { id: 'preview', label: 'Match Preview' },
-    { id: 'signing', label: 'New Player Signing' },
-    { id: 'generic', label: 'Generic Post' },
+    { id: 'matchDay', label: 'Match Day Announcement' },
+    { id: 'result', label: 'Full-Time Result' },
   ];
 
   return (
