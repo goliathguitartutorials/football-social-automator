@@ -2,60 +2,87 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const formData = await request.formData();
-    const authKey = formData.get('authKey');
-    const workflow = formData.get('workflow');
-    const jsonDataString = formData.get('data');
-    const customBackgroundFile = formData.get('customBackground');
-    const data = JSON.parse(jsonDataString);
-
-    const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
-    const APP_SECURITY_KEY = process.env.APP_SECURITY_KEY;
+    const { N8N_WEBHOOK_URL, APP_SECURITY_KEY } = process.env;
 
     if (!N8N_WEBHOOK_URL || !APP_SECURITY_KEY) {
       console.error("Server configuration error: Missing environment variables.");
       throw new Error("Server configuration error.");
     }
-    if (authKey !== APP_SECURITY_KEY) {
-      return NextResponse.json({ message: 'Authorization failed.' }, { status: 401 });
-    }
-    
-    const n8nFormData = new FormData();
-    n8nFormData.append('data', JSON.stringify(data));
-    if (customBackgroundFile) {
-      n8nFormData.append('customBackground', customBackgroundFile);
-    }
 
-    const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
+    const contentType = request.headers.get('content-type') || '';
+    let n8nResponse;
+
+    // --- LOGIC TO HANDLE EITHER JSON OR FORMDATA ---
+    if (contentType.includes('application/json')) {
+      // Handle JSON data from new components
+      const authHeader = request.headers.get('authorization');
+      const token = authHeader?.split(' ')[1]; // Get token from "Bearer TOKEN"
+
+      if (token !== APP_SECURITY_KEY) {
+        return NextResponse.json({ error: 'Authorization failed.' }, { status: 401 });
+      }
+
+      const payload = await request.json();
+      
+      console.log("Received JSON payload:", payload);
+
+      // Forward the JSON payload directly to the n8n webhook
+      n8nResponse = await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+    } else if (contentType.includes('multipart/form-data')) {
+      // Handle FormData (e.g., from original Squad Announcement with file uploads)
+      const formData = await request.formData();
+      const authKey = formData.get('authKey');
+
+      if (authKey !== APP_SECURITY_KEY) {
+        return NextResponse.json({ error: 'Authorization failed.' }, { status: 401 });
+      }
+
+      // Reconstruct FormData to send to n8n (excluding our internal authKey)
+      const n8nFormData = new FormData();
+      for (const [key, value] of formData.entries()) {
+        if (key !== 'authKey') {
+          n8nFormData.append(key, value);
+        }
+      }
+      
+      console.log("Received FormData payload");
+      
+      n8nResponse = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
         body: n8nFormData,
-    });
+      });
 
-    if (!n8nResponse.ok) {
-        const errorResult = await n8nResponse.json().catch(() => ({ message: n8nResponse.statusText }));
-        console.error("Error from n8n webhook:", errorResult);
-        throw new Error(errorResult.message || 'The n8n workflow returned an error.');
+    } else {
+      return NextResponse.json({ error: 'Unsupported Content-Type.' }, { status: 415 });
     }
 
-    // --- FIX: Pass the binary data through directly ---
-
-    // 1. Get the binary data (the image) from n8n as a Blob
-    const imageBlob = await n8nResponse.blob();
-
-    // 2. Get the original Content-Type header from the n8n response (e.g., 'image/jpeg')
-    const contentType = n8nResponse.headers.get('content-type');
-
-    // 3. Create a new response to send to the web app, containing the image
-    //    and forwarding the correct Content-Type header.
-    return new NextResponse(imageBlob, {
-      status: 200,
-      headers: {
-        'Content-Type': contentType,
-      },
-    });
+    // --- PROCESS N8N RESPONSE (SAME FOR BOTH PATHS) ---
+    if (!n8nResponse.ok) {
+      const errorResult = await n8nResponse.json().catch(() => ({ message: n8nResponse.statusText }));
+      console.error("Error from n8n webhook:", errorResult);
+      throw new Error(errorResult.message || 'The n8n workflow returned an error.');
+    }
+    
+    // For now, n8n returns a success message for JSON workflows
+    // If it returns an image, that logic would go here.
+    if (n8nResponse.headers.get('content-type')?.includes('application/json')) {
+        const jsonResponse = await n8nResponse.json();
+        return NextResponse.json(jsonResponse, { status: 200 });
+    }
+    
+    // Fallback for binary data like image previews
+    const blob = await n8nResponse.blob();
+    const headers = new Headers();
+    headers.set('Content-Type', n8nResponse.headers.get('content-type'));
+    return new NextResponse(blob, { status: 200, headers });
 
   } catch (error) {
     console.error("API Route Error:", error.message);
-    return NextResponse.json({ message: error.message || 'An internal server error occurred.' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'An internal server error occurred.' }, { status: 500 });
   }
 }
