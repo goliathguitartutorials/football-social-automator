@@ -1,5 +1,6 @@
 import './globals.css';
-import styles from './layout.module.css'; // We'll create this new CSS file
+import styles from './layout.module.css';
+import AppWrapper from './AppWrapper'; // MODIFIED: Import the wrapper
 
 export const metadata = {
   title: "Football Social Automator",
@@ -10,10 +11,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <div className={styles.appContainer}>
-          {/* The children prop will be our main page content */}
-          {children}
-        </div>
+        {/* MODIFIED: Wrap everything in the AppWrapper */}
+        <AppWrapper>
+          <div className={styles.appContainer}>
+            {children}
+          </div>
+        </AppWrapper>
       </body>
     </html>
   );
