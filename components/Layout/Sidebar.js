@@ -1,13 +1,30 @@
 'use client';
-import styles from './Sidebar.module.css';
 
-// The Sidebar now receives the authKey and a function to update it from the parent
-export default function Sidebar({ activeView, setView, authKey, setAuthKey }) {
+import { useState } from 'react';
+import styles from './Sidebar.module.css';
+import { useAppContext } from '../../app/context/AppContext'; // MODIFIED: Use our new context
+
+export default function Sidebar({ activeView, setView }) {
+  const { isAuthenticated, authenticate, logout, loading } = useAppContext(); // Get what we need from context
+  const [localAuthKey, setLocalAuthKey] = useState(''); // State for the input field
+
   const postTypes = [
     { id: 'squad', label: 'Squad Announcement' },
     { id: 'matchDay', label: 'Match Day Announcement' },
     { id: 'result', label: 'Full-Time Result' },
   ];
+
+  const handleAuth = () => {
+    if (localAuthKey) {
+      authenticate(localAuthKey);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleAuth();
+    }
+  };
 
   return (
     <aside className={styles.sidebar}>
@@ -20,6 +37,8 @@ export default function Sidebar({ activeView, setView, authKey, setAuthKey }) {
                 <button
                   className={activeView === post.id ? styles.active : ''}
                   onClick={() => setView(post.id)}
+                  // MODIFIED: Disable navigation when not authenticated
+                  disabled={!isAuthenticated}
                 >
                   {post.label}
                 </button>
@@ -29,19 +48,33 @@ export default function Sidebar({ activeView, setView, authKey, setAuthKey }) {
         </nav>
       </div>
 
-      {/* NEW: Permanent Authorization Section at the bottom */}
       <div className={styles.authSection}>
         <label htmlFor="authKey" className={styles.authLabel}>
           Authorization Key
         </label>
-        <input
-          id="authKey"
-          type="password"
-          className={styles.authInput}
-          placeholder="Enter secret key..."
-          value={authKey}
-          onChange={(e) => setAuthKey(e.target.value)}
-        />
+        {isAuthenticated ? (
+          // MODIFIED: Show a logout button if authenticated
+          <button onClick={logout} className={styles.authButton}>
+            Logout
+          </button>
+        ) : (
+          // MODIFIED: Show the input and a new button if not authenticated
+          <>
+            <input
+              id="authKey"
+              type="password"
+              className={styles.authInput}
+              placeholder="Enter secret key..."
+              value={localAuthKey}
+              onChange={(e) => setLocalAuthKey(e.target.value)}
+              onKeyPress={handleKeyPress} // Allow pressing Enter
+              disabled={loading} // Disable while authenticating
+            />
+            <button onClick={handleAuth} className={styles.authButton} disabled={loading}>
+              {loading ? 'Authenticating...' : 'Authenticate'}
+            </button>
+          </>
+        )}
       </div>
     </aside>
   );
