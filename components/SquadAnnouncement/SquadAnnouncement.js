@@ -1,17 +1,13 @@
 'use client';
 import { useState } from 'react';
 import styles from './SquadAnnouncement.module.css';
-// MODIFIED: We now import our global context hook.
-import { useAppContext } from '../../context/AppContext';
+// MODIFIED: Corrected the import path to use the project's '@/' alias.
+import { useAppContext } from '@/app/context/AppContext';
 
-// MODIFIED: The component no longer accepts any props.
 export default function SquadAnnouncement() {
-  // MODIFIED: We get all data and the authKey directly from the global context.
   const { appData, authKey, loading, error } = useAppContext();
-  // We now get players, backgrounds, AND badges from the context.
   const { players, backgrounds, badges } = appData;
 
-  // --- Component's internal state remains the same ---
   const [selectedPlayers, setSelectedPlayers] = useState(Array(16).fill(''));
   const [selectedBackground, setSelectedBackground] = useState('');
   const [homeTeamBadge, setHomeTeamBadge] = useState('');
@@ -82,10 +78,8 @@ export default function SquadAnnouncement() {
     }
   };
   
-  // MODIFIED: This section now correctly reflects the context's state.
   if (loading) return <p className={styles.notice}>Loading assets...</p>;
   if (error) return <p className={`${styles.notice} ${styles.error}`}>{error}</p>;
-  // This check is now based on actual data being present.
   if (players.length === 0) return <p className={styles.notice}>Please enter your Authorization Key in the sidebar to load assets.</p>;
 
   return (
@@ -106,7 +100,6 @@ export default function SquadAnnouncement() {
         </div>
       </div>
       
-      {/* UPGRADED: Badge selection now uses dropdowns for consistency. */}
       <div className={styles.formSection}>
         <h3 className={styles.sectionTitle}>Select Team Badges</h3>
         <div className={styles.badgeGrid}>
