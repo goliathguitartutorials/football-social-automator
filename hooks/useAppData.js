@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-export function useAppData() {
+// The hook now accepts the authKey as an argument
+export function useAppData(authKey) {
   const [data, setData] = useState({
     players: [],
     backgrounds: [],
@@ -11,8 +12,14 @@ export function useAppData() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Do not fetch if the auth key isn't provided yet.
+    if (!authKey) {
+      setLoading(false);
+      return;
+    }
+
     async function fetchData() {
-      // 1. Check session storage first
+      setLoading(true);
       const cachedData = sessionStorage.getItem('appData');
       if (cachedData) {
         processData(JSON.parse(cachedData));
@@ -20,15 +27,26 @@ export function useAppData() {
         return;
       }
 
-      // 2. If no cache, fetch from the API
       try {
-        const response = await fetch('/api/get-app-data');
-        if (!response.ok) {
-          throw new Error('Failed to fetch app data');
-        }
-        const rawData = await response.json();
+        // --- MODIFIED FETCH CALL ---
+        // Use the POST method and send the authKey in the body
+        const response = await fetch('/api/get-app-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ authKey }),
+        });
+        // --- END MODIFICATION ---
 
-        // 3. Process and save to session storage
+        if (response.status === 401) {
+          throw new Error('Authorization failed. Please check your key.');
+        }
+        if (!response.ok) {
+          throw new Error('Failed to fetch app data from the server.');
+        }
+
+        const rawData = await response.json();
         processData(rawData);
         sessionStorage.setItem('appData', JSON.stringify(rawData));
       } catch (err) {
@@ -46,14 +64,14 @@ export function useAppData() {
       const backgrounds = assets.filter((asset) => asset.Type === 'background');
       const badges = assets.filter((asset) => asset.Type === 'badge');
 
-      // Sort badges alphabetically by name
       badges.sort((a, b) => a.Name.localeCompare(b.Name));
       
       setData({ players, backgrounds, badges });
     }
 
     fetchData();
-  }, []);
+    // Re-run the effect if the authKey changes
+  }, [authKey]);
 
   return { ...data, loading, error };
 }
