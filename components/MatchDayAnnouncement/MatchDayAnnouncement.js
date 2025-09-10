@@ -4,9 +4,11 @@ import styles from './MatchDayAnnouncement.module.css';
 import { useAppData } from '@/hooks/useAppData';
 
 export default function MatchDayAnnouncement({ authKey }) {
-  // Pass the authKey prop into our hook
   const { backgrounds, badges, loading, error } = useAppData(authKey);
 
+  // View state: 'CONFIG' for the form, 'PREVIEW' for the image
+  const [view, setView] = useState('CONFIG');
+  
   // Form state
   const [homeTeamBadge, setHomeTeamBadge] = useState('');
   const [awayTeamBadge, setAwayTeamBadge] = useState('');
@@ -14,19 +16,21 @@ export default function MatchDayAnnouncement({ authKey }) {
   const [kickOffTime, setKickOffTime] = useState('');
   const [venue, setVenue] = useState('');
   const [selectedBackground, setSelectedBackground] = useState('');
+  
+  // Control state
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [message, setMessage] = useState('');
 
-  const handleSubmit = async (event) => {
+  // Step 1: Generate the preview image
+  const handleGeneratePreview = async (event) => {
     event.preventDefault();
-    if (!authKey) {
-      alert('Please enter your Authorization Key.');
-      return;
-    }
-    if (!selectedBackground) {
-      alert('Please select a background image.');
-      return;
-    }
+    if (!authKey) { alert('Please enter your Authorization Key.'); return; }
+    if (!selectedBackground) { alert('Please select a background image.'); return; }
+
     setIsSubmitting(true);
+    setMessage('');
+
     const payload = {
       action: 'match_day_announcement',
       home_team_badge: homeTeamBadge,
@@ -36,6 +40,7 @@ export default function MatchDayAnnouncement({ authKey }) {
       venue: venue,
       background: selectedBackground,
     };
+
     try {
       const response = await fetch('/api/trigger-workflow', {
         method: 'POST',
@@ -45,29 +50,86 @@ export default function MatchDayAnnouncement({ authKey }) {
         },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Something went wrong');
-      }
+
       const result = await response.json();
-      console.log('Workflow triggered successfully:', result);
-      alert('Image generation started successfully! Check n8n for progress.');
+      if (!response.ok) throw new Error(result.error || 'Failed to generate preview.');
+
+      setPreviewUrl(result.previewUrl);
+      setView('PREVIEW'); // Switch to the preview view
+
     } catch (error) {
-      console.error('Submission error:', error);
-      alert(`Error: ${error.message}`);
+      setMessage(`Error: ${error.message}`);
+      console.error('Preview Generation Error:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Improved loading/error states
-  if (loading) return <p>Loading assets...</p>;
-  if (error) return <p>Error loading assets: {error}</p>;
-  if (!authKey) return <p>Please enter your Authorization Key in the sidebar to load assets.</p>;
+  // Step 2: Post the generated image to social media
+  const handlePostToSocial = async () => {
+    setIsSubmitting(true);
+    setMessage('');
+    
+    const payload = {
+      action: 'post_image', // The new action for posting
+      imageUrl: previewUrl, // Send the URL to n8n
+    };
+
+    try {
+      const response = await fetch('/api/trigger-workflow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authKey}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to post to social media.');
+      
+      setMessage('Successfully posted to social media!');
+      // Optional: Disable button after successful post
+      // setView('POSTED'); 
+      
+    } catch (error) {
+      setMessage(`Error: ${error.message}`);
+      console.error('Post to Social Error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBackToEdit = () => {
+    setView('CONFIG');
+    setPreviewUrl('');
+    setMessage('');
+  };
+
+  if (loading) return <p className={styles.notice}>Loading assets...</p>;
+  if (error) return <p className={`${styles.notice} ${styles.error}`}>Error loading assets: {error}</p>;
+  if (!authKey) return <p className={styles.notice}>Please enter your Authorization Key to load assets.</p>;
+
+  if (view === 'PREVIEW') {
+    return (
+      <div className={styles.previewContainer}>
+        <h2>Preview</h2>
+        {previewUrl ? <img src={previewUrl} alt="Generated match day announcement" className={styles.previewImage} /> : <p>Loading preview...</p>}
+        <div className={styles.previewActions}>
+          <button onClick={handleBackToEdit} className={styles.backButton}>Back to Edit</button>
+          <button onClick={handlePostToSocial} disabled={isSubmitting} className={styles.postButton}>
+            {isSubmitting ? 'Posting...' : 'Post to Social Media'}
+          </button>
+        </div>
+        {message && <p className={styles.message}>{message}</p>}
+      </div>
+    );
+  }
 
   return (
-    <form className={styles.container} onSubmit={handleSubmit}>
+    <form className={styles.container} onSubmit={handleGeneratePreview}>
       <h2>Match Day Announcement</h2>
+      {/* Form content from previous step, no changes needed here */}
       <div className={styles.formGrid}>
         <div className={styles.formGroup}>
           <label htmlFor="homeTeamBadge">Home Team Badge</label>
@@ -116,9 +178,10 @@ export default function MatchDayAnnouncement({ authKey }) {
       </div>
       <div className={styles.actions}>
         <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Generating...' : 'Generate Image'}
+          {isSubmitting ? 'Generating...' : 'Generate Preview'}
         </button>
       </div>
+       {message && <p className={styles.message}>{message}</p>}
     </form>
   );
 }
