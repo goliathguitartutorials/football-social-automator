@@ -1,8 +1,8 @@
 /*
  * =================================================================
- * COMPONENT: Home Page
- * PAGE: /
- * FILE: /app/page.module.css
+ * COMPONENT: Updates Page
+ * PAGE: /updates
+ * FILE: /app/(main)/updates/Updates.module.css
  * =================================================================
  */
 
@@ -15,18 +15,24 @@
   flex-grow: 1; /* Takes up the remaining space */
   padding: 2rem 3rem;
   overflow-y: auto; /* Allows content to scroll if it's too long */
+
+  /* --- MODIFIED: Constrain and center the layout --- */
+  width: 100%; /* Ensures it's responsive on smaller screens */
+  max-width: 1200px; /* The maximum width the content can stretch to */
+  margin-left: auto; /* These two lines center the container */
+  margin-right: auto;
 }
 
 /* --- Mobile Styles --- */
 @media (max-width: 768px) {
   .pageContainer {
     /* On mobile, the container itself doesn't need to be a flex row */
-    display: block; 
+    display: block;
   }
 
   .main {
     padding: 1.5rem; /* Reduce padding for smaller screens */
     /* Add padding to the bottom to prevent the mobile nav from overlapping content */
-    padding-bottom: 80px; 
+    padding-bottom: 80px;
   }
 }
