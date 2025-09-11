@@ -13,25 +13,22 @@ export async function POST(request) {
         const { gameInfo, page } = body;
         const authKeyFromUser = request.headers.get('Authorization')?.split(' ')[1];
 
-        // --- ADDED LOGGING FOR DEBUGGING ---
         console.log('API Route: /api/generate-caption invoked.');
-        const serverAuthKey = process.env.AUTH_KEY;
+        
+        // CORRECTED: Using the correct environment variable name 'APP_SECURITY_KEY'
+        const serverAuthKey = process.env.APP_SECURITY_KEY;
 
         if (!serverAuthKey) {
-            console.error('CRITICAL: AUTH_KEY environment variable is not set on the server.');
+            console.error('CRITICAL: APP_SECURITY_KEY environment variable is not set on the server.');
             return NextResponse.json({ error: 'Server configuration error.' }, { status: 500 });
         }
         
-        // Securely check the keys
         if (!authKeyFromUser || authKeyFromUser !== serverAuthKey) {
             console.warn('Authorization failed. Keys do not match.');
-            // Note: In a real production app, avoid logging the keys themselves.
-            // console.log(`Key from user: ...${authKeyFromUser?.slice(-4)}`); 
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
         
         console.log('Authorization successful. Proceeding to call n8n webhook.');
-        // --- END LOGGING ---
 
         const webhookUrl = process.env.N8N_CAPTION_WEBHOOK_URL;
         if (!webhookUrl) {
