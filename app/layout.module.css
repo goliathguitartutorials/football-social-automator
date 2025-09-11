@@ -1,11 +1,12 @@
+/*
+ * =================================================================
+ * COMPONENT: Root Layout
+ * PAGE: /
+ * FILE: /app/layout.module.css
+ * =================================================================
+ */
+
 .appContainer {
   display: flex;
   min-height: 100vh;
-}
-
-/* --- Mobile Styles --- */
-@media (max-width: 768px) {
-  .appContainer {
-    flex-direction: column;
-  }
 }
