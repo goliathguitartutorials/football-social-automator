@@ -6,32 +6,104 @@
  * ==========================================================
  */
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import styles from './UpNextAnnouncement.module.css';
 import { useAppContext } from '@/app/context/AppContext';
+
+// MODIFIED: Import ReactCrop and its required assets
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+
+// --- Cropper Constants ---
+const ASPECT_RATIO = 1080 / 1350;
+const MIN_WIDTH = 400;
 
 export default function UpNextAnnouncement() {
     const { appData, loading, error } = useAppContext();
     const { backgrounds, badges } = appData;
 
-    // Form State
+    // --- Component State ---
     const [homeTeamBadge, setHomeTeamBadge] = useState('');
     const [awayTeamBadge, setAwayTeamBadge] = useState('');
     const [matchDate, setMatchDate] = useState('');
     const [kickOffTime, setKickOffTime] = useState('');
     const [venue, setVenue] = useState('');
     const [teamType, setTeamType] = useState('First Team');
-
-    // Background State
+    const [caption, setCaption] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // --- Background State ---
     const [selectedBackground, setSelectedBackground] = useState('');
     const [saveCustomBackground, setSaveCustomBackground] = useState(true);
 
-    // Caption State
-    const [caption, setCaption] = useState('');
+    // --- Cropper State & Refs ---
+    const [imgSrc, setImgSrc] = useState('');
+    const [crop, setCrop] = useState();
+    const [isCropping, setIsCropping] = useState(false);
+    const [customBackgroundPreview, setCustomBackgroundPreview] = useState('');
+    const imgRef = useRef(null);
+    const fileInputRef = useRef(null);
 
-    // Control State
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    // --- Cropper Helper Functions ---
+    const onSelectFile = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
+        // Reset previous custom background
+        setCustomBackgroundPreview('');
+
+        const reader = new FileReader();
+        reader.addEventListener('load', () => {
+            setImgSrc(reader.result?.toString() || '');
+            setIsCropping(true);
+        });
+        reader.readAsDataURL(file);
+    };
+
+    const onImageLoad = (e) => {
+        const { width, height } = e.currentTarget;
+        const crop = makeAspectCrop({ unit: '%', width: 90 }, ASPECT_RATIO, width, height);
+        const centeredCrop = centerCrop(crop, width, height);
+        setCrop(centeredCrop);
+    };
+
+    const handleConfirmCrop = () => {
+        if (!imgRef.current || !crop || !crop.width || !crop.height) return;
+        const image = imgRef.current;
+        const canvas = document.createElement('canvas');
+        const scaleX = image.naturalWidth / image.width;
+        const scaleY = image.naturalHeight / image.height;
+        canvas.width = crop.width * scaleX;
+        canvas.height = crop.height * scaleY;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(image, crop.x * scaleX, crop.y * scaleY, crop.width * scaleX, crop.height * scaleY, 0, 0, canvas.width, canvas.height);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        
+        // Key change: Set the preview AND set the main selected background
+        setCustomBackgroundPreview(dataUrl);
+        setSelectedBackground(dataUrl); // This makes the cropped image the active background
+
+        setIsCropping(false);
+    };
+    
+    const resetCustomBackground = () => {
+        setImgSrc('');
+        setCustomBackgroundPreview('');
+        setIsCropping(false);
+        if (selectedBackground.startsWith('data:image')) {
+            setSelectedBackground(''); // Clear selection if it was a custom one
+        }
+        if(fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handleSelectGalleryBg = (bgLink) => {
+        resetCustomBackground(); // Clear any custom image
+        setSelectedBackground(bgLink);
+    };
+
+    // --- Form Submission Handlers ---
     const handleGeneratePreview = (e) => {
         e.preventDefault();
         alert("'Generate Preview' logic goes here.");
@@ -99,28 +171,47 @@ export default function UpNextAnnouncement() {
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>Background</h3>
                 </div>
-                <div className={styles.backgroundOptions}>
-                    <div className={styles.customUploadSection}>
-                        <p>Upload a Custom Background</p>
-                        {/* We will replace this with the BespokePost cropper logic */}
-                        <input type="file" accept="image/*" />
-                        <div className={styles.checkboxContainer}>
-                            <input type="checkbox" id="saveCustomBg" checked={saveCustomBackground} onChange={(e) => setSaveCustomBackground(e.target.checked)} />
-                            <label htmlFor="saveCustomBg">Save background for future use</label>
+
+                <h4 className={styles.subHeader}>Custom</h4>
+                <div className={styles.customUploadSection}>
+                    {!imgSrc && !customBackgroundPreview && (
+                        <>
+                           <p>Upload a Custom Background</p>
+                           <input ref={fileInputRef} type="file" accept="image/*" onChange={onSelectFile} />
+                        </>
+                    )}
+                    {imgSrc && isCropping && (
+                        <div className={styles.cropperContainer}>
+                             <ReactCrop crop={crop} onChange={(c) => setCrop(c)} aspect={ASPECT_RATIO} minWidth={100}>
+                                <img ref={imgRef} src={imgSrc} onLoad={onImageLoad} alt="To be cropped" style={{ maxHeight: '60vh' }} />
+                            </ReactCrop>
+                            <button type="button" onClick={handleConfirmCrop} className={styles.utilityButton} style={{marginTop: '1rem'}}>Confirm Crop</button>
                         </div>
-                    </div>
-                    <h4 style={{textAlign: 'center', margin: '2rem 0', color: 'var(--text-secondary)'}}>OR</h4>
-                     <div className={styles.backgroundGrid}>
-                        {backgrounds.map((bg) => (
-                            <div
-                                key={bg.Link}
-                                className={`${styles.backgroundItem} ${selectedBackground === bg.Link ? styles.selected : ''}`}
-                                onClick={() => setSelectedBackground(bg.Link)}
-                            >
-                                <img src={bg.Link} alt={bg.Name} />
-                            </div>
-                        ))}
-                    </div>
+                    )}
+                     {customBackgroundPreview && !isCropping && (
+                        <div className={styles.customPreviewContainer}>
+                            <p>Your selected background:</p>
+                            <img src={customBackgroundPreview} alt="Cropped Preview" className={styles.previewImage} />
+                            <button type="button" onClick={resetCustomBackground} className={styles.utilityButton}>Change Image</button>
+                        </div>
+                    )}
+                </div>
+                <div className={styles.checkboxContainer}>
+                    <input type="checkbox" id="saveCustomBg" checked={saveCustomBackground} onChange={(e) => setSaveCustomBackground(e.target.checked)} />
+                    <label htmlFor="saveCustomBg">Save background for future use</label>
+                </div>
+
+                <h4 className={styles.subHeader}>Gallery</h4>
+                <div className={styles.backgroundGrid}>
+                    {backgrounds.map((bg) => (
+                        <div
+                            key={bg.Link}
+                            className={`${styles.backgroundItem} ${selectedBackground === bg.Link ? styles.selected : ''}`}
+                            onClick={() => handleSelectGalleryBg(bg.Link)}
+                        >
+                            <img src={bg.Link} alt={bg.Name} />
+                        </div>
+                    ))}
                 </div>
             </div>
 
