@@ -1,7 +1,9 @@
 /*
  * ==========================================================
-CreatePage.js
- ==========================================================
+ * COMPONENT: Create Page
+ * PAGE: /create
+ * FILE: /components/CreatePage/CreatePage.js
+ * ==========================================================
  */
 'use client';
 
@@ -14,16 +16,8 @@ import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnno
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
 import MatchResult from '@/components/MatchResult/MatchResult';
 import BespokePost from '@/components/BespokePost/BespokePost';
-
-// TODO: Move placeholder components to their own files
-const UpNextAnnouncement = () => {
-    return (
-        <div>
-            <h2>Up Next Announcement</h2>
-            <p>UI and functionality for creating the 'Up Next' match preview post will be built here.</p>
-        </div>
-    );
-};
+// MODIFIED: Imported the new UpNextAnnouncement component
+import UpNextAnnouncement from '@/components/UpNextAnnouncement/UpNextAnnouncement';
 
 const postTypes = [
     { id: 'upNext', label: 'Up Next', icon: <UpNextIcon /> },
@@ -33,13 +27,12 @@ const postTypes = [
     { id: 'bespoke', label: 'Custom', icon: <BespokeIcon /> },
 ];
 
-// MODIFIED: Updated crop positions based on feedback
 const bannerImages = {
-    upNext: { src: '/upnext.png', position: 'middleMid' }, // Adjusted to middle-middle
-    matchDay: { src: '/matchday.png', position: 'top' }, // Perfect
-    squad: { src: '/squad.png', position: 'top' }, // Now top third
-    result: { src: '/result.png', position: 'top' }, // Perfect
-    bespoke: { src: '/custom.png', position: 'middleHighMore' }, // Adjusted higher
+    upNext: { src: '/upnext.png', position: 'middleMid' },
+    matchDay: { src: '/matchday.png', position: 'top' },
+    squad: { src: '/squad.png', position: 'top' },
+    result: { src: '/result.png', position: 'top' },
+    bespoke: { src: '/custom.png', position: 'middleHighMore' },
 };
 
 const PostTypeContent = ({ activePostType }) => {
