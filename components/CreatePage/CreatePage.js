@@ -1,8 +1,6 @@
 /*
  * ==========================================================
- * COMPONENT: Updates Page
- * PAGE: /updates
- * FILE: /app/(main)/updates/Updates.module.css
+CreatePage.js
  ==========================================================
  */
 'use client';
@@ -35,13 +33,13 @@ const postTypes = [
     { id: 'bespoke', label: 'Custom', icon: <BespokeIcon /> },
 ];
 
-// MODIFIED: Map post types to their banner images and updated crop positions
+// MODIFIED: Updated crop positions based on feedback
 const bannerImages = {
-    upNext: { src: '/upnext.png', position: 'middleLow' }, // Adjusted lower
+    upNext: { src: '/upnext.png', position: 'middleMid' }, // Adjusted to middle-middle
     matchDay: { src: '/matchday.png', position: 'top' }, // Perfect
-    squad: { src: '/squad.png', position: 'middleHigh' }, // Adjusted higher
+    squad: { src: '/squad.png', position: 'top' }, // Now top third
     result: { src: '/result.png', position: 'top' }, // Perfect
-    bespoke: { src: '/custom.png', position: 'middleHigh' }, // Adjusted higher
+    bespoke: { src: '/custom.png', position: 'middleHighMore' }, // Adjusted higher
 };
 
 const PostTypeContent = ({ activePostType }) => {
@@ -85,13 +83,13 @@ export default function CreatePage() {
 
                 <div className={styles.bannerContainer}>
                     <Image
-                        key={activePostType} // Helps React trigger transitions on change
+                        key={activePostType}
                         src={activeBanner.src}
                         alt={`${postTypes.find((p) => p.id === activePostType)?.label} Banner`}
                         fill
                         priority
-                        placeholder="blur" // MODIFIED: Added for perceived performance
-                        blurDataURL={activeBanner.src} // Use the same image for the blur placeholder
+                        placeholder="blur"
+                        blurDataURL={activeBanner.src}
                         className={`${styles.bannerImage} ${styles[activeBanner.position]}`}
                     />
                 </div>
