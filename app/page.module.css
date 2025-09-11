@@ -1,3 +1,16 @@
+/*
+ * =================================================================
+ * COMPONENT: Home Page
+ * PAGE: /
+ * FILE: /app/page.module.css
+ * =================================================================
+ */
+
+.pageContainer {
+  display: flex;
+  width: 100%;
+}
+
 .main {
   flex-grow: 1; /* Takes up the remaining space */
   padding: 2rem 3rem;
@@ -6,7 +19,14 @@
 
 /* --- Mobile Styles --- */
 @media (max-width: 768px) {
+  .pageContainer {
+    /* On mobile, the container itself doesn't need to be a flex row */
+    display: block; 
+  }
+
   .main {
     padding: 1.5rem; /* Reduce padding for smaller screens */
+    /* Add padding to the bottom to prevent the mobile nav from overlapping content */
+    padding-bottom: 80px; 
   }
 }
