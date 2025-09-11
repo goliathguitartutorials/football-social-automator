@@ -14,6 +14,7 @@ import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, BespokeIcon } from './
 import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnnouncement';
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
 import MatchResult from '@/components/MatchResult/MatchResult';
+import BespokePost from '@/components/BespokePost/BespokePost'; // Import the new component
 
 // TODO: Move placeholder components to their own files
 const UpNextAnnouncement = () => {
@@ -23,27 +24,6 @@ const UpNextAnnouncement = () => {
             <p>UI and functionality for creating the 'Up Next' match preview post will be built here.</p>
         </div>
     );
-};
-
-// TODO: Move placeholder components to their own files
-const BespokePost = () => {
-    return (
-        <div>
-            <h2>Bespoke Post</h2>
-            <p>UI and functionality for creating a generic post with an image upload will be built here.</p>
-            <p>This will include the image cropping and editing functionality we discussed.</p>
-        </div>
-    );
-    // Placeholder image generation to show bespoke functionality in the future
-    // return (
-    //     <div>
-    //         <h2>Bespoke Post</h2>
-    //         <p>UI and functionality for creating a generic post with an image upload will be built here.</p>
-    //         <p>This will include the image cropping and editing functionality we discussed.</p>
-    //         <button onClick={handleGenerateImage}>Generate Bespoke Image</button>
-    //         {imageUrl && <img src={imageUrl} alt="Generated Bespoke Post" />}
-    //     </div>
-    // );
 };
 
 const postTypes = [
@@ -61,18 +41,18 @@ const PostTypeContent = ({ activePostType }) => {
         case 'matchDay':
             return <MatchDayAnnouncement />;
         case 'squad':
-            return <SquadAnnouncement />;
+t            return <SquadAnnouncement />;
         case 'result':
             return <MatchResult />;
         case 'bespoke':
-            return <BespokePost />;
+            return <BespokePost />; // Use the new component
         default:
             return <UpNextAnnouncement />;
     }
 };
 
 export default function CreatePage() {
-    const [activePostType, setActivePostType] = useState('upNext'); // Set default to 'Up Next'
+    const [activePostType, setActivePostType] = useState('upNext');
 
     return (
         <div className={styles.container}>
