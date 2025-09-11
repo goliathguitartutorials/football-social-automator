@@ -3,7 +3,7 @@
  * COMPONENT: Bespoke Post
  * PAGE: / (as part of CreatePage)
  * FILE: /components/BespokePost/BespokePost.js
- ==========================================================
+ * ==========================================================
  */
 'use client';
 
@@ -15,6 +15,20 @@ import { useAppContext } from '@/app/context/AppContext';
 
 const ASPECT_RATIO = 1080 / 1350;
 const MIN_WIDTH = 400;
+
+// Helper function to convert Data URL to a Blob object
+function dataURLtoBlob(dataurl) {
+    const arr = dataurl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+}
+
 
 export default function BespokePost() {
     const { authKey } = useAppContext();
@@ -79,20 +93,26 @@ export default function BespokePost() {
         setIsSubmitting(true);
         setMessage('');
 
-        const payload = {
-            action: 'bespoke_post',
-            text: text,
-            imageData: croppedImageUrl,
-        };
+        // 1. Create a FormData object
+        const formData = new FormData();
+        
+        // 2. Convert the Base64 Data URL to a Blob
+        const imageBlob = dataURLtoBlob(croppedImageUrl);
+
+        // 3. Append your data. The third argument is the filename n8n will see.
+        formData.append('action', 'bespoke_post');
+        formData.append('text', text);
+        formData.append('image', imageBlob, 'bespoke-post-image.jpg');
 
         try {
             const response = await fetch('/api/trigger-workflow', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    // 4. DO NOT set the 'Content-Type' header. 
+                    // The browser will automatically set it to 'multipart/form-data' with the correct boundary.
                     'Authorization': `Bearer ${currentAuthKey}`,
                 },
-                body: JSON.stringify(payload),
+                body: formData, // 5. Send the FormData object as the body
             });
 
             const result = await response.json();
