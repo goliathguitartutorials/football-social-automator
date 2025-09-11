@@ -13,7 +13,6 @@ const AppContext = createContext();
 
 export function AppProvider({ children }) {
     const [authKey, setAuthKey] = useState('');
-    // MODIFIED: Added 'matches' to the initial state
     const [appData, setAppData] = useState({ players: [], backgrounds: [], badges: [], matches: [] });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -32,7 +31,7 @@ export function AppProvider({ children }) {
         sessionStorage.removeItem('appData');
 
         try {
-            // MODIFIED: Reverted to fetching from a single endpoint
+            // CORRECTED: Reverted to fetching from ONLY the single, correct endpoint.
             const response = await fetch('/api/get-app-data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -43,12 +42,13 @@ export function AppProvider({ children }) {
                 throw new Error("Authorization failed. Please check your key.");
             }
             if (!response.ok) {
+                // This is the error message you were seeing.
                 throw new Error("Failed to fetch app data from the server.");
             }
 
             const rawData = await response.json();
             
-            // The processData function will now handle the combined array
+            // The processData function will now correctly handle the combined array.
             processData(rawData);
             
             sessionStorage.setItem('appData', JSON.stringify(rawData));
@@ -63,18 +63,18 @@ export function AppProvider({ children }) {
         }
     };
 
-    // MODIFIED: Updated to process a single, combined data array
+    // CORRECTED: This function now correctly parses players, assets, AND matches from a single array.
     const processData = (rawData) => {
-        // Filter by 'class' for players and assets
+        // Filter by the 'class' property for players and assets
         const players = rawData.filter((item) => item.class === 'player');
         const assets = rawData.filter((item) => item.class === 'asset');
         
-        // Further filter assets by 'Type'
+        // Further filter assets by their 'Type' property
         const backgrounds = assets.filter((asset) => asset.Type === 'background');
         const badges = assets.filter((asset) => asset.Type === 'badge');
         badges.sort((a, b) => a.Name.localeCompare(b.Name));
 
-        // NEW: Filter by 'type' for matches
+        // Filter by the 'type' property for matches
         const matches = rawData.filter((item) => item.type === 'Match');
         matches.sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
 
