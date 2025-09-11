@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react'; // Import useEffect
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import styles from './BespokePost.module.css';
@@ -18,11 +18,18 @@ const MIN_WIDTH = 400;
 
 export default function BespokePost() {
     const { authKey } = useAppContext();
+    const authKeyRef = useRef(authKey); // Create a ref to hold the authKey
+
+    // This effect keeps the ref updated with the latest authKey from the context
+    useEffect(() => {
+        authKeyRef.current = authKey;
+    }, [authKey]);
+
     const [text, setText] = useState('');
     const [imgSrc, setImgSrc] = useState('');
     const [crop, setCrop] = useState();
-    const [croppedImageBlob, setCroppedImageBlob] = useState(null); // Store the binary Blob
-    const [previewUrl, setPreviewUrl] = useState(''); // For the UI preview
+    const [croppedImageBlob, setCroppedImageBlob] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState('');
     const [isCropping, setIsCropping] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState('');
@@ -32,11 +39,9 @@ export default function BespokePost() {
     const onSelectFile = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
         setCroppedImageBlob(null);
         setPreviewUrl('');
         setMessage('');
-
         const reader = new FileReader();
         reader.addEventListener('load', () => {
             setImgSrc(reader.result?.toString() || '');
@@ -52,13 +57,9 @@ export default function BespokePost() {
         setCrop(centeredCrop);
     };
 
-    // This function now returns a Promise that resolves with the image Blob
     const getCroppedImgBlob = () => {
         return new Promise((resolve) => {
-            if (!imgRef.current || !crop || !crop.width || !crop.height) {
-                resolve(null);
-                return;
-            }
+            if (!imgRef.current || !crop || !crop.width || !crop.height) return resolve(null);
             const image = imgRef.current;
             const canvas = document.createElement('canvas');
             const scaleX = image.naturalWidth / image.width;
@@ -66,15 +67,9 @@ export default function BespokePost() {
             canvas.width = crop.width * scaleX;
             canvas.height = crop.height * scaleY;
             const ctx = canvas.getContext('2d');
-            if (!ctx) {
-                resolve(null);
-                return;
-            }
+            if (!ctx) return resolve(null);
             ctx.drawImage(image, crop.x * scaleX, crop.y * scaleY, crop.width * scaleX, crop.height * scaleY, 0, 0, canvas.width, canvas.height);
-            
-            canvas.toBlob((blob) => {
-                resolve(blob);
-            }, 'image/jpeg', 0.9);
+            canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', 0.9);
         });
     };
 
@@ -82,13 +77,15 @@ export default function BespokePost() {
         const blob = await getCroppedImgBlob();
         if (blob) {
             setCroppedImageBlob(blob);
-            setPreviewUrl(URL.createObjectURL(blob)); // Create a temporary URL for the preview
+            setPreviewUrl(URL.createObjectURL(blob));
             setIsCropping(false);
         }
     };
     
     const handlePost = async () => {
-        if (!authKey) return setMessage('Authorization Key is missing. Please set it on the Settings page.');
+        // Use the most up-to-date key from the ref
+        const currentAuthKey = authKeyRef.current; 
+        if (!currentAuthKey) return setMessage('Authorization Key is missing. Please set it on the Settings page.');
         if (!croppedImageBlob) return setMessage('Please upload and crop an image.');
         if (!text.trim()) return setMessage('Please enter some text for the caption.');
 
@@ -98,14 +95,13 @@ export default function BespokePost() {
         const formData = new FormData();
         formData.append('action', 'bespoke_post');
         formData.append('text', text);
-        formData.append('imageFile', croppedImageBlob, 'bespoke-post.jpg'); // Append the binary file
+        formData.append('imageFile', croppedImageBlob, 'bespoke-post.jpg');
 
         try {
             const response = await fetch('/api/trigger-workflow', {
                 method: 'POST',
                 headers: {
-                    // NOTE: DO NOT set Content-Type header. The browser will do it automatically for FormData.
-                    'Authorization': `Bearer ${authKey}`,
+                    'Authorization': `Bearer ${currentAuthKey}`, // Send the correct key
                 },
                 body: formData,
             });
@@ -130,12 +126,9 @@ export default function BespokePost() {
         if(fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    // Render logic remains similar, but uses previewUrl
     return (
         <div className={styles.container}>
             <h2>Create a Bespoke Post</h2>
-
-            {/* --- Image Section --- */}
             <div className={styles.imageSection}>
                 {!imgSrc && (
                     <div className={styles.uploadPlaceholder}>
@@ -143,7 +136,6 @@ export default function BespokePost() {
                         <input ref={fileInputRef} type="file" accept="image/*" onChange={onSelectFile} />
                     </div>
                 )}
-
                 {imgSrc && isCropping && (
                     <div className={styles.cropperContainer}>
                         <p className={styles.instructions}>Adjust the selection to crop your image (1080x1350 ratio).</p>
@@ -153,7 +145,6 @@ export default function BespokePost() {
                         <button onClick={handleConfirmCrop} className={styles.primaryButton}>Confirm Crop</button>
                     </div>
                 )}
-                
                 {previewUrl && !isCropping && (
                      <div className={styles.previewContainer}>
                         <img src={previewUrl} alt="Cropped Preview" className={styles.previewImage} />
@@ -164,8 +155,6 @@ export default function BespokePost() {
                      </div>
                 )}
             </div>
-
-            {/* --- Text & Action Section --- */}
             <div className={styles.formSection}>
                  <label htmlFor="postText" className={styles.label}>Post Caption</label>
                 <textarea
