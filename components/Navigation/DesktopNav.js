@@ -8,7 +8,6 @@
 'use client';
 
 import styles from './DesktopNav.module.css';
-import { useAppContext } from '../../app/context/AppContext';
 import { CreateIcon, ScheduleIcon, LiveMatchIcon, SettingsIcon } from './Icons';
 
 // Define the main navigation items
@@ -20,19 +19,7 @@ const navItems = [
 ];
 
 export default function DesktopNav({ activeView, setView }) {
-  const {
-    authKey,
-    setAuthKey,
-    authorizeAndFetchData,
-    loading,
-    error,
-    authStatus
-  } = useAppContext();
-  
-  const handleAuthorize = () => {
-    authorizeAndFetchData(authKey);
-  };
-
+  // Authorization logic has been moved to the Settings page
   return (
     <aside className={styles.desktopNav}>
       <div>
@@ -53,39 +40,7 @@ export default function DesktopNav({ activeView, setView }) {
           </ul>
         </nav>
       </div>
-
-      <div className={styles.authSection}>
-        <label htmlFor="authKey" className={styles.authLabel}>
-          Authorization Key
-        </label>
-        <div className={styles.authInputContainer}>
-          <input
-            id="authKey"
-            type="password"
-            className={styles.authInput}
-            placeholder="Enter key to load data..."
-            value={authKey}
-            onChange={(e) => setAuthKey(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAuthorize()}
-          />
-          <button
-            onClick={handleAuthorize}
-            className={styles.authButton}
-            disabled={loading}
-          >
-            {loading ? '...' : 'Go'}
-          </button>
-        </div>
-        
-        <div className={styles.authStatus}>
-          {authStatus === 'success' && (
-            <p className={styles.successText}>✓ Authorized. Data loaded.</p>
-          )}
-          {authStatus === 'error' && (
-            <p className={styles.errorText}>{error}</p>
-          )}
-        </div>
-      </div>
+      {/* The entire auth section has been removed from here */}
     </aside>
   );
 }
