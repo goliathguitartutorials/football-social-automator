@@ -3,20 +3,18 @@
  * COMPONENT: Create Page
  * PAGE: /
  * FILE: /components/CreatePage/CreatePage.js
- * ==========================================================
+ ==========================================================
  */
 'use client';
 
 import { useState } from 'react';
 import styles from './CreatePage.module.css';
-// Renamed BespokeIcon to CustomIcon
-import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, CustomIcon } from './CreatePageIcons';
+import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, BespokeIcon } from './CreatePageIcons';
 
 import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnnouncement';
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
 import MatchResult from '@/components/MatchResult/MatchResult';
-// Renamed BespokePost to CustomPost
-import CustomPost from '@/components/CustomPost/CustomPost';
+import BespokePost from '@/components/BespokePost/BespokePost';
 
 // TODO: Move placeholder components to their own files
 const UpNextAnnouncement = () => {
@@ -30,10 +28,10 @@ const UpNextAnnouncement = () => {
 
 const postTypes = [
     { id: 'upNext', label: 'Up Next', icon: <UpNextIcon /> },
-    { id: 'matchDay', label: 'Match Day', icon: <MatchDayIcon /> }, // FIX: Used correct MatchDayIcon
+    { id: 'matchDay', label: 'Match Day', icon: <MatchDayIcon /> },
     { id: 'squad', label: 'Squad', icon: <SquadIcon /> },
     { id: 'result', label: 'Result', icon: <ResultIcon /> },
-    { id: 'custom', label: 'Custom', icon: <CustomIcon /> }, // Changed from 'bespoke'
+    { id: 'bespoke', label: 'Custom', icon: <BespokeIcon /> },
 ];
 
 const PostTypeContent = ({ activePostType }) => {
@@ -46,8 +44,8 @@ const PostTypeContent = ({ activePostType }) => {
             return <SquadAnnouncement />;
         case 'result':
             return <MatchResult />;
-        case 'custom': // Changed from 'bespoke'
-            return <CustomPost />;
+        case 'bespoke':
+            return <BespokePost />;
         default:
             return <UpNextAnnouncement />;
     }
