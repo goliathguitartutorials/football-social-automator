@@ -1,0 +1,63 @@
+/*
+ * ==========================================================
+ * COMPONENT: Image Editor
+ * PAGE: (Reusable)
+ * FILE: /components/ImageEditor/ImageEditor.module.css
+ * ==========================================================
+ */
+
+.container {
+    background-color: var(--surface-light);
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.cropperContainer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.previewContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.previewImage {
+    max-width: 250px;
+    width: 100%;
+    border-radius: 8px;
+}
+
+.imageActions {
+    display: flex;
+    gap: 1rem;
+}
+
+.utilityButton {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: #4a5568;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.utilityButton:hover {
+    background-color: #6b7280;
+}
