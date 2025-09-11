@@ -1,0 +1,144 @@
+/*
+ * =================================================================
+ * COMPONENT: Desktop Navigation
+ * PAGE: (Shared)
+ * FILE: /components/Navigation/DesktopNav.module.css
+ * =================================================================
+ */
+
+.desktopNav {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 280px;
+  background-color: var(--surface-dark);
+  border-right: 1px solid var(--border-color);
+  padding: 1.5rem;
+  flex-shrink: 0;
+}
+
+.logo {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav button {
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  background-color: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* Space between icon and text */
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-secondary);
+  transition: color 0.2s ease-in-out;
+}
+
+.nav button:hover {
+  background-color: #374151;
+  color: var(--text-primary);
+}
+
+.nav button:hover .icon {
+  color: var(--text-primary);
+}
+
+.nav button.active {
+  background-color: var(--accent-color);
+  color: white;
+  font-weight: 600;
+}
+
+.nav button.active .icon {
+  color: white;
+}
+
+.authSection {
+  margin-top: 2rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1.5rem;
+}
+
+.authLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.authInput {
+  flex-grow: 1;
+  padding: 0.75rem;
+  background-color: #374151;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  color: var(--text-primary);
+}
+
+.authInputContainer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.authButton {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  background-color: #4b5563;
+  color: var(--text-primary);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.authButton:hover {
+  background-color: #6b7280;
+}
+
+.authButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.authStatus {
+  margin-top: 0.75rem;
+  height: 20px;
+  text-align: center;
+}
+
+.successText {
+  color: var(--success-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.errorText {
+  color: var(--error-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
