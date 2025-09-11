@@ -104,27 +104,22 @@ CreatePage.module.css
     object-position: 50% 0%;
 }
 
-/* MODIFIED: New class for a slightly higher crop (original middleHigh was 30%) */
 .middleHigh {
     object-position: 50% 25%;
 }
 
-/* MODIFIED: New class for an even higher crop */
 .middleHighMore {
     object-position: 50% 20%;
 }
 
-/* MODIFIED: Adjusted the vertical position for the 'Up Next' image */
 .middleMid {
-    object-position: 50% 58%; /* Changed from 45% */
+    object-position: 50% 58%;
 }
 
-/* Original .center (50% 50%) is not explicitly used now, but kept for reference */
 .center {
     object-position: 50% 50%;
 }
 
-/* Original .middleLow (50% 70%) is not explicitly used now, but kept for reference */
 .middleLow {
     object-position: 50% 70%;
 }
@@ -147,8 +142,11 @@ CreatePage.module.css
         padding: 0.75rem 1.5rem;
     }
 
+    /* MODIFIED: Show the icon on desktop and add spacing */
     .navIcon {
-        display: none;
+        display: block; /* Was 'none' */
+        margin-bottom: 0; /* Remove mobile margin */
+        margin-right: 0.5rem; /* Add space between icon and label */
     }
 
     .navLabel {
