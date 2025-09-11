@@ -35,13 +35,13 @@ const postTypes = [
     { id: 'bespoke', label: 'Custom', icon: <BespokeIcon /> },
 ];
 
-// Map post types to their banner images and desired crop position
+// MODIFIED: Map post types to their banner images and updated crop positions
 const bannerImages = {
-    upNext: { src: '/upnext.png', position: 'center' },
-    matchDay: { src: '/matchday.png', position: 'top' },
-    squad: { src: '/squad.png', position: 'center' },
-    result: { src: '/result.png', position: 'top' },
-    bespoke: { src: '/custom.png', position: 'center' },
+    upNext: { src: '/upnext.png', position: 'middleLow' }, // Adjusted lower
+    matchDay: { src: '/matchday.png', position: 'top' }, // Perfect
+    squad: { src: '/squad.png', position: 'middleHigh' }, // Adjusted higher
+    result: { src: '/result.png', position: 'top' }, // Perfect
+    bespoke: { src: '/custom.png', position: 'middleHigh' }, // Adjusted higher
 };
 
 const PostTypeContent = ({ activePostType }) => {
@@ -90,6 +90,8 @@ export default function CreatePage() {
                         alt={`${postTypes.find((p) => p.id === activePostType)?.label} Banner`}
                         fill
                         priority
+                        placeholder="blur" // MODIFIED: Added for perceived performance
+                        blurDataURL={activeBanner.src} // Use the same image for the blur placeholder
                         className={`${styles.bannerImage} ${styles[activeBanner.position]}`}
                     />
                 </div>
