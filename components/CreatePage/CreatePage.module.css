@@ -1,9 +1,9 @@
 /*
  * ==========================================================
- * COMPONENT: Updates Page
- * PAGE: /updates
- * FILE: /app/(main)/updates/Updates.module.css
- ==========================================================
+ * COMPONENT: Create Page
+ * PAGE: /
+ * FILE: /components/CreatePage/CreatePage.module.css
+ * ==========================================================
  */
 
 .container {
@@ -50,6 +50,11 @@
 /* Icon container */
 .navIcon {
     margin-bottom: 4px;
+}
+
+/* FIX: Explicitly set SVG fill to none to prevent solid icons */
+.navIcon svg {
+    fill: none;
 }
 
 /* Label styles for mobile */
