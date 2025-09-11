@@ -11,16 +11,10 @@ import { useState } from 'react';
 import styles from './page.module.css';
 import DesktopNav from '@/components/Navigation/DesktopNav';
 import MobileNav from '@/components/Navigation/MobileNav';
+import CreatePage from '@/components/CreatePage/CreatePage'; // MODIFIED: Import the new component
 
 // --- Placeholder Pages ---
-// In the future, these will be moved to their own component files.
-
-const CreatePage = () => (
-  <div>
-    <h2>Create a New Post</h2>
-    <p>This is where the post types (Match Day, Squad, Result) will live.</p>
-  </div>
-);
+// CreatePage is now a real component. The others remain placeholders for now.
 
 const SchedulePage = () => (
   <div>
@@ -48,7 +42,7 @@ const SettingsPage = () => (
 const MainContent = ({ view }) => {
   switch (view) {
     case 'create':
-      return <CreatePage />;
+      return <CreatePage />; // MODIFIED: Render the new CreatePage component
     case 'schedule':
       return <SchedulePage />;
     case 'live':
