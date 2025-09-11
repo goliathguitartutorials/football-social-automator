@@ -1,8 +1,6 @@
 /*
  * ==========================================================
- * COMPONENT: Updates Page
- * PAGE: /updates
- * FILE: /app/(main)/updates/Updates.module.css
+CreatePage.module.css
  ==========================================================
  */
 .container {
@@ -74,13 +72,12 @@
     aspect-ratio: 3 / 1;
     overflow: hidden;
     background-color: var(--background-secondary);
-    /* MODIFIED: Added for framing */
     border-radius: 8px;
-    margin-top: 1.5rem; /* Add some space between nav and banner */
-    box-shadow: inset 0 0 15px 5px rgba(17, 24, 39, 0.6); /* Inset shadow for depth */
+    margin-top: 1.5rem;
+    box-shadow: inset 0 0 15px 5px rgba(17, 24, 39, 0.6);
 }
 
-/* MODIFIED: Added a pseudo-element for the dark overlay */
+/* MODIFIED: Reduced gradient opacity */
 .bannerContainer::after {
     content: '';
     position: absolute;
@@ -88,13 +85,13 @@
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none; /* Allows clicks to pass through */
+    pointer-events: none;
     background: linear-gradient(
         180deg,
-        rgba(17, 24, 39, 0.2) 0%,
-        rgba(17, 24, 39, 0.6) 100%
+        rgba(17, 24, 39, 0.1) 0%, /* Reduced from 0.2 to 0.1 */
+        rgba(17, 24, 39, 0.3) 100% /* Reduced from 0.6 to 0.3 */
     );
-    border-radius: inherit; /* Match the parent's border-radius */
+    border-radius: inherit;
 }
 
 
@@ -108,15 +105,31 @@
     object-position: 50% 0%; /* Aligns the image to the top-center */
 }
 
-/* MODIFIED: New class for a slightly higher crop */
+/* MODIFIED: New class for a slightly higher crop (original middleHigh was 30%) */
 .middleHigh {
-    object-position: 50% 30%; /* Shows the middle-upper part */
+    object-position: 50% 25%; /* Shows the middle-upper part, slightly higher */
 }
 
-/* MODIFIED: New class for a slightly lower crop */
-.middleLow {
-    object-position: 50% 70%; /* Shows the middle-lower part */
+/* MODIFIED: New class for an even higher crop */
+.middleHighMore {
+    object-position: 50% 20%; /* Shows a higher part of the image */
 }
+
+/* MODIFIED: New class for middle-middle crop (between center and middleLow) */
+.middleMid {
+    object-position: 50% 45%; /* Shows the absolute middle-middle part */
+}
+
+/* Original .center (50% 50%) is not explicitly used now, but kept for reference */
+.center {
+    object-position: 50% 50%;
+}
+
+/* Original .middleLow (50% 70%) is not explicitly used now, but kept for reference */
+.middleLow {
+    object-position: 50% 70%;
+}
+
 
 /* ==========================================================
  * DESKTOP STYLES
