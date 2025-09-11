@@ -1,8 +1,8 @@
 /*
  * ==========================================================
- * COMPONENT: Updates Page
- * PAGE: /updates
- * FILE: /app/(main)/updates/Updates.module.css
+ * COMPONENT: Create Page
+ * PAGE: /
+ * FILE: /components/CreatePage/CreatePage.js
  ==========================================================
  */
 'use client';
@@ -14,7 +14,7 @@ import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, BespokeIcon } from './
 import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnnouncement';
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
 import MatchResult from '@/components/MatchResult/MatchResult';
-import BespokePost from '@/components/BespokePost/BespokePost'; // Corrected import path
+import BespokePost from '@/components/BespokePost/BespokePost';
 
 // TODO: Move placeholder components to their own files
 const UpNextAnnouncement = () => {
