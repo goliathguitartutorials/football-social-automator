@@ -11,42 +11,48 @@ import { useState, useRef } from 'react';
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import styles from './BespokePost.module.css';
-import { useAppContext } from '@/app/context/AppContext'; // CORRECTED FILE PATH
+import { useAppContext } from '@/app/context/AppContext';
 
-// Aspect ratio for the crop
 const ASPECT_RATIO = 1080 / 1350;
 const MIN_WIDTH = 400;
 
 export default function BespokePost() {
-    const { triggerWorkflow, isLoading } = useAppContext();
+    const { authKey } = useAppContext(); // Get authKey for the API call
     const [text, setText] = useState('');
     const [imgSrc, setImgSrc] = useState('');
     const [crop, setCrop] = useState();
     const [croppedImageUrl, setCroppedImageUrl] = useState('');
-    const [error, setError] = useState('');
+    const [isCropping, setIsCropping] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [message, setMessage] = useState('');
     const imgRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     const onSelectFile = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        setCroppedImageUrl('');
+        setMessage('');
+
         const reader = new FileReader();
         reader.addEventListener('load', () => {
             setImgSrc(reader.result?.toString() || '');
+            setIsCropping(true); // Automatically enter cropping mode on new image upload
         });
         reader.readAsDataURL(file);
     };
 
     const onImageLoad = (e) => {
         const { width, height } = e.currentTarget;
-        const cropWidth = (MIN_WIDTH / width) * 100;
-        const crop = makeAspectCrop({ unit: '%', width: cropWidth }, ASPECT_RATIO, width, height);
+        const crop = makeAspectCrop({ unit: '%', width: 90 }, ASPECT_RATIO, width, height);
         const centeredCrop = centerCrop(crop, width, height);
         setCrop(centeredCrop);
     };
 
-    const getCroppedImg = () => {
-        if (!imgRef.current || !crop || !crop.width || !crop.height) return null;
+    const handleConfirmCrop = () => {
+        if (!imgRef.current || !crop || !crop.width || !crop.height) return;
+
         const image = imgRef.current;
         const canvas = document.createElement('canvas');
         const scaleX = image.naturalWidth / image.width;
@@ -54,60 +60,107 @@ export default function BespokePost() {
         canvas.width = crop.width * scaleX;
         canvas.height = crop.height * scaleY;
         const ctx = canvas.getContext('2d');
-        if (!ctx) return null;
+        if (!ctx) return;
+
         ctx.drawImage(image, crop.x * scaleX, crop.y * scaleY, crop.width * scaleX, crop.height * scaleY, 0, 0, canvas.width, canvas.height);
-        return canvas.toDataURL('image/jpeg', 0.9);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        setCroppedImageUrl(dataUrl);
+        setIsCropping(false);
     };
 
-    const handleGeneratePreview = () => {
-        const croppedDataUrl = getCroppedImg();
-        if (croppedDataUrl) setCroppedImageUrl(croppedDataUrl);
-        else setError('Could not generate cropped image. Please try again.');
+    const handlePost = async () => {
+        if (!authKey) return setMessage('Authorization Key is missing. Please set it on the Settings page.');
+        if (!croppedImageUrl) return setMessage('Please upload and crop an image.');
+        if (!text.trim()) return setMessage('Please enter some text for the caption.');
+
+        setIsSubmitting(true);
+        setMessage('');
+
+        const payload = {
+            action: 'bespoke_post',
+            text: text,
+            imageData: croppedImageUrl, // Base64 image data
+        };
+
+        try {
+            const response = await fetch('/api/trigger-workflow', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authKey}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to post to social media.');
+
+            setMessage('Successfully posted to social media!');
+        } catch (error) {
+            setMessage(`Error: ${error.message}`);
+            console.error('Post to Social Error:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
     
-    const handlePost = async () => {
-        setError('');
-        const imageData = croppedImageUrl || getCroppedImg();
-        if (!imageData) return setError('Please upload and crop an image first.');
-        if (!text.trim()) return setError('Please enter some text for the post.');
-        const payload = { action: 'bespoke_post', text: text, imageData: imageData };
-        await triggerWorkflow(payload);
+    const resetImage = () => {
+        setImgSrc('');
+        setCroppedImageUrl('');
+        setIsCropping(false);
+        if(fileInputRef.current) fileInputRef.current.value = '';
     };
 
     return (
         <div className={styles.container}>
-            <div className={styles.formSection}>
-                <h2>Create a Bespoke Post</h2>
-                <label htmlFor="postText" className={styles.label}>Post Text</label>
-                <textarea id="postText" className={styles.textarea} value={text} onChange={(e) => setText(e.target.value)} placeholder="Write your caption here..." rows={5} />
-                <label htmlFor="imageUpload" className={styles.label}>Upload Image</label>
-                <input id="imageUpload" type="file" accept="image/*" onChange={onSelectFile} className={styles.fileInput} />
-                {imgSrc && (
-                    <>
+            <h2>Create a Bespoke Post</h2>
+
+            {/* --- Image Section --- */}
+            <div className={styles.imageSection}>
+                {!imgSrc && (
+                    <div className={styles.uploadPlaceholder}>
+                        <p>Upload an image to get started</p>
+                        <input ref={fileInputRef} type="file" accept="image/*" onChange={onSelectFile} />
+                    </div>
+                )}
+
+                {imgSrc && isCropping && (
+                    <div className={styles.cropperContainer}>
                         <p className={styles.instructions}>Adjust the selection to crop your image (1080x1350 ratio).</p>
-                        <div className={styles.cropperContainer}>
-                            <ReactCrop crop={crop} onChange={(c) => setCrop(c)} aspect={ASPECT_RATIO} minWidth={100}>
-                                <img ref={imgRef} src={imgSrc} onLoad={onImageLoad} alt="To be cropped" style={{ maxHeight: '70vh' }} />
-                            </ReactCrop>
+                        <ReactCrop crop={crop} onChange={(c) => setCrop(c)} aspect={ASPECT_RATIO} minWidth={100}>
+                            <img ref={imgRef} src={imgSrc} onLoad={onImageLoad} alt="To be cropped" style={{ maxHeight: '60vh' }} />
+                        </ReactCrop>
+                        <button onClick={handleConfirmCrop} className={styles.primaryButton}>Confirm Crop</button>
+                    </div>
+                )}
+                
+                {croppedImageUrl && !isCropping && (
+                     <div className={styles.previewContainer}>
+                        <img src={croppedImageUrl} alt="Cropped Preview" className={styles.previewImage} />
+                        <div className={styles.imageActions}>
+                            <button onClick={() => setIsCropping(true)} className={styles.secondaryButton}>Re-crop</button>
+                            <button onClick={resetImage} className={styles.secondaryButton}>Change Image</button>
                         </div>
-                        <button onClick={handleGeneratePreview} className={styles.previewButton}>Generate Preview</button>
-                    </>
+                     </div>
                 )}
             </div>
-            <div className={styles.previewSection}>
-                <h3>Post Preview</h3>
-                {croppedImageUrl ? (
-                     <div className={styles.previewContent}>
-                        <img src={croppedImageUrl} alt="Cropped Preview" className={styles.previewImage} />
-                        <p className={styles.previewText}>{text || "Your caption will appear here."}</p>
-                     </div>
-                ) : (
-                    <p className={styles.placeholder}>Your cropped image and text will be previewed here.</p>
-                )}
-                {error && <p className={styles.error}>{error}</p>}
-                <button onClick={handlePost} disabled={isLoading || !croppedImageUrl} className={styles.postButton}>
-                    {isLoading ? 'Posting...' : 'Post to Social Media'}
+
+            {/* --- Text & Action Section --- */}
+            <div className={styles.formSection}>
+                 <label htmlFor="postText" className={styles.label}>Post Caption</label>
+                <textarea
+                    id="postText"
+                    className={styles.textarea}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="Write your caption here..."
+                    rows={6}
+                />
+                <button onClick={handlePost} disabled={isSubmitting || !croppedImageUrl} className={styles.postButton}>
+                    {isSubmitting ? 'Posting...' : 'Post to Social Media'}
                 </button>
+                {message && <p className={styles.message}>{message}</p>}
             </div>
         </div>
     );
