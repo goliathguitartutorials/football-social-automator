@@ -14,7 +14,7 @@ import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, BespokeIcon } from './
 import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnnouncement';
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
 import MatchResult from '@/components/MatchResult/MatchResult';
-import BespokePost from '@/components/BespokePost/BespokePost'; // Import the new component
+import BespokePost from '@/components/BespokePost/B bespokePost'; // Import the new component
 
 // TODO: Move placeholder components to their own files
 const UpNextAnnouncement = () => {
@@ -41,7 +41,7 @@ const PostTypeContent = ({ activePostType }) => {
         case 'matchDay':
             return <MatchDayAnnouncement />;
         case 'squad':
-t            return <SquadAnnouncement />;
+            return <SquadAnnouncement />; // Typo "t" removed from here
         case 'result':
             return <MatchResult />;
         case 'bespoke':
