@@ -9,13 +9,12 @@
 import { useState } from 'react';
 import styles from './UpNextAnnouncement.module.css';
 import { useAppContext } from '@/app/context/AppContext';
-
-// MODIFIED: Imported the new reusable ImageEditor component
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
 
 export default function UpNextAnnouncement() {
+    // MODIFIED: Destructure 'matches' from the global appData state
     const { appData, loading, error } = useAppContext();
-    const { backgrounds, badges } = appData;
+    const { backgrounds, badges, matches } = appData;
 
     // --- Component State ---
     const [homeTeamBadge, setHomeTeamBadge] = useState('');
@@ -31,20 +30,42 @@ export default function UpNextAnnouncement() {
     const [selectedBackground, setSelectedBackground] = useState('');
     const [saveCustomBackground, setSaveCustomBackground] = useState(true);
 
-    // MODIFIED: This single function now handles the result from the ImageEditor component
+    // NEW: This function runs when a match is selected from the dropdown
+    const handleMatchSelect = (eventId) => {
+        const selectedMatch = matches.find(m => m.eventId === eventId);
+        if (!selectedMatch) return;
+
+        // Auto-populate form fields
+        setVenue(selectedMatch.venue);
+
+        // -- Date & Time --
+        const dateTime = new Date(selectedMatch.startDateTime);
+        const date = dateTime.toISOString().split('T')[0]; // Format for <input type="date">
+        const time = dateTime.toTimeString().substring(0, 5); // Format for <input type="time">
+        setMatchDate(date);
+        setKickOffTime(time);
+
+        // -- Team Type --
+        // Capitalizes the first letter e.g., "development" -> "Development Team"
+        const formattedTeamType = `${selectedMatch.team.charAt(0).toUpperCase()}${selectedMatch.team.slice(1)} Team`;
+        setTeamType(formattedTeamType);
+
+        // -- Home & Away Badges --
+        const [home, away] = selectedMatch.title.split(' vs ');
+        const homeBadge = badges.find(b => b.Name.includes(home.trim()))?.Link || '';
+        const awayBadge = badges.find(b => b.Name.includes(away.trim()))?.Link || '';
+        setHomeTeamBadge(homeBadge);
+        setAwayTeamBadge(awayBadge);
+    };
+
     const handleCropComplete = (dataUrl) => {
-        // The ImageEditor component provides the final, cropped image data.
-        // We set it as the active background.
         setSelectedBackground(dataUrl);
     };
 
     const handleSelectGalleryBg = (bgLink) => {
-        // When a gallery item is selected, it becomes the active background.
-        // This will override any custom background.
         setSelectedBackground(bgLink);
     };
 
-    // --- Form Submission Handlers ---
     const handleGeneratePreview = (e) => {
         e.preventDefault();
         alert("'Generate Preview' logic goes here.");
@@ -61,12 +82,21 @@ export default function UpNextAnnouncement() {
 
     return (
         <form className={styles.pageContainer} onSubmit={handleGeneratePreview}>
-            {/* Section 1: Configuration */}
+            {/* MODIFIED: Section 1 now starts with the match selector */}
             <div className={styles.section}>
-                <div className={styles.sectionHeader}>
-                    <h2 className={styles.sectionTitle}>Up Next Announcement</h2>
-                </div>
                 <div className={styles.formGrid}>
+                    {/* NEW: Dropdown to select a match */}
+                    <div className={styles.formGroupFull}>
+                         <label htmlFor="matchSelector">Select a Match (Optional)</label>
+                         <select id="matchSelector" onChange={(e) => handleMatchSelect(e.target.value)}>
+                            <option value="">-- Select an upcoming match --</option>
+                            {matches.map((match) => (
+                                <option key={match.eventId} value={match.eventId}>
+                                    {match.title}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="homeTeamBadge">Home Team Badge</label>
                         <select id="homeTeamBadge" value={homeTeamBadge} onChange={(e) => setHomeTeamBadge(e.target.value)} required>
@@ -112,16 +142,12 @@ export default function UpNextAnnouncement() {
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>Background</h3>
                 </div>
-
                 <h4 className={styles.subHeader}>Custom</h4>
-                {/* MODIFIED: All complex cropper logic is replaced by our new component */}
                 <ImageEditor onCropComplete={handleCropComplete} />
-                
                 <div className={styles.checkboxContainer}>
                     <input type="checkbox" id="saveCustomBg" checked={saveCustomBackground} onChange={(e) => setSaveCustomBackground(e.target.checked)} />
                     <label htmlFor="saveCustomBg">Save background for future use</label>
                 </div>
-
                 <h4 className={styles.subHeader}>Gallery</h4>
                 <div className={styles.backgroundGrid}>
                     {backgrounds.map((bg) => (
