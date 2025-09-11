@@ -80,7 +80,7 @@ export default function SquadAnnouncement() {
   
   if (loading) return <p className={styles.notice}>Loading assets...</p>;
   if (error) return <p className={`${styles.notice} ${styles.error}`}>{error}</p>;
-  if (players.length === 0) return <p className={styles.notice}>Please enter your Authorization Key in the sidebar to load assets.</p>;
+  if (players.length === 0) return <p className={styles.notice}>Please enter your Authorization Key on the Settings page to load assets.</p>;
 
   return (
     <form className={styles.container} onSubmit={handleSubmit}>
