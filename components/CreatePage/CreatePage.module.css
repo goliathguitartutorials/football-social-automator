@@ -17,24 +17,29 @@
 /* Sub-navigation container */
 .subNav {
     display: flex;
-    gap: 0.25rem; /* Reduced gap for mobile */
+    justify-content: space-around;
     border-bottom: 1px solid var(--border-color);
 }
 
 /* Default mobile styles for the navigation button */
 .navButton {
-    flex-grow: 1; /* Allows buttons to expand and fill the space */
-    padding: 0.75rem 0.5rem;
-    background-color: transparent;
+    background: none;
     border: none;
-    border-bottom: 3px solid transparent;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    flex-grow: 1;
+    padding: 8px 4px;
+    border-bottom: 3px solid transparent;
     transform: translateY(1px);
     transition: all 0.2s ease-in-out;
 }
 
 .navButton:hover {
-    background-color: #374151;
+    color: var(--text-primary);
 }
 
 .navButton.active {
@@ -42,15 +47,18 @@
     border-bottom-color: var(--accent-color);
 }
 
-/* Icon styles (visible on mobile by default) */
+/* Icon container */
 .navIcon {
-    font-size: 1.5rem; /* Makes icons larger and easier to tap */
-    display: inline-block;
+    margin-bottom: 4px;
 }
 
-/* Label styles (hidden on mobile by default) */
+/* Label styles for mobile */
 .navLabel {
-    display: none;
+    font-size: 0.75rem; /* 12px */
+    font-weight: 500;
+    /* The label for "Match Day" might wrap, which is acceptable on mobile */
+    line-height: 1.2;
+    text-align: center;
 }
 
 
@@ -61,30 +69,36 @@
  */
 @media (min-width: 768px) {
 
+    .subNav {
+        justify-content: flex-start; /* Align tabs to the left on desktop */
+        gap: 0.5rem;
+    }
+
+    .navButton {
+        flex-direction: row; /* Revert to a row layout */
+        flex-grow: 0;
+        padding: 0.75rem 1.5rem;
+    }
+
     /* Hide the icon on desktop */
     .navIcon {
         display: none;
     }
 
-    /* Show the text label on desktop */
+    /* Restore original label styles */
     .navLabel {
-        display: inline-block;
         font-size: 1rem;
         font-weight: 600;
         color: var(--text-secondary);
     }
     
-    .navButton {
-        flex-grow: 0; /* Revert to natural width */
-        padding: 0.75rem 1.5rem; /* Restore original padding */
-    }
-
-    .navButton.active .navLabel {
-        color: var(--accent-color);
-    }
-
+    .navButton.active .navLabel,
     .navButton:hover .navLabel {
         color: var(--text-primary);
+    }
+    
+    .navButton.active .navLabel {
+        color: var(--accent-color);
     }
 }
 
