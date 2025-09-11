@@ -232,3 +232,13 @@
 .error {
     color: #fca5a5;
 }
+
+/* NEW: Style for the badge matching notification */
+.badgeNotice {
+    grid-column: 1 / -1; /* Span full width */
+    text-align: center;
+    color: #f6ad55; /* An amber color for notices */
+    font-style: italic;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+}
