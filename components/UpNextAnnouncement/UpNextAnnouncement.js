@@ -12,7 +12,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
 
 export default function UpNextAnnouncement() {
-    const { appData, authKey, loading, error } = useAppContext(); // Added authKey
+    const { appData, authKey, loading, error } = useAppContext();
     const { backgrounds, badges, matches } = appData;
 
     const [homeTeamBadge, setHomeTeamBadge] = useState('');
@@ -26,18 +26,23 @@ export default function UpNextAnnouncement() {
     const [badgeMessage, setBadgeMessage] = useState('');
     const [selectedBackground, setSelectedBackground] = useState('');
     const [saveCustomBackground, setSaveCustomBackground] = useState(true);
-    
-    // NEW: State for the AI caption generator button
     const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
+
+    // NEW: State to hold all data from the selected match
+    const [selectedMatchData, setSelectedMatchData] = useState(null);
 
     const handleMatchSelect = (eventId) => {
         setBadgeMessage('');
         if (!eventId) {
             setHomeTeamBadge(''); setAwayTeamBadge(''); setMatchDate(''); setKickOffTime(''); setVenue(''); setTeamType('First Team');
+            setSelectedMatchData(null); // Clear selected match data
             return;
         }
+
         const selectedMatch = matches.find(m => m.eventId === eventId);
         if (!selectedMatch) return;
+
+        setSelectedMatchData(selectedMatch); // Store the full match object
 
         setVenue(selectedMatch.venue);
         const dateTime = new Date(selectedMatch.startDateTime);
@@ -69,47 +74,43 @@ export default function UpNextAnnouncement() {
         setHomeTeamBadge(foundHomeBadge); setAwayTeamBadge(foundAwayBadge);
     };
 
-    // NEW: Function to handle AI caption generation
     const handleGenerateCaption = async () => {
         setIsGeneratingCaption(true);
-        setCaption(''); // Clear existing caption
+        setCaption('');
 
-        // Helper function to find team name from badge URL
         const getTeamNameFromBadge = (badgeUrl) => {
             const badge = badges.find(b => b.Link === badgeUrl);
             if (!badge) return 'Unknown Team';
-            // Cleans '1757504967585-Henllan.png' to 'Henllan'
             return badge.Name.replace(/.png/i, '').substring(14);
         };
 
-        const payload = {
-            page: 'upNext',
-            gameInfo: {
-                homeTeam: getTeamNameFromBadge(homeTeamBadge),
-                awayTeam: getTeamNameFromBadge(awayTeamBadge),
-                matchDate,
-                kickOffTime,
-                venue,
-                teamType,
-            }
+        const gameInfo = {
+            homeTeam: getTeamNameFromBadge(homeTeamBadge),
+            awayTeam: getTeamNameFromBadge(awayTeamBadge),
+            matchDate,
+            kickOffTime,
+            venue,
+            teamType,
         };
+
+        // MODIFIED: Conditionally add extra info if a match was selected from the dropdown
+        if (selectedMatchData) {
+            gameInfo.competition = selectedMatchData.competition || '';
+            gameInfo.referee = selectedMatchData.referee || '';
+        }
+
+        const payload = { page: 'upNext', gameInfo };
 
         try {
             const response = await fetch('/api/generate-caption', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authKey}`,
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
                 body: JSON.stringify(payload),
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to generate caption.');
-            }
+            if (!response.ok) { throw new Error('Failed to generate caption.'); }
 
             const result = await response.json();
-            // Assuming your n8n workflow returns a JSON object like { "caption": "..." }
             setCaption(result.caption || 'Sorry, could not generate a caption.');
 
         } catch (err) {
@@ -118,7 +119,6 @@ export default function UpNextAnnouncement() {
             setIsGeneratingCaption(false);
         }
     };
-
 
     const handleCropComplete = (dataUrl) => { setSelectedBackground(dataUrl); };
     const handleSelectGalleryBg = (bgLink) => { setSelectedBackground(bgLink); };
@@ -198,7 +198,6 @@ export default function UpNextAnnouncement() {
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>Post Caption</h3>
-                    {/* MODIFIED: Button is now functional */}
                     <button type="button" className={styles.aiButton} onClick={handleGenerateCaption} disabled={isGeneratingCaption}>
                         {isGeneratingCaption ? 'Generating...' : '✨ Generate with AI'}
                     </button>
@@ -211,7 +210,7 @@ export default function UpNextAnnouncement() {
                     <h3 className={styles.sectionTitle}>Tagging</h3>
                      <button type="button" className={styles.tagButton}>👥 Tag People</button>
                 </div>
-                <p style={{color: 'var(--text-secondary)', textAlign: 'center'}}>Tag players and sponsors to notify them in your post. (Feature coming soon)</p>
+                <p style={{color: 'var--text-secondary)', textAlign: 'center'}}>Tag players and sponsors to notify them in your post. (Feature coming soon)</p>
             </div>
 
             <div className={styles.actionsContainer}>
