@@ -3,7 +3,7 @@
  * COMPONENT: Create Page Icons
  * PAGE: /
  * FILE: /components/CreatePage/CreatePageIcons.js
- ==========================================================
+ * ==========================================================
  */
 
 // A simple wrapper to handle sizing and styling for all icons
@@ -41,23 +41,19 @@ export const MatchDayIcon = () => (
 
 export const SquadIcon = () => (
     <Icon>
-        {/* A more complete representation of a jersey or team shirt */}
-        <path d="M12 2L6 5v5c0 4.42 3.03 8.35 6 9.87 2.97-1.52 6-5.45 6-9.87V5z"></path>
-        <path d="m16.5 3.5-3.5 1-2.5-1-3.5-1.5"></path>
-        <path d="M16 8h-8"></path>
-        <path d="M16 12h-8"></path>
+        <path d="M12 2L4 6v6l8 4 8-4V6z"></path>
+        <line x1="4" y1="6" x2="20" y2="6"></line>
     </Icon>
 );
 
 export const ResultIcon = () => (
     <Icon>
-        {/* A trophy icon for "Result" */}
         <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
         <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
         <path d="M4 22h16"></path>
-        <path d="M10 14h4"></path>
-        <path d="M12 10v6"></path>
-        <path d="M12 2a3 3 0 0 0-3 3v2a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+        <path d="M12 11.6v6.4"></path>
+        <path d="M12 2c-1.66 0-3 1.34-3 3v2a3 3 0 0 0 6 0V5c0-1.66-1.34-3-3-3z"></path>
+        <path d="M7 10h10a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2z"></path>
     </Icon>
 );
 
