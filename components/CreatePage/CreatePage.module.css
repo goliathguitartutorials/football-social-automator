@@ -1,54 +1,55 @@
 /*
- * =================================================================
- * COMPONENT: Create Page
- * PAGE: /
- * FILE: /components/CreatePage/CreatePage.module.css
- * =================================================================
+ * ==========================================================
+ * COMPONENT: Updates Page
+ * PAGE: /updates
+ * FILE: /app/(main)/updates/Updates.module.css
+ ==========================================================
  */
 
 .container {
-  width: 100%;
+    width: 100%;
 }
 
 .header {
-  margin-bottom: 2rem;
+    margin-bottom: 2rem;
 }
 
 .title {
-  font-size: 2rem;
-  font-weight: 800;
-  margin-bottom: 1.5rem;
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
 }
 
 .subNav {
-  display: flex;
-  gap: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-wrap: wrap; /* Ensures buttons wrap on smaller screens */
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .navButton {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background-color: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-  transform: translateY(1px); /* Aligns with the bottom border */
-  transition: all 0.2s ease-in-out;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background-color: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transform: translateY(1px); /* Aligns with the bottom border */
+    transition: all 0.2s ease-in-out;
 }
 
 .navButton:hover {
-  color: var(--text-primary);
-  background-color: #374151; /* A subtle hover effect */
+    color: var(--text-primary);
+    background-color: #374151; /* A subtle hover effect */
 }
 
 .navButton.active {
-  color: var(--accent-color);
-  border-bottom-color: var(--accent-color);
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
 }
 
 .contentArea {
-  /* This ensures the selected component is displayed below the header */
+    /* This ensures the selected component is displayed below the header */
 }
