@@ -17,7 +17,6 @@ export async function POST(request) {
     }
 
     // --- UNIFIED AUTHORIZATION CHECK ---
-    // All requests, regardless of type, must have a valid authorization header.
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -44,17 +43,14 @@ export async function POST(request) {
         throw new Error(errorResult.message || 'The n8n workflow returned an error.');
       }
 
-      // Check if this action was for generating a preview.
       const isPreviewGeneration = payload?.action === 'match_day_announcement' || payload?.action === 'squad_announcement';
       
-      // If n8n returns a plain text URL for the preview, handle it.
       if (isPreviewGeneration && n8nResponse.headers.get('content-type')?.includes('text/plain')) {
           const previewUrl = await n8nResponse.text();
           console.log("Received preview URL from n8n:", previewUrl);
           return NextResponse.json({ previewUrl: previewUrl });
       }
 
-      // Otherwise, handle other responses as JSON
       const jsonResponse = await n8nResponse.json();
       return NextResponse.json(jsonResponse, { status: 200 });
 
@@ -62,15 +58,14 @@ export async function POST(request) {
     } else if (contentType.includes('multipart/form-data')) {
       console.log("Proxying FormData (file upload) to n8n...");
       
-      // Directly stream the request body to n8n without parsing it.
-      // This is the key fix.
       const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: {
-          // Pass the original Content-Type header which includes the multipart boundary
           'Content-Type': contentType,
         },
         body: request.body,
+        // @ts-ignore
+        duplex: 'half', // FIX: This option is required for streaming request bodies.
       });
 
       if (!n8nResponse.ok) {
@@ -79,7 +74,6 @@ export async function POST(request) {
         throw new Error(errorResult.message || 'The n8n workflow returned an error.');
       }
 
-      // Bespoke posts are not expected to return previews, so we just parse the JSON confirmation.
       const jsonResponse = await n8nResponse.json();
       return NextResponse.json(jsonResponse, { status: 200 });
 
