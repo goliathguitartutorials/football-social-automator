@@ -1,11 +1,10 @@
 /*
  * ==========================================================
- * COMPONENT: Create Page
- * PAGE: /
- * FILE: /components/CreatePage/CreatePage.module.css
- * ==========================================================
+ * COMPONENT: Updates Page
+ * PAGE: /updates
+ * FILE: /app/(main)/updates/Updates.module.css
+ ==========================================================
  */
-
 .container {
     width: 100%;
 }
@@ -66,6 +65,32 @@
     text-align: center;
 }
 
+/* ==========================================================
+ * BANNER STYLES
+ * ==========================================================
+ */
+.bannerContainer {
+    position: relative; /* Required for Next/Image with 'fill' */
+    width: 100%;
+    height: 120px; /* Mobile banner height */
+    overflow: hidden; /* This is what crops the image */
+    background-color: var(--background-secondary); /* Fallback color while image loads */
+}
+
+.bannerImage {
+    object-fit: cover; /* Ensures the image covers the container without distortion */
+    transition: opacity 0.4s ease-in-out;
+}
+
+/* Modifier class for top-third crop */
+.top {
+    object-position: 50% 0%; /* Aligns the image to the top-center */
+}
+
+/* Modifier class for middle-third crop */
+.center {
+    object-position: 50% 50%; /* Aligns the image to the center */
+}
 
 /* ==========================================================
  * DESKTOP STYLES
@@ -73,7 +98,6 @@
  * ==========================================================
  */
 @media (min-width: 768px) {
-
     .subNav {
         justify-content: flex-start; /* Align tabs to the left on desktop */
         gap: 0.5rem;
@@ -96,14 +120,19 @@
         font-weight: 600;
         color: var(--text-secondary);
     }
-    
+
     .navButton.active .navLabel,
     .navButton:hover .navLabel {
         color: var(--text-primary);
     }
-    
+
     .navButton.active .navLabel {
         color: var(--accent-color);
+    }
+
+    /* Increase banner height on desktop */
+    .bannerContainer {
+        height: 180px;
     }
 }
 
