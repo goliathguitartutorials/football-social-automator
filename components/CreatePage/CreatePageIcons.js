@@ -23,6 +23,13 @@ const Icon = ({ children }) => (
     </svg>
 );
 
+export const UpNextIcon = () => (
+    <Icon>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+    </Icon>
+);
+
 export const MatchDayIcon = () => (
     <Icon>
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -32,31 +39,31 @@ export const MatchDayIcon = () => (
     </Icon>
 );
 
-export const UpNextIcon = () => (
-    <Icon>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-        <polyline points="12 5 19 12 12 19"></polyline>
-    </Icon>
-);
-
 export const SquadIcon = () => (
     <Icon>
-        <path d="M20.38 3.46 16 2a4 4 0 0 0-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.45a2 2 0 0 0 2 1.86h1.28L8 18a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1.88-7h1.28a2 2 0 0 0 2-1.86l.58-3.45a2 2 0 0 0-1.34-2.23z"></path>
+        {/* A more complete representation of a jersey or team shirt */}
+        <path d="M12 2L6 5v5c0 4.42 3.03 8.35 6 9.87 2.97-1.52 6-5.45 6-9.87V5z"></path>
+        <path d="m16.5 3.5-3.5 1-2.5-1-3.5-1.5"></path>
+        <path d="M16 8h-8"></path>
+        <path d="M16 12h-8"></path>
     </Icon>
 );
 
 export const ResultIcon = () => (
     <Icon>
-        <path d="M12 2c3.866 0 7 2.686 7 6v2h-2V8c0-2.21-2.239-4-5-4s-5 1.79-5 4v2H5V8c0-3.314 3.134-6 7-6z"></path>
-        <path d="M4 10h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10z"></path>
+        {/* A trophy icon for "Result" */}
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+        <path d="M4 22h16"></path>
+        <path d="M10 14h4"></path>
+        <path d="M12 10v6"></path>
+        <path d="M12 2a3 3 0 0 0-3 3v2a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
     </Icon>
 );
 
 export const BespokeIcon = () => (
     <Icon>
-        <path d="M12 2L9 5l3 7 3-7-3-2z"></path>
-        <path d="M2 12l5-3-2 3-2 3-1-3z"></path>
-        <path d="m22 12-5-3 2 3 2 3 1-3z"></path>
-        <path d="M12 22l3-7-3 2-3-2 3 7z"></path>
+        {/* A star icon for "Bespoke" to imply custom/special */}
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
     </Icon>
 );
