@@ -72,7 +72,8 @@
 .bannerContainer {
     position: relative; /* Required for Next/Image with 'fill' */
     width: 100%;
-    height: 120px; /* Mobile banner height */
+    /* MODIFIED: Replaced fixed height with a responsive aspect ratio */
+    aspect-ratio: 3 / 1; /* This means width will always be 3x the height */
     overflow: hidden; /* This is what crops the image */
     background-color: var(--background-secondary); /* Fallback color while image loads */
 }
@@ -130,10 +131,7 @@
         color: var(--accent-color);
     }
 
-    /* Increase banner height on desktop */
-    .bannerContainer {
-        height: 180px;
-    }
+    /* REMOVED: The fixed height for the banner on desktop is no longer needed. */
 }
 
 .contentArea {
