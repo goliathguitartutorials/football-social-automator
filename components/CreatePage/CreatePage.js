@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import styles from './CreatePage.module.css';
-import { MatchDayIcon, UpNextIcon, SquadIcon, ResultIcon, BespokeIcon } from './CreatePageIcons';
+import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, BespokeIcon } from './CreatePageIcons';
 
 import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnnouncement';
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
@@ -34,11 +34,21 @@ const BespokePost = () => {
             <p>This will include the image cropping and editing functionality we discussed.</p>
         </div>
     );
+    // Placeholder image generation to show bespoke functionality in the future
+    // return (
+    //     <div>
+    //         <h2>Bespoke Post</h2>
+    //         <p>UI and functionality for creating a generic post with an image upload will be built here.</p>
+    //         <p>This will include the image cropping and editing functionality we discussed.</p>
+    //         <button onClick={handleGenerateImage}>Generate Bespoke Image</button>
+    //         {imageUrl && <img src={imageUrl} alt="Generated Bespoke Post" />}
+    //     </div>
+    // );
 };
 
 const postTypes = [
-    { id: 'matchDay', label: 'Match Day', icon: <MatchDayIcon /> },
     { id: 'upNext', label: 'Up Next', icon: <UpNextIcon /> },
+    { id: 'matchDay', label: 'Match Day', icon: <MatchDayIcon /> },
     { id: 'squad', label: 'Squad', icon: <SquadIcon /> },
     { id: 'result', label: 'Result', icon: <ResultIcon /> },
     { id: 'bespoke', label: 'Bespoke', icon: <BespokeIcon /> },
@@ -46,10 +56,10 @@ const postTypes = [
 
 const PostTypeContent = ({ activePostType }) => {
     switch (activePostType) {
-        case 'matchDay':
-            return <MatchDayAnnouncement />;
         case 'upNext':
             return <UpNextAnnouncement />;
+        case 'matchDay':
+            return <MatchDayAnnouncement />;
         case 'squad':
             return <SquadAnnouncement />;
         case 'result':
@@ -57,12 +67,12 @@ const PostTypeContent = ({ activePostType }) => {
         case 'bespoke':
             return <BespokePost />;
         default:
-            return <MatchDayAnnouncement />;
+            return <UpNextAnnouncement />;
     }
 };
 
 export default function CreatePage() {
-    const [activePostType, setActivePostType] = useState('matchDay');
+    const [activePostType, setActivePostType] = useState('upNext'); // Set default to 'Up Next'
 
     return (
         <div className={styles.container}>
