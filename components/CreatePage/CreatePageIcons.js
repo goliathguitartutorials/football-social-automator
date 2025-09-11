@@ -39,21 +39,21 @@ export const MatchDayIcon = () => (
     </Icon>
 );
 
+// A simpler "users" icon to represent a team/squad
 export const SquadIcon = () => (
     <Icon>
-        <path d="M12 2L4 6v6l8 4 8-4V6z"></path>
-        <line x1="4" y1="6" x2="20" y2="6"></line>
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
     </Icon>
 );
 
+// A simpler "medal" icon to represent a result
 export const ResultIcon = () => (
     <Icon>
-        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-        <path d="M4 22h16"></path>
-        <path d="M12 11.6v6.4"></path>
-        <path d="M12 2c-1.66 0-3 1.34-3 3v2a3 3 0 0 0 6 0V5c0-1.66-1.34-3-3-3z"></path>
-        <path d="M7 10h10a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2z"></path>
+        <circle cx="12" cy="8" r="7"></circle>
+        <polyline points="8.21 13.89 7 22 12 17 17 22 15.79 13.88"></polyline>
     </Icon>
 );
 
