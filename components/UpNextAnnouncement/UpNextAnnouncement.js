@@ -12,10 +12,9 @@ import { useAppContext } from '@/app/context/AppContext';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
 
 export default function UpNextAnnouncement() {
-    const { appData, loading, error } = useAppContext();
+    const { appData, authKey, loading, error } = useAppContext(); // Added authKey
     const { backgrounds, badges, matches } = appData;
 
-    // --- Component State ---
     const [homeTeamBadge, setHomeTeamBadge] = useState('');
     const [awayTeamBadge, setAwayTeamBadge] = useState('');
     const [matchDate, setMatchDate] = useState('');
@@ -24,31 +23,22 @@ export default function UpNextAnnouncement() {
     const [teamType, setTeamType] = useState('First Team');
     const [caption, setCaption] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
-    // NEW: State for the badge matching notification message
     const [badgeMessage, setBadgeMessage] = useState('');
-    
-    // --- Background State ---
     const [selectedBackground, setSelectedBackground] = useState('');
     const [saveCustomBackground, setSaveCustomBackground] = useState(true);
+    
+    // NEW: State for the AI caption generator button
+    const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
 
     const handleMatchSelect = (eventId) => {
-        setBadgeMessage(''); // Clear any previous message
+        setBadgeMessage('');
         if (!eventId) {
-            // If the user selects the default "-- Select --" option, clear the form
-            setHomeTeamBadge('');
-            setAwayTeamBadge('');
-            setMatchDate('');
-            setKickOffTime('');
-            setVenue('');
-            setTeamType('First Team');
+            setHomeTeamBadge(''); setAwayTeamBadge(''); setMatchDate(''); setKickOffTime(''); setVenue(''); setTeamType('First Team');
             return;
         }
-
         const selectedMatch = matches.find(m => m.eventId === eventId);
         if (!selectedMatch) return;
 
-        // --- Auto-populate standard fields ---
         setVenue(selectedMatch.venue);
         const dateTime = new Date(selectedMatch.startDateTime);
         setMatchDate(dateTime.toISOString().split('T')[0]);
@@ -56,50 +46,79 @@ export default function UpNextAnnouncement() {
         const formattedTeamType = `${selectedMatch.team.charAt(0).toUpperCase()}${selectedMatch.team.slice(1)} Team`.replace('First-team', 'First Team');
         setTeamType(formattedTeamType);
 
-        // --- Advanced Badge Matching Logic ---
         const [homeTeamName, awayTeamName] = selectedMatch.title.split(' vs ');
-
-        // 1. Find the official "Y Glannau" badge first
         const glannauBadge = badges.find(b => b.Name.toLowerCase().includes('glannau'))?.Link || '';
+        let foundHomeBadge = ''; let foundAwayBadge = '';
+        if (homeTeamName.toLowerCase().includes('glannau')) { foundHomeBadge = glannauBadge; }
+        if (awayTeamName.toLowerCase().includes('glannau')) { foundAwayBadge = glannauBadge; }
 
-        let foundHomeBadge = '';
-        let foundAwayBadge = '';
-
-        // 2. Assign Glannau badge based on home/away status
-        if (homeTeamName.toLowerCase().includes('glannau')) {
-            foundHomeBadge = glannauBadge;
-        }
-        if (awayTeamName.toLowerCase().includes('glannau')) {
-            foundAwayBadge = glannauBadge;
-        }
-
-        // 3. Find the opposition badge
         const oppositionName = homeTeamName.toLowerCase().includes('glannau') ? awayTeamName : homeTeamName;
         const normalizedOppositionName = oppositionName.toLowerCase().replace(/ fc| afc| town| city| dev| development| u19s| pheonix/g, '').trim();
-        
         const oppositionBadge = badges.find(badge => {
-            if (badge.Name.toLowerCase().includes('glannau')) return false; // Don't match Glannau again
+            if (badge.Name.toLowerCase().includes('glannau')) return false;
             const normalizedBadgeName = badge.Name.toLowerCase().replace('.png', '').split('-').pop();
             return normalizedOppositionName.includes(normalizedBadgeName);
         })?.Link || '';
 
-        // 4. Assign the found opposition badge
         if (oppositionBadge) {
-            if (homeTeamName.toLowerCase().includes('glannau')) {
-                foundAwayBadge = oppositionBadge;
-            } else {
-                foundHomeBadge = oppositionBadge;
-            }
+            if (homeTeamName.toLowerCase().includes('glannau')) { foundAwayBadge = oppositionBadge; } else { foundHomeBadge = oppositionBadge; }
         } else if (!homeTeamName.toLowerCase().includes('glannau') && !awayTeamName.toLowerCase().includes('glannau')) {
-            // Handle case where neither team is Glannau (future proofing)
-             setBadgeMessage("Could not automatically match badges. Please select manually.");
-        } else {
-             setBadgeMessage("Opposition badge not matched. Please select manually.");
-        }
+            setBadgeMessage("Could not automatically match badges. Please select manually.");
+        } else { setBadgeMessage("Opposition badge not matched. Please select manually."); }
 
-        setHomeTeamBadge(foundHomeBadge);
-        setAwayTeamBadge(foundAwayBadge);
+        setHomeTeamBadge(foundHomeBadge); setAwayTeamBadge(foundAwayBadge);
     };
+
+    // NEW: Function to handle AI caption generation
+    const handleGenerateCaption = async () => {
+        setIsGeneratingCaption(true);
+        setCaption(''); // Clear existing caption
+
+        // Helper function to find team name from badge URL
+        const getTeamNameFromBadge = (badgeUrl) => {
+            const badge = badges.find(b => b.Link === badgeUrl);
+            if (!badge) return 'Unknown Team';
+            // Cleans '1757504967585-Henllan.png' to 'Henllan'
+            return badge.Name.replace(/.png/i, '').substring(14);
+        };
+
+        const payload = {
+            page: 'upNext',
+            gameInfo: {
+                homeTeam: getTeamNameFromBadge(homeTeamBadge),
+                awayTeam: getTeamNameFromBadge(awayTeamBadge),
+                matchDate,
+                kickOffTime,
+                venue,
+                teamType,
+            }
+        };
+
+        try {
+            const response = await fetch('/api/generate-caption', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authKey}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to generate caption.');
+            }
+
+            const result = await response.json();
+            // Assuming your n8n workflow returns a JSON object like { "caption": "..." }
+            setCaption(result.caption || 'Sorry, could not generate a caption.');
+
+        } catch (err) {
+            setCaption(`Error: ${err.message}`);
+        } finally {
+            setIsGeneratingCaption(false);
+        }
+    };
+
 
     const handleCropComplete = (dataUrl) => { setSelectedBackground(dataUrl); };
     const handleSelectGalleryBg = (bgLink) => { setSelectedBackground(bgLink); };
@@ -121,7 +140,6 @@ export default function UpNextAnnouncement() {
                             {matches.map((match) => ( <option key={match.eventId} value={match.eventId}>{match.title}</option> ))}
                         </select>
                     </div>
-                    {/* NEW: Conditionally render the badge notice */}
                     {badgeMessage && <p className={styles.badgeNotice}>{badgeMessage}</p>}
                     <div className={styles.formGroup}>
                         <label htmlFor="homeTeamBadge">Home Team Badge</label>
@@ -180,7 +198,10 @@ export default function UpNextAnnouncement() {
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>Post Caption</h3>
-                    <button type="button" className={styles.aiButton}>✨ Generate with AI</button>
+                    {/* MODIFIED: Button is now functional */}
+                    <button type="button" className={styles.aiButton} onClick={handleGenerateCaption} disabled={isGeneratingCaption}>
+                        {isGeneratingCaption ? 'Generating...' : '✨ Generate with AI'}
+                    </button>
                 </div>
                 <textarea className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here, or generate one with AI..." rows={5} />
             </div>
