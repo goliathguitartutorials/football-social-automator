@@ -11,11 +11,10 @@ import { useState } from 'react';
 import styles from './page.module.css';
 import DesktopNav from '@/components/Navigation/DesktopNav';
 import MobileNav from '@/components/Navigation/MobileNav';
-import CreatePage from '@/components/CreatePage/CreatePage'; // MODIFIED: Import the new component
+import CreatePage from '@/components/CreatePage/CreatePage';
+import SettingsPage from '@/components/SettingsPage/SettingsPage'; // MODIFIED: Import the new component
 
 // --- Placeholder Pages ---
-// CreatePage is now a real component. The others remain placeholders for now.
-
 const SchedulePage = () => (
   <div>
     <h2>Post Scheduler</h2>
@@ -30,25 +29,17 @@ const LiveMatchPage = () => (
   </div>
 );
 
-const SettingsPage = () => (
-  <div>
-    <h2>Settings</h2>
-    <p>This feature is coming soon.</p>
-  </div>
-);
-
-
 // --- Main Content Renderer ---
 const MainContent = ({ view }) => {
   switch (view) {
     case 'create':
-      return <CreatePage />; // MODIFIED: Render the new CreatePage component
+      return <CreatePage />;
     case 'schedule':
       return <SchedulePage />;
     case 'live':
       return <LiveMatchPage />;
     case 'settings':
-      return <SettingsPage />;
+      return <SettingsPage />; // MODIFIED: Render the new SettingsPage component
     default:
       return <CreatePage />;
   }
