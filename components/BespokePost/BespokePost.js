@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useRef, useEffect } from 'react'; // Import useEffect
+import { useState, useRef, useEffect } from 'react';
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import styles from './BespokePost.module.css';
@@ -18,9 +18,8 @@ const MIN_WIDTH = 400;
 
 export default function BespokePost() {
     const { authKey } = useAppContext();
-    const authKeyRef = useRef(authKey); // Create a ref to hold the authKey
+    const authKeyRef = useRef(authKey);
 
-    // This effect keeps the ref updated with the latest authKey from the context
     useEffect(() => {
         authKeyRef.current = authKey;
     }, [authKey]);
@@ -28,8 +27,7 @@ export default function BespokePost() {
     const [text, setText] = useState('');
     const [imgSrc, setImgSrc] = useState('');
     const [crop, setCrop] = useState();
-    const [croppedImageBlob, setCroppedImageBlob] = useState(null);
-    const [previewUrl, setPreviewUrl] = useState('');
+    const [croppedImageUrl, setCroppedImageUrl] = useState(''); // This will now hold the Base64 Data URL
     const [isCropping, setIsCropping] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState('');
@@ -39,8 +37,7 @@ export default function BespokePost() {
     const onSelectFile = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        setCroppedImageBlob(null);
-        setPreviewUrl('');
+        setCroppedImageUrl('');
         setMessage('');
         const reader = new FileReader();
         reader.addEventListener('load', () => {
@@ -57,57 +54,49 @@ export default function BespokePost() {
         setCrop(centeredCrop);
     };
 
-    const getCroppedImgBlob = () => {
-        return new Promise((resolve) => {
-            if (!imgRef.current || !crop || !crop.width || !crop.height) return resolve(null);
-            const image = imgRef.current;
-            const canvas = document.createElement('canvas');
-            const scaleX = image.naturalWidth / image.width;
-            const scaleY = image.naturalHeight / image.height;
-            canvas.width = crop.width * scaleX;
-            canvas.height = crop.height * scaleY;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return resolve(null);
-            ctx.drawImage(image, crop.x * scaleX, crop.y * scaleY, crop.width * scaleX, crop.height * scaleY, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', 0.9);
-        });
-    };
-
-    const handleConfirmCrop = async () => {
-        const blob = await getCroppedImgBlob();
-        if (blob) {
-            setCroppedImageBlob(blob);
-            setPreviewUrl(URL.createObjectURL(blob));
-            setIsCropping(false);
-        }
+    const handleConfirmCrop = () => {
+        if (!imgRef.current || !crop || !crop.width || !crop.height) return;
+        const image = imgRef.current;
+        const canvas = document.createElement('canvas');
+        const scaleX = image.naturalWidth / image.width;
+        const scaleY = image.naturalHeight / image.height;
+        canvas.width = crop.width * scaleX;
+        canvas.height = crop.height * scaleY;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(image, crop.x * scaleX, crop.y * scaleY, crop.width * scaleX, crop.height * scaleY, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        setCroppedImageUrl(dataUrl); // Set the Base64 string for preview and sending
+        setIsCropping(false);
     };
     
     const handlePost = async () => {
-        // Use the most up-to-date key from the ref
-        const currentAuthKey = authKeyRef.current; 
+        const currentAuthKey = authKeyRef.current;
         if (!currentAuthKey) return setMessage('Authorization Key is missing. Please set it on the Settings page.');
-        if (!croppedImageBlob) return setMessage('Please upload and crop an image.');
+        if (!croppedImageUrl) return setMessage('Please upload and crop an image.');
         if (!text.trim()) return setMessage('Please enter some text for the caption.');
 
         setIsSubmitting(true);
         setMessage('');
 
-        const formData = new FormData();
-        formData.append('action', 'bespoke_post');
-        formData.append('text', text);
-        formData.append('imageFile', croppedImageBlob, 'bespoke-post.jpg');
+        const payload = {
+            action: 'bespoke_post',
+            text: text,
+            imageData: croppedImageUrl, // Send the Base64 Data URL
+        };
 
         try {
             const response = await fetch('/api/trigger-workflow', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${currentAuthKey}`, // Send the correct key
+                    'Content-Type': 'application/json', // Send as JSON
+                    'Authorization': `Bearer ${currentAuthKey}`,
                 },
-                body: formData,
+                body: JSON.stringify(payload), // Stringify the JSON payload
             });
 
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Failed to post to social media.');
+            if (!response.ok) throw new Error(result.error || 'Authorization failed.');
 
             setMessage('Successfully posted to social media!');
         } catch (error) {
@@ -120,8 +109,7 @@ export default function BespokePost() {
     
     const resetImage = () => {
         setImgSrc('');
-        setCroppedImageBlob(null);
-        setPreviewUrl('');
+        setCroppedImageUrl('');
         setIsCropping(false);
         if(fileInputRef.current) fileInputRef.current.value = '';
     };
@@ -145,9 +133,9 @@ export default function BespokePost() {
                         <button onClick={handleConfirmCrop} className={styles.primaryButton}>Confirm Crop</button>
                     </div>
                 )}
-                {previewUrl && !isCropping && (
+                {croppedImageUrl && !isCropping && (
                      <div className={styles.previewContainer}>
-                        <img src={previewUrl} alt="Cropped Preview" className={styles.previewImage} />
+                        <img src={croppedImageUrl} alt="Cropped Preview" className={styles.previewImage} />
                         <div className={styles.imageActions}>
                             <button onClick={() => setIsCropping(true)} className={styles.secondaryButton}>Re-crop</button>
                             <button onClick={resetImage} className={styles.secondaryButton}>Change Image</button>
@@ -165,7 +153,7 @@ export default function BespokePost() {
                     placeholder="Write your caption here..."
                     rows={6}
                 />
-                <button onClick={handlePost} disabled={isSubmitting || !croppedImageBlob} className={styles.postButton}>
+                <button onClick={handlePost} disabled={isSubmitting || !croppedImageUrl} className={styles.postButton}>
                     {isSubmitting ? 'Posting...' : 'Post to Social Media'}
                 </button>
                 {message && <p className={styles.message}>{message}</p>}
