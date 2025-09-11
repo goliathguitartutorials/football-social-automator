@@ -1,13 +1,14 @@
 /*
  * ==========================================================
- * COMPONENT: Create Page
- * PAGE: /
- * FILE: /components/CreatePage/CreatePage.js
+ * COMPONENT: Updates Page
+ * PAGE: /updates
+ * FILE: /app/(main)/updates/Updates.module.css
  ==========================================================
  */
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import styles from './CreatePage.module.css';
 import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, BespokeIcon } from './CreatePageIcons';
 
@@ -34,6 +35,15 @@ const postTypes = [
     { id: 'bespoke', label: 'Custom', icon: <BespokeIcon /> },
 ];
 
+// Map post types to their banner images and desired crop position
+const bannerImages = {
+    upNext: { src: '/upnext.png', position: 'center' },
+    matchDay: { src: '/matchday.png', position: 'top' },
+    squad: { src: '/squad.png', position: 'center' },
+    result: { src: '/result.png', position: 'top' },
+    bespoke: { src: '/custom.png', position: 'center' },
+};
+
 const PostTypeContent = ({ activePostType }) => {
     switch (activePostType) {
         case 'upNext':
@@ -53,6 +63,7 @@ const PostTypeContent = ({ activePostType }) => {
 
 export default function CreatePage() {
     const [activePostType, setActivePostType] = useState('upNext');
+    const activeBanner = bannerImages[activePostType];
 
     return (
         <div className={styles.container}>
@@ -71,6 +82,17 @@ export default function CreatePage() {
                         </button>
                     ))}
                 </nav>
+
+                <div className={styles.bannerContainer}>
+                    <Image
+                        key={activePostType} // Helps React trigger transitions on change
+                        src={activeBanner.src}
+                        alt={`${postTypes.find((p) => p.id === activePostType)?.label} Banner`}
+                        fill
+                        priority
+                        className={`${styles.bannerImage} ${styles[activeBanner.position]}`}
+                    />
+                </div>
             </header>
             <div className={styles.contentArea}>
                 <PostTypeContent activePostType={activePostType} />
