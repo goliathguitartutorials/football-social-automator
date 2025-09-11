@@ -9,6 +9,7 @@
 
 import { useState } from 'react';
 import styles from './CreatePage.module.css';
+import { MatchDayIcon, UpNextIcon, SquadIcon, ResultIcon, BespokeIcon } from './CreatePageIcons';
 
 import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnnouncement';
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
@@ -35,13 +36,12 @@ const BespokePost = () => {
     );
 };
 
-
 const postTypes = [
-    { id: 'matchDay', label: 'Match Day', icon: '🗓️' },
-    { id: 'upNext', label: 'Up Next', icon: '➡️' },
-    { id: 'squad', label: 'Squad', icon: '👕' },
-    { id: 'result', label: 'Result', icon: '🏆' },
-    { id: 'bespoke', label: 'Bespoke', icon: '✨' },
+    { id: 'matchDay', label: 'Match Day', icon: <MatchDayIcon /> },
+    { id: 'upNext', label: 'Up Next', icon: <UpNextIcon /> },
+    { id: 'squad', label: 'Squad', icon: <SquadIcon /> },
+    { id: 'result', label: 'Result', icon: <ResultIcon /> },
+    { id: 'bespoke', label: 'Bespoke', icon: <BespokeIcon /> },
 ];
 
 const PostTypeContent = ({ activePostType }) => {
@@ -75,7 +75,6 @@ export default function CreatePage() {
                                 activePostType === type.id ? styles.active : ''
                             }`}
                             onClick={() => setActivePostType(type.id)}
-                            aria-label={type.label}
                         >
                             <span className={styles.navIcon}>{type.icon}</span>
                             <span className={styles.navLabel}>{type.label}</span>
