@@ -11,7 +11,7 @@ import { useState, useRef } from 'react';
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import styles from './BespokePost.module.css';
-import { useAppContext } from '@/context/AppContext';
+import { useAppContext } from '@/contexts/AppContext'; // CORRECTED FILE PATH
 
 // Aspect ratio for the crop
 const ASPECT_RATIO = 1080 / 1350;
@@ -116,10 +116,6 @@ export default function BespokePost() {
         };
 
         await triggerWorkflow(payload);
-        // Optionally clear fields on success
-        // setText('');
-        // setImgSrc('');
-        // setCroppedImageUrl('');
     };
 
     return (
