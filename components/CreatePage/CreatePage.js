@@ -37,11 +37,11 @@ const BespokePost = () => {
 
 
 const postTypes = [
-    { id: 'matchDay', label: 'Match Day' },
-    { id: 'upNext', label: 'Up Next' },
-    { id: 'squad', label: 'Squad' },
-    { id: 'result', label: 'Result' },
-    { id: 'bespoke', label: 'Bespoke' },
+    { id: 'matchDay', label: 'Match Day', icon: '🗓️' },
+    { id: 'upNext', label: 'Up Next', icon: '➡️' },
+    { id: 'squad', label: 'Squad', icon: '👕' },
+    { id: 'result', label: 'Result', icon: '🏆' },
+    { id: 'bespoke', label: 'Bespoke', icon: '✨' },
 ];
 
 const PostTypeContent = ({ activePostType }) => {
@@ -67,7 +67,6 @@ export default function CreatePage() {
     return (
         <div className={styles.container}>
             <header className={styles.header}>
-                <h2 className={styles.title}>Create a New Post</h2>
                 <nav className={styles.subNav}>
                     {postTypes.map((type) => (
                         <button
@@ -76,8 +75,10 @@ export default function CreatePage() {
                                 activePostType === type.id ? styles.active : ''
                             }`}
                             onClick={() => setActivePostType(type.id)}
+                            aria-label={type.label}
                         >
-                            {type.label}
+                            <span className={styles.navIcon}>{type.icon}</span>
+                            <span className={styles.navLabel}>{type.label}</span>
                         </button>
                     ))}
                 </nav>
