@@ -77,7 +77,6 @@ CreatePage.module.css
     box-shadow: inset 0 0 15px 5px rgba(17, 24, 39, 0.6);
 }
 
-/* MODIFIED: Reduced gradient opacity */
 .bannerContainer::after {
     content: '';
     position: absolute;
@@ -88,8 +87,8 @@ CreatePage.module.css
     pointer-events: none;
     background: linear-gradient(
         180deg,
-        rgba(17, 24, 39, 0.1) 0%, /* Reduced from 0.2 to 0.1 */
-        rgba(17, 24, 39, 0.3) 100% /* Reduced from 0.6 to 0.3 */
+        rgba(17, 24, 39, 0.1) 0%,
+        rgba(17, 24, 39, 0.3) 100%
     );
     border-radius: inherit;
 }
@@ -102,22 +101,22 @@ CreatePage.module.css
 
 /* Modifier class for top-third crop */
 .top {
-    object-position: 50% 0%; /* Aligns the image to the top-center */
+    object-position: 50% 0%;
 }
 
 /* MODIFIED: New class for a slightly higher crop (original middleHigh was 30%) */
 .middleHigh {
-    object-position: 50% 25%; /* Shows the middle-upper part, slightly higher */
+    object-position: 50% 25%;
 }
 
 /* MODIFIED: New class for an even higher crop */
 .middleHighMore {
-    object-position: 50% 20%; /* Shows a higher part of the image */
+    object-position: 50% 20%;
 }
 
-/* MODIFIED: New class for middle-middle crop (between center and middleLow) */
+/* MODIFIED: Adjusted the vertical position for the 'Up Next' image */
 .middleMid {
-    object-position: 50% 45%; /* Shows the absolute middle-middle part */
+    object-position: 50% 58%; /* Changed from 45% */
 }
 
 /* Original .center (50% 50%) is not explicitly used now, but kept for reference */
