@@ -10,6 +10,7 @@ import { useState } from 'react';
 import styles from './UpNextAnnouncement.module.css';
 import { useAppContext } from '@/app/context/AppContext';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
+import { UploadIcon, GalleryIcon } from './UpNextAnnouncementIcons'; // Import the new icons
 
 export default function UpNextAnnouncement() {
     const { appData, authKey, loading, error } = useAppContext();
@@ -31,6 +32,7 @@ export default function UpNextAnnouncement() {
     const [badgeMessage, setBadgeMessage] = useState('');
     const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
     const [selectedMatchData, setSelectedMatchData] = useState(null);
+    const [backgroundSource, setBackgroundSource] = useState('gallery'); // State for the new tabs
 
     const handleMatchSelect = (eventId) => {
         setBadgeMessage('');
@@ -162,7 +164,7 @@ export default function UpNextAnnouncement() {
     }
 
     return (
-        <form className={styles.pageContainer} onSubmit={(e) => {e.preventDefault(); handleGeneratePreview();}}>
+        <form className={styles.pageContainer} onSubmit={(e) => { e.preventDefault(); handleGeneratePreview(); }}>
             <div className={styles.section}>
                 <div className={styles.formGrid}>
                     <div className={styles.formGroupFull}>
@@ -208,19 +210,41 @@ export default function UpNextAnnouncement() {
                     </div>
                 </div>
             </div>
+
+            {/* ========== MODIFIED BACKGROUND SECTION ========== */}
             <div className={styles.section}>
-                <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Background</h3></div>
-                <h4 className={styles.subHeader}>Custom</h4>
-                <ImageEditor onCropComplete={handleCropComplete} />
-                <div className={styles.checkboxContainer}>
-                    <input type="checkbox" id="saveCustomBg" checked={saveCustomBackground} onChange={(e) => setSaveCustomBackground(e.target.checked)} />
-                    <label htmlFor="saveCustomBg">Save background for future use</label>
+                <div className={styles.sectionHeader}>
+                    <h3 className={styles.sectionTitle}>Background</h3>
+                    <div className={styles.backgroundTabs}>
+                        <button type="button" className={`${styles.tabButton} ${backgroundSource === 'gallery' ? styles.active : ''}`} onClick={() => setBackgroundSource('gallery')}>
+                            <span className={styles.tabIcon}><GalleryIcon /></span>
+                            <span className={styles.tabLabel}>Gallery</span>
+                        </button>
+                        <button type="button" className={`${styles.tabButton} ${backgroundSource === 'custom' ? styles.active : ''}`} onClick={() => setBackgroundSource('custom')}>
+                            <span className={styles.tabIcon}><UploadIcon /></span>
+                            <span className={styles.tabLabel}>Custom</span>
+                        </button>
+                    </div>
                 </div>
-                <h4 className={styles.subHeader}>Gallery</h4>
-                <div className={styles.backgroundGrid}>
-                    {backgrounds.map((bg) => (<div key={bg.Link} className={`${styles.backgroundItem} ${selectedBackground === bg.Link ? styles.selected : ''}`} onClick={() => handleSelectGalleryBg(bg.Link)}><img src={bg.Link} alt={bg.Name} /></div>))}
-                </div>
+
+                {backgroundSource === 'gallery' && (
+                    <div className={styles.backgroundGrid}>
+                        {backgrounds.map((bg) => (<div key={bg.Link} className={`${styles.backgroundItem} ${selectedBackground === bg.Link ? styles.selected : ''}`} onClick={() => handleSelectGalleryBg(bg.Link)}><img src={bg.Link} alt={bg.Name} /></div>))}
+                    </div>
+                )}
+
+                {backgroundSource === 'custom' && (
+                    <div className={styles.customBackgroundContainer}>
+                        <ImageEditor onCropComplete={handleCropComplete} />
+                        <div className={styles.checkboxContainer}>
+                            <input type="checkbox" id="saveCustomBg" checked={saveCustomBackground} onChange={(e) => setSaveCustomBackground(e.target.checked)} />
+                            <label htmlFor="saveCustomBg">Save background for future use</label>
+                        </div>
+                    </div>
+                )}
             </div>
+            {/* ============================================== */}
+
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>Post Caption</h3>
@@ -230,6 +254,7 @@ export default function UpNextAnnouncement() {
                 </div>
                 <textarea className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here, or generate one with AI..." rows={5} />
             </div>
+
             <div className={styles.actionsContainer}>
                 <div>
                     <button type="button" onClick={handleYoloPost} disabled={isSubmitting} className={styles.yoloButton}>{isSubmitting ? 'Sending...' : 'YOLO Post'}</button>
