@@ -67,7 +67,6 @@
     font-size: 1rem;
 }
 
-/* ========== NEW STYLES FOR BACKGROUND TABS ========== */
 .backgroundTabs {
     display: flex;
     gap: 0.25rem;
@@ -116,7 +115,6 @@
 .customBackgroundContainer {
     margin-top: 1.5rem;
 }
-/* ============================================== */
 
 .checkboxContainer {
     display: flex;
@@ -164,7 +162,7 @@
     width: 100%;
     padding: 0.75rem;
     border-radius: 8px;
-    background-color: var(--surface-light);
+    background-color: #374151;
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     font-size: 1rem;
@@ -172,8 +170,15 @@
     min-height: 120px;
 }
 
-.aiButton, .utilityButton {
-    padding: 0.5rem 1rem;
+/* MODIFIED: Container added for better control */
+.aiButtonContainer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.aiButton {
+    padding: 0.7rem 1.2rem;
     font-size: 0.9rem;
     font-weight: bold;
     color: #fff;
@@ -183,7 +188,7 @@
     cursor: pointer;
     transition: background-color 0.2s;
 }
-.aiButton:hover, .utilityButton:hover {
+.aiButton:hover {
     background-color: #6b7280;
 }
 
@@ -249,7 +254,6 @@
     margin-bottom: 1rem;
 }
 
-/* --- PREVIEW VIEW STYLES --- */
 .previewContainer {
     padding: 2rem;
     background-color: var(--surface-dark, #1a1d2e);
@@ -303,4 +307,51 @@
     margin-top: 1.5rem;
     font-weight: 500;
     color: var(--text-secondary);
+}
+
+/* ========== NEW: MOBILE RESPONSIVE STYLES ========== */
+@media (max-width: 768px) {
+    .pageContainer {
+        padding: 1rem;
+    }
+
+    .sectionHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    /* This targets the header for the caption section */
+    .sectionHeader:has(> .sectionTitle) {
+        align-items: center;
+        width: 100%;
+    }
+
+    .backgroundTabs {
+        width: 100%;
+    }
+
+    .actionsContainer {
+        flex-direction: column-reverse; /* Puts primary button last */
+        align-items: stretch;
+        gap: 1.5rem;
+    }
+    
+    .actionsContainer > div {
+        text-align: center;
+    }
+
+    .actionButton, .yoloButton {
+        width: 100%;
+        padding: 1rem; /* Increase tap target size */
+    }
+    
+    .aiButtonContainer {
+        justify-content: center;
+    }
+    
+    .aiButton {
+        width: 100%;
+        max-width: 400px;
+    }
 }
