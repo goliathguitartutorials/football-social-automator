@@ -22,11 +22,13 @@ export default function ImageEditor({ onCropComplete }) {
     const [isCropping, setIsCropping] = useState(false);
     const imgRef = useRef(null);
     const fileInputRef = useRef(null);
+    const [fileName, setFileName] = useState('');
 
     const onSelectFile = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        setFileName(file.name);
         setCroppedImageUrl(''); // Reset previous preview
         
         const reader = new FileReader();
@@ -71,6 +73,7 @@ export default function ImageEditor({ onCropComplete }) {
         setImgSrc('');
         setCroppedImageUrl('');
         setIsCropping(false);
+        setFileName('');
         if (fileInputRef.current) fileInputRef.current.value = '';
         // Also inform the parent that the image has been removed
         if (onCropComplete) {
@@ -81,10 +84,21 @@ export default function ImageEditor({ onCropComplete }) {
     return (
         <div className={styles.container}>
             {!imgSrc && (
-                <>
-                    <p>Upload a Custom Background</p>
-                    <input ref={fileInputRef} type="file" accept="image/*" onChange={onSelectFile} />
-                </>
+                <div className={styles.uploadInitialState}>
+                    <p className={styles.uploadText}>Upload a Custom Background</p>
+                    <input 
+                        id="custom-bg-upload"
+                        ref={fileInputRef} 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={onSelectFile}
+                        className={styles.fileInput}
+                    />
+                    <label htmlFor="custom-bg-upload" className={styles.uploadButton}>
+                        Choose File
+                    </label>
+                    {fileName && <p className={styles.fileName}>{fileName}</p>}
+                </div>
             )}
 
             {imgSrc && isCropping && (
