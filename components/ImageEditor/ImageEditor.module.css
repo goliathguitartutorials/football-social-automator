@@ -7,8 +7,8 @@
  */
 
 .container {
-    background-color: var(--surface-light);
-    border: 2px dashed var(--border-color);
+    background-color: var(--surface-light, #2d3748);
+    border: 2px dashed var(--border-color, #4a5568);
     border-radius: 8px;
     padding: 1.5rem;
     text-align: center;
@@ -18,7 +18,60 @@
     justify-content: center;
     align-items: center;
     width: 100%;
+    transition: border-color 0.3s ease;
 }
+
+.container:hover {
+    border-color: var(--accent-color, #3182ce);
+}
+
+/* ========== NEW STYLES FOR UPLOAD STATE ========== */
+.uploadInitialState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.uploadText {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-secondary, #a0aec0);
+}
+
+.fileInput {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
+
+.uploadButton {
+    padding: 0.6rem 1.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: var(--accent-color, #3182ce);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.uploadButton:hover {
+    background-color: var(--accent-color-hover, #2b6cb0);
+}
+
+.fileName {
+    font-size: 0.9rem;
+    color: var(--text-secondary, #a0aec0);
+    margin: 0;
+}
+/* =============================================== */
 
 .cropperContainer {
     width: 100%;
