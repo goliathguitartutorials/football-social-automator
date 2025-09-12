@@ -10,7 +10,7 @@ import { useState } from 'react';
 import styles from './UpNextAnnouncement.module.css';
 import { useAppContext } from '@/app/context/AppContext';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
-import { UploadIcon, GalleryIcon } from './UpNextAnnouncementIcons'; // Import the new icons
+import { UploadIcon, GalleryIcon } from './UpNextAnnouncementIcons';
 
 export default function UpNextAnnouncement() {
     const { appData, authKey, loading, error } = useAppContext();
@@ -32,7 +32,7 @@ export default function UpNextAnnouncement() {
     const [badgeMessage, setBadgeMessage] = useState('');
     const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
     const [selectedMatchData, setSelectedMatchData] = useState(null);
-    const [backgroundSource, setBackgroundSource] = useState('gallery'); // State for the new tabs
+    const [backgroundSource, setBackgroundSource] = useState('gallery');
 
     const handleMatchSelect = (eventId) => {
         setBadgeMessage('');
@@ -211,7 +211,6 @@ export default function UpNextAnnouncement() {
                 </div>
             </div>
 
-            {/* ========== MODIFIED BACKGROUND SECTION ========== */}
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>Background</h3>
@@ -243,16 +242,17 @@ export default function UpNextAnnouncement() {
                     </div>
                 )}
             </div>
-            {/* ============================================== */}
-
+            
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>Post Caption</h3>
+                </div>
+                <textarea className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here, or generate one with AI..." rows={5} />
+                <div className={styles.aiButtonContainer}>
                     <button type="button" className={styles.aiButton} onClick={handleGenerateCaption} disabled={isGeneratingCaption}>
                         {isGeneratingCaption ? 'Generating...' : '✨ Generate with AI'}
                     </button>
                 </div>
-                <textarea className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here, or generate one with AI..." rows={5} />
             </div>
 
             <div className={styles.actionsContainer}>
