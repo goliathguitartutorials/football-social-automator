@@ -100,8 +100,8 @@ const ScorerInput = ({ scorer, onUpdate, onRemove, players }) => {
 };
 
 
-// MODIFIED: Helper function now accepts a key prefix
-const formatScorersForWebhook = (scorers, keyPrefix) => {
+// MODIFIED: Helper function now determines home/away and returns all 16 keys.
+const formatScorersForWebhook = (scorers, isGlannauHome) => {
     const groupedScorers = {};
 
     scorers.forEach(scorer => {
@@ -116,7 +116,7 @@ const formatScorersForWebhook = (scorers, keyPrefix) => {
         });
     });
 
-    const formattedLines = Object.entries(groupedScorers).map(([name, goals]) => {
+    const glannauScorerLines = Object.entries(groupedScorers).map(([name, goals]) => {
         goals.sort((a, b) => parseInt(a.minute) - parseInt(b.minute));
         const goalStrings = goals.map(g => `${g.minute}'${g.isPenalty ? ' (P)' : ''}`).join(', ');
         if (name === 'OG') {
@@ -130,10 +130,14 @@ const formatScorersForWebhook = (scorers, keyPrefix) => {
     });
 
     const payload = {};
+    const homeScorers = isGlannauHome ? glannauScorerLines : [];
+    const awayScorers = isGlannauHome ? [] : glannauScorerLines;
+
     for (let i = 1; i <= 8; i++) {
-        // Use the dynamic key prefix
-        payload[`${keyPrefix}_${i}`] = formattedLines[i - 1] || "";
+        payload[`home_team_scorer_${i}`] = homeScorers[i - 1] || "";
+        payload[`away_team_scorer_${i}`] = awayScorers[i - 1] || "";
     }
+
     return payload;
 };
 
@@ -214,15 +218,13 @@ export default function MatchResult() {
             return badge.Name.replace(/.png/i, '').substring(14);
         };
 
-        // NEW: Determine scorer key prefix
         const homeBadgeObject = badges.find(b => b.Link === homeTeamBadge);
         const isGlannauHome = homeBadgeObject && homeBadgeObject.Name.toLowerCase().includes('glannau');
-        const scorerKeyPrefix = isGlannauHome ? 'home_team_scorer' : 'away_team_scorer';
 
         const gameInfo = {
             homeTeam: getTeamNameFromBadge(homeTeamBadge), awayTeam: getTeamNameFromBadge(awayTeamBadge),
             homeTeamScore, awayTeamScore,
-            scorers: formatScorersForWebhook(scorers, scorerKeyPrefix)
+            scorers: formatScorersForWebhook(scorers, isGlannauHome) // MODIFIED: Pass boolean flag
         };
         const payload = { page: 'matchResult', gameInfo };
         try {
@@ -238,13 +240,11 @@ export default function MatchResult() {
         if (!authKey || !selectedBackground) { alert('Please ensure you have an Authorization Key and have selected a background.'); return; }
         setIsSubmitting(true); setMessage('');
 
-        // NEW: Determine if Glannau is the home team based on the selected badge
         const homeBadgeObject = badges.find(b => b.Link === homeTeamBadge);
         const isGlannauHome = homeBadgeObject && homeBadgeObject.Name.toLowerCase().includes('glannau');
-        const scorerKeyPrefix = isGlannauHome ? 'home_team_scorer' : 'away_team_scorer';
-
-        // MODIFIED: Use the new formatting function with the correct prefix
-        const formattedScorers = formatScorersForWebhook(scorers, scorerKeyPrefix);
+        
+        // MODIFIED: Pass boolean flag instead of a prefix
+        const formattedScorers = formatScorersForWebhook(scorers, isGlannauHome);
 
         const payload = {
             action,
@@ -307,8 +307,6 @@ export default function MatchResult() {
 
     if (loading) return <p className={styles.notice}>Loading assets...</p>;
     if (error) return <p className={`${styles.notice} ${styles.error}`}>{error}</p>;
-
-    // --- JSX for PREVIEW and CONFIG views remains unchanged below this line ---
 
     if (view === 'PREVIEW') {
         return (
