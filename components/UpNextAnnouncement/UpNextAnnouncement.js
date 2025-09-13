@@ -304,21 +304,6 @@ export default function UpNextAnnouncement() {
                 </div>
             </div>
 
-            {generatedPreviews.length > 0 && (
-                <div className={styles.section}>
-                    <div className={styles.sectionHeader}>
-                        <h3 className={styles.sectionTitle}>Generated Previews</h3>
-                    </div>
-                    <div className={styles.previewsGrid}>
-                        {generatedPreviews.map((url, index) => (
-                            <div key={index} className={styles.previewItem} onClick={() => handleSelectPreview(url)}>
-                                <img src={url} alt={`Generated Preview ${index + 1}`} />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>Background</h3>
@@ -368,6 +353,23 @@ export default function UpNextAnnouncement() {
                     <button type="button" onClick={handleYoloPost} disabled={isSubmitting} className={styles.yoloButton}>{isSubmitting ? 'Sending...' : 'Post Now (YOLO)'}</button>
                 </div>
             </div>
+            
+            {/* MOVED: Generated previews section moved from above to below the actions */}
+            {generatedPreviews.length > 0 && (
+                <div className={styles.section}>
+                    <div className={styles.sectionHeader}>
+                        <h3 className={styles.sectionTitle}>Generated Previews</h3>
+                    </div>
+                    <div className={styles.previewsGrid}>
+                        {generatedPreviews.map((url, index) => (
+                            <div key={index} className={styles.previewItem} onClick={() => handleSelectPreview(url)}>
+                                <img src={url} alt={`Generated Preview ${index + 1}`} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+            
             {message && <p className={styles.message}>{message}</p>}
         </form>
     );
