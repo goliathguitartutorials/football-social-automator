@@ -12,18 +12,15 @@ import { useAppContext } from '@/app/context/AppContext';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
 import { UploadIcon, GalleryIcon } from './UpNextAnnouncementIcons';
 
-// NEW: Helper function to format the date as requested
+// Helper function to format the date as requested
 const formatDateForWebhook = (dateString) => {
-    if (!dateString) return ''; // Return empty if no date is provided
+    if (!dateString) return '';
 
-    // Create a date object, ensuring it's treated as UTC to avoid timezone issues
     const date = new Date(dateString + 'T00:00:00Z');
-
     const dayOfWeek = date.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' });
     const dayOfMonth = date.getUTCDate();
     const month = date.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' });
 
-    // Function to get the correct ordinal suffix (st, nd, rd, th)
     const getOrdinalSuffix = (day) => {
         if (day > 3 && day < 21) return 'th';
         switch (day % 10) {
@@ -33,12 +30,9 @@ const formatDateForWebhook = (dateString) => {
             default: return "th";
         }
     };
-
     const suffix = getOrdinalSuffix(dayOfMonth);
-
     return `${dayOfWeek} ${dayOfMonth}${suffix} ${month}`;
 };
-
 
 export default function UpNextAnnouncement() {
     const { appData, authKey, loading, error } = useAppContext();
@@ -61,6 +55,10 @@ export default function UpNextAnnouncement() {
     const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
     const [selectedMatchData, setSelectedMatchData] = useState(null);
     const [backgroundSource, setBackgroundSource] = useState('gallery');
+    
+    // NEW: State for the image edit feature
+    const [editPrompt, setEditPrompt] = useState('');
+    const [isEditingImage, setIsEditingImage] = useState(false);
 
     const handleMatchSelect = (eventId) => {
         setBadgeMessage('');
@@ -128,23 +126,8 @@ export default function UpNextAnnouncement() {
         if (!authKey || !selectedBackground) { alert('Please ensure you have an Authorization Key and have selected a background.'); return; }
         setIsSubmitting(true);
         setMessage('');
-
-        // MODIFIED: Use the helper function to format the date before sending
         const formattedDate = formatDateForWebhook(matchDate);
-
-        const payload = {
-            action,
-            home_team_badge: homeTeamBadge,
-            away_team_badge: awayTeamBadge,
-            match_date: formattedDate, // Use the newly formatted date
-            kick_off_time: kickOffTime,
-            venue,
-            team: teamType,
-            background: selectedBackground,
-            caption,
-            save_background: saveCustomBackground
-        };
-
+        const payload = { action, home_team_badge: homeTeamBadge, away_team_badge: awayTeamBadge, match_date: formattedDate, kick_off_time: kickOffTime, venue, team: teamType, background: selectedBackground, caption, save_background: saveCustomBackground };
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
             const result = await response.json();
@@ -188,17 +171,78 @@ export default function UpNextAnnouncement() {
         }
     };
 
+    // NEW: Function to handle the image edit request
+    const handleEditImage = async () => {
+        if (!editPrompt) {
+            alert('Please provide instructions for the image edit.');
+            return;
+        }
+        setIsEditingImage(true);
+        setMessage('');
+        const payload = {
+            action: 'edit_image',
+            imageUrl: previewUrl,
+            prompt: editPrompt
+        };
+        try {
+            const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to edit image.');
+            const newImageUrl = result[0]?.data?.data?.content;
+            if (!newImageUrl) throw new Error("Edited image URL not found in API response.");
+            setPreviewUrl(newImageUrl);
+            setMessage('Image successfully updated!');
+        } catch (err) {
+            setMessage(`Error: ${err.message}`);
+            console.error('Image Edit Error:', err);
+        } finally {
+            setIsEditingImage(false);
+        }
+    };
+
     if (loading) return <p className={styles.notice}>Loading assets...</p>;
     if (error) return <p className={`${styles.notice} ${styles.error}`}>{error}</p>;
 
+    // MODIFIED: Complete overhaul of the preview view
     if (view === 'PREVIEW') {
         return (
             <div className={styles.previewContainer}>
-                <h2>Preview</h2>
-                {previewUrl ? <img src={previewUrl} alt="Generated post preview" className={styles.previewImage} /> : <p>Loading preview...</p>}
+                <h2>Preview & Refine</h2>
+                <div className={styles.previewLayout}>
+                    <div className={styles.previewImageWrapper}>
+                        {isEditingImage ? <div className={styles.imageOverlay}>Editing Image...</div> : null}
+                        {previewUrl ? <img src={previewUrl} alt="Generated post preview" className={styles.previewImage} /> : <p>Loading preview...</p>}
+                    </div>
+                    <div className={styles.previewControls}>
+                        <div className={styles.previewSection}>
+                            <label htmlFor="previewCaption">Post Caption</label>
+                            <textarea
+                                id="previewCaption"
+                                className={styles.previewCaptionTextarea}
+                                value={caption}
+                                onChange={(e) => setCaption(e.target.value)}
+                                rows={8}
+                            />
+                        </div>
+                        <div className={styles.previewSection}>
+                            <label htmlFor="editPrompt">Request Image Edit (Optional)</label>
+                            <textarea
+                                id="editPrompt"
+                                className={styles.editPromptTextarea}
+                                value={editPrompt}
+                                onChange={(e) => setEditPrompt(e.target.value)}
+                                placeholder="e.g., make the background darker..."
+                                rows={3}
+                            />
+                            <button onClick={handleEditImage} className={styles.editImageButton} disabled={isEditingImage || isSubmitting}>
+                                {isEditingImage ? 'Updating...' : '🎨 Edit Image'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div className={styles.previewActions}>
-                    <button onClick={handleBackToEdit} className={styles.backButton} disabled={isSubmitting}>Back to Edit</button>
-                    <button onClick={handlePostToSocial} disabled={isSubmitting} className={styles.postButton}>
+                    <button onClick={handleBackToEdit} className={styles.backButton} disabled={isSubmitting || isEditingImage}>Back to Config</button>
+                    <button onClick={handlePostToSocial} disabled={isSubmitting || isEditingImage} className={styles.postButton}>
                         {isSubmitting ? 'Posting...' : 'Post to Social Media'}
                     </button>
                 </div>
@@ -254,7 +298,6 @@ export default function UpNextAnnouncement() {
                     </div>
                 </div>
             </div>
-
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>Background</h3>
@@ -269,13 +312,11 @@ export default function UpNextAnnouncement() {
                         </button>
                     </div>
                 </div>
-
                 {backgroundSource === 'gallery' && (
                     <div className={styles.backgroundGrid}>
                         {backgrounds.map((bg) => (<div key={bg.Link} className={`${styles.backgroundItem} ${selectedBackground === bg.Link ? styles.selected : ''}`} onClick={() => handleSelectGalleryBg(bg.Link)}><img src={bg.Link} alt={bg.Name} /></div>))}
                     </div>
                 )}
-
                 {backgroundSource === 'custom' && (
                     <div className={styles.customBackgroundContainer}>
                         <ImageEditor onCropComplete={handleCropComplete} />
@@ -286,7 +327,6 @@ export default function UpNextAnnouncement() {
                     </div>
                 )}
             </div>
-            
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>Post Caption</h3>
@@ -298,7 +338,6 @@ export default function UpNextAnnouncement() {
                     </button>
                 </div>
             </div>
-
             <div className={styles.actionsContainer}>
                 <div>
                     <button type="button" onClick={handleYoloPost} disabled={isSubmitting} className={styles.yoloButton}>{isSubmitting ? 'Sending...' : 'YOLO Post'}</button>
