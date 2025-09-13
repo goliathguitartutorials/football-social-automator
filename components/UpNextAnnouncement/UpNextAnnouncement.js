@@ -228,7 +228,7 @@ export default function UpNextAnnouncement() {
                             />
                         </div>
                         <div className={styles.previewSection}>
-                            <label htmlFor="editPrompt">Request Image Edit (Optional)</label>
+                            <label htmlFor="editPrompt">Request Image Edit (Coming Soon)</label>
                             <textarea
                                 id="editPrompt"
                                 className={styles.editPromptTextarea}
