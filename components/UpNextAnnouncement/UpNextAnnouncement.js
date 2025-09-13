@@ -10,17 +10,16 @@ import { useState } from 'react';
 import styles from './UpNextAnnouncement.module.css';
 import { useAppContext } from '@/app/context/AppContext';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
-import { UploadIcon, GalleryIcon } from './UpNextAnnouncementIcons';
+// MODIFIED: Import the new icons
+import { UploadIcon, GalleryIcon, GenerateIcon, EditIcon } from './UpNextAnnouncementIcons';
 
 // Helper function to format the date as requested
 const formatDateForWebhook = (dateString) => {
     if (!dateString) return '';
-
     const date = new Date(dateString + 'T00:00:00Z');
     const dayOfWeek = date.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' });
     const dayOfMonth = date.getUTCDate();
     const month = date.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' });
-
     const getOrdinalSuffix = (day) => {
         if (day > 3 && day < 21) return 'th';
         switch (day % 10) {
@@ -55,8 +54,6 @@ export default function UpNextAnnouncement() {
     const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
     const [selectedMatchData, setSelectedMatchData] = useState(null);
     const [backgroundSource, setBackgroundSource] = useState('gallery');
-    
-    // NEW: State for the image edit feature
     const [editPrompt, setEditPrompt] = useState('');
     const [isEditingImage, setIsEditingImage] = useState(false);
 
@@ -171,7 +168,6 @@ export default function UpNextAnnouncement() {
         }
     };
 
-    // NEW: Function to handle the image edit request
     const handleEditImage = async () => {
         if (!editPrompt) {
             alert('Please provide instructions for the image edit.');
@@ -179,11 +175,7 @@ export default function UpNextAnnouncement() {
         }
         setIsEditingImage(true);
         setMessage('');
-        const payload = {
-            action: 'edit_image',
-            imageUrl: previewUrl,
-            prompt: editPrompt
-        };
+        const payload = { action: 'edit_image', imageUrl: previewUrl, prompt: editPrompt };
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
             const result = await response.json();
@@ -203,7 +195,6 @@ export default function UpNextAnnouncement() {
     if (loading) return <p className={styles.notice}>Loading assets...</p>;
     if (error) return <p className={`${styles.notice} ${styles.error}`}>{error}</p>;
 
-    // MODIFIED: Complete overhaul of the preview view
     if (view === 'PREVIEW') {
         return (
             <div className={styles.previewContainer}>
@@ -215,7 +206,14 @@ export default function UpNextAnnouncement() {
                     </div>
                     <div className={styles.previewControls}>
                         <div className={styles.previewSection}>
-                            <label htmlFor="previewCaption">Post Caption</label>
+                            {/* MODIFIED: Label and AI button now sit in a header */}
+                            <div className={styles.previewSectionHeader}>
+                                <label htmlFor="previewCaption">Post Caption</label>
+                                <button onClick={handleGenerateCaption} className={styles.aiButton} disabled={isGeneratingCaption}>
+                                    <GenerateIcon />
+                                    {isGeneratingCaption ? 'Generating...' : 'Generate with AI'}
+                                </button>
+                            </div>
                             <textarea
                                 id="previewCaption"
                                 className={styles.previewCaptionTextarea}
@@ -234,8 +232,10 @@ export default function UpNextAnnouncement() {
                                 placeholder="e.g., make the background darker..."
                                 rows={3}
                             />
+                            {/* MODIFIED: Button text changed and icon added */}
                             <button onClick={handleEditImage} className={styles.editImageButton} disabled={isEditingImage || isSubmitting}>
-                                {isEditingImage ? 'Updating...' : '🎨 Edit Image'}
+                                <EditIcon />
+                                {isEditingImage ? 'Updating...' : 'Edit with AI'}
                             </button>
                         </div>
                     </div>
@@ -333,8 +333,10 @@ export default function UpNextAnnouncement() {
                 </div>
                 <textarea className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here, or generate one with AI..." rows={5} />
                 <div className={styles.aiButtonContainer}>
+                    {/* MODIFIED: Replaced emoji with SVG icon */}
                     <button type="button" className={styles.aiButton} onClick={handleGenerateCaption} disabled={isGeneratingCaption}>
-                        {isGeneratingCaption ? 'Generating...' : '✨ Generate with AI'}
+                        <GenerateIcon />
+                        {isGeneratingCaption ? 'Generating...' : 'Generate with AI'}
                     </button>
                 </div>
             </div>
