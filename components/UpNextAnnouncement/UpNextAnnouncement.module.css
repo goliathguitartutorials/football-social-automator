@@ -177,6 +177,10 @@
 }
 
 .aiButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     padding: 0.7rem 1.2rem;
     font-size: 0.9rem;
     font-weight: bold;
@@ -274,7 +278,7 @@
 .previewImageWrapper {
     flex: 1 1 50%;
     min-width: 280px;
-    position: relative; /* For overlay */
+    position: relative;
 }
 
 .imageOverlay {
@@ -313,7 +317,15 @@
     gap: 0.75rem;
 }
 
-.previewSection label {
+/* NEW: Header for a section label and button combo */
+.previewSectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.previewSectionHeader label {
     font-weight: 500;
     color: var(--text-secondary, #a0aec0);
 }
@@ -330,11 +342,15 @@
 }
 
 .editImageButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     padding: 0.7rem 1.2rem;
     font-size: 0.9rem;
     font-weight: bold;
     color: #fff;
-    background-color: #718096; /* A neutral, secondary color */
+    background-color: #718096;
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -439,12 +455,12 @@
         max-width: 400px;
     }
 
-    /* NEW responsive styles for preview */
+    /* MODIFIED: Responsive styles for preview */
     .previewLayout {
         flex-direction: column;
     }
     
-    .previewImageWrapper {
+    .previewImageWrapper, .previewControls {
         width: 100%;
     }
     
@@ -455,5 +471,14 @@
     .previewActions {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .previewSectionHeader {
+        flex-direction: column;
+        align-items: stretch; /* Full width */
+    }
+
+    .previewSectionHeader label {
+        text-align: center; /* Center label text */
     }
 }
