@@ -39,3 +39,19 @@ export const UploadIcon = () => (
         <line x1="12" y1="3" x2="12" y2="15"></line>
     </Icon>
 );
+
+// NEW: An icon for AI generation (magic wand / sparkles)
+export const GenerateIcon = () => (
+    <Icon>
+        <path d="M12 3L14.34 7.66L19 10L14.34 12.34L12 17L9.66 12.34L5 10L9.66 7.66L12 3Z" />
+        <path d="M3 21L5.34 16.34" />
+        <path d="M18.66 5.34L21 3" />
+    </Icon>
+);
+
+// NEW: An icon for editing (paint brush)
+export const EditIcon = () => (
+    <Icon>
+        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+    </Icon>
+);
