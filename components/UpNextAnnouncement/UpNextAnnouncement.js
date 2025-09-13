@@ -55,8 +55,6 @@ export default function UpNextAnnouncement() {
     const [backgroundSource, setBackgroundSource] = useState('gallery');
     const [editPrompt, setEditPrompt] = useState('');
     const [isEditingImage, setIsEditingImage] = useState(false);
-
-    // NEW: State to store the URLs of generated previews
     const [generatedPreviews, setGeneratedPreviews] = useState([]);
 
     const handleMatchSelect = (eventId) => {
@@ -135,7 +133,6 @@ export default function UpNextAnnouncement() {
                 const imageUrl = result[0]?.data?.data?.content;
                 if (!imageUrl) throw new Error("Image URL not found in API response.");
                 setPreviewUrl(imageUrl);
-                // NEW: Add the generated image URL to our list of previews
                 setGeneratedPreviews(prev => [...new Set([imageUrl, ...prev])]);
                 setView('PREVIEW');
             } else if (action === 'yolo') {
@@ -154,8 +151,6 @@ export default function UpNextAnnouncement() {
     const handleBackToEdit = () => { setView('CONFIG'); setPreviewUrl(''); setMessage(''); };
     const handleCropComplete = (dataUrl) => { setSelectedBackground(dataUrl); };
     const handleSelectGalleryBg = (bgLink) => { setSelectedBackground(bgLink); };
-
-    // NEW: Function to select a previously generated preview
     const handleSelectPreview = (url) => {
         setPreviewUrl(url);
         setView('PREVIEW');
@@ -193,7 +188,6 @@ export default function UpNextAnnouncement() {
             const newImageUrl = result[0]?.data?.data?.content;
             if (!newImageUrl) throw new Error("Edited image URL not found in API response.");
             setPreviewUrl(newImageUrl);
-            // NEW: Add the edited image URL to our list of previews
             setGeneratedPreviews(prev => [...new Set([newImageUrl, ...prev])]);
             setMessage('Image successfully updated!');
         } catch (err) {
@@ -252,8 +246,9 @@ export default function UpNextAnnouncement() {
                 </div>
                 <div className={styles.previewActions}>
                     <button onClick={handleBackToEdit} className={styles.backButton} disabled={isSubmitting || isEditingImage}>Back to Config</button>
+                    {/* MODIFIED: Button text changed */}
                     <button onClick={handlePostToSocial} disabled={isSubmitting || isEditingImage} className={styles.postButton}>
-                        {isSubmitting ? 'Posting...' : 'Post to Social Media'}
+                        {isSubmitting ? 'Posting...' : 'Post Now'}
                     </button>
                 </div>
                 {message && <p className={styles.message}>{message}</p>}
@@ -309,7 +304,6 @@ export default function UpNextAnnouncement() {
                 </div>
             </div>
 
-            {/* NEW: Conditionally rendered section for saved previews */}
             {generatedPreviews.length > 0 && (
                 <div className={styles.section}>
                     <div className={styles.sectionHeader}>
@@ -367,12 +361,11 @@ export default function UpNextAnnouncement() {
                 </div>
             </div>
 
-            {/* MODIFIED: Button layout and order changed */}
             <div className={styles.actionsContainer}>
                 <button type="submit" disabled={isSubmitting} className={styles.actionButton}>{isSubmitting ? 'Generating...' : 'Generate Preview'}</button>
                 <div className={styles.yoloAction}>
-                    <button type="button" onClick={handleYoloPost} disabled={isSubmitting} className={styles.yoloButton}>{isSubmitting ? 'Sending...' : 'YOLO Post'}</button>
-                    <p className={styles.yoloWarning}>Output may vary - experimental feature.</p>
+                    {/* MODIFIED: Button text changed and warning text removed */}
+                    <button type="button" onClick={handleYoloPost} disabled={isSubmitting} className={styles.yoloButton}>{isSubmitting ? 'Sending...' : 'Post Now (YOLO)'}</button>
                 </div>
             </div>
             {message && <p className={styles.message}>{message}</p>}
