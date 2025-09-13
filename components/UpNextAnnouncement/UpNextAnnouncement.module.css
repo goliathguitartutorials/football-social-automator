@@ -158,6 +158,35 @@
     transform: scale(1.05);
 }
 
+/* NEW: Styles for the generated previews grid */
+.previewsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.previewItem {
+    border: 3px solid var(--border-color, #4a5568);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    aspect-ratio: 1 / 1;
+}
+
+.previewItem:hover {
+    transform: scale(1.05);
+    border-color: var(--accent-color-hover, #63b3ed);
+}
+
+.previewItem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 .captionTextarea {
     width: 100%;
     padding: 0.75rem;
@@ -195,10 +224,11 @@
     background-color: #6b7280;
 }
 
+/* MODIFIED: Styles for the main action buttons */
 .actionsContainer {
     display: flex;
     justify-content: flex-end;
-    align-items: center;
+    align-items: flex-end; /* Aligns items to the bottom */
     gap: 1.5rem;
     margin-top: 1rem;
 }
@@ -222,11 +252,11 @@
 }
 
 .yoloButton {
-    background-color: #dd6b20; /* Orange */
+    background-color: #ef4444; /* MODIFIED: Light Red */
     color: #fff;
 }
 .yoloButton:hover {
-    background-color: #c05621;
+    background-color: #dc2626; /* MODIFIED: Darker Red */
 }
 
 .actionButton:disabled, .yoloButton:disabled {
@@ -234,10 +264,18 @@
     cursor: not-allowed;
 }
 
+/* NEW: Container for YOLO button and its warning text */
+.yoloAction {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .yoloWarning {
     font-size: 0.8rem;
     color: var(--text-secondary);
     text-align: center;
+    margin-top: 0.25rem; /* Reduced margin */
 }
 
 .notice {
@@ -257,7 +295,7 @@
     margin-bottom: 1rem;
 }
 
-/* ========== PREVIEW VIEW STYLES (MODIFIED & NEW) ========== */
+/* ========== PREVIEW VIEW STYLES ========== */
 .previewContainer {
     padding: 2rem;
     background-color: var(--surface-dark, #1a1d2e);
@@ -317,7 +355,6 @@
     gap: 0.75rem;
 }
 
-/* NEW: Header for a section label and button combo */
 .previewSectionHeader {
     display: flex;
     justify-content: space-between;
@@ -437,7 +474,8 @@
         gap: 1.5rem;
     }
     
-    .actionsContainer > div {
+    .yoloAction {
+        display: block; /* Let it take full width */
         text-align: center;
     }
 
@@ -455,7 +493,6 @@
         max-width: 400px;
     }
 
-    /* MODIFIED: Responsive styles for preview */
     .previewLayout {
         flex-direction: column;
     }
@@ -465,7 +502,7 @@
     }
     
     .editImageButton {
-        align-self: stretch; /* Make button full-width */
+        align-self: stretch;
     }
 
     .previewActions {
@@ -475,10 +512,10 @@
 
     .previewSectionHeader {
         flex-direction: column;
-        align-items: stretch; /* Full width */
+        align-items: stretch;
     }
 
     .previewSectionHeader label {
-        text-align: center; /* Center label text */
+        text-align: center;
     }
 }
