@@ -10,10 +10,9 @@ import { useState, useRef, useEffect } from 'react';
 import styles from './MatchResult.module.css';
 import { useAppContext } from '@/app/context/AppContext';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
-import { UploadIcon, GalleryIcon, GenerateIcon, EditIcon } from './MatchResultIcons';
-import { AddIcon, RemoveIcon } from './MatchResultIcons'; // NEW: Icons for add/remove
+import { UploadIcon, GalleryIcon, GenerateIcon, EditIcon, AddIcon, RemoveIcon } from './MatchResultIcons';
 
-// NEW: Autocomplete sub-component for player names
+// Autocomplete sub-component for player names
 const PlayerAutocomplete = ({ value, onSelect, players }) => {
     const [searchTerm, setSearchTerm] = useState(value);
     const [isOpen, setIsOpen] = useState(false);
@@ -64,7 +63,7 @@ const PlayerAutocomplete = ({ value, onSelect, players }) => {
     );
 };
 
-// NEW: Sub-component for a single scorer input row
+// Sub-component for a single scorer input row
 const ScorerInput = ({ scorer, onUpdate, onRemove, players }) => {
     return (
         <div className={styles.scorerRow}>
@@ -101,17 +100,13 @@ const ScorerInput = ({ scorer, onUpdate, onRemove, players }) => {
 };
 
 
-// NEW: Helper function to format scorers for the webhook
-const formatScorersForWebhook = (scorers) => {
+// MODIFIED: Helper function now accepts a key prefix
+const formatScorersForWebhook = (scorers, keyPrefix) => {
     const groupedScorers = {};
 
-    // Group goals by player name
     scorers.forEach(scorer => {
         if (!scorer.name || !scorer.minute) return;
-
-        // Standardize Own Goal
         const key = scorer.name.trim().toUpperCase() === 'OG' ? 'OG' : scorer.name.trim();
-
         if (!groupedScorers[key]) {
             groupedScorers[key] = [];
         }
@@ -122,44 +117,35 @@ const formatScorersForWebhook = (scorers) => {
     });
 
     const formattedLines = Object.entries(groupedScorers).map(([name, goals]) => {
-        // Sort goals by minute
         goals.sort((a, b) => parseInt(a.minute) - parseInt(b.minute));
-        
         const goalStrings = goals.map(g => `${g.minute}'${g.isPenalty ? ' (P)' : ''}`).join(', ');
-
         if (name === 'OG') {
             return `OG ${goalStrings}`;
         }
-
         const nameParts = name.split(' ');
         const formattedName = nameParts.length > 1
             ? `${nameParts[0].charAt(0).toUpperCase()}. ${nameParts.slice(1).join(' ')}`
             : name;
-        
         return `${formattedName} ${goalStrings}`;
     });
 
-    // Create payload with up to 8 scorers, filling blanks if necessary
     const payload = {};
     for (let i = 1; i <= 8; i++) {
-        payload[`scorer_${i}`] = formattedLines[i - 1] || "";
+        // Use the dynamic key prefix
+        payload[`${keyPrefix}_${i}`] = formattedLines[i - 1] || "";
     }
     return payload;
 };
 
 export default function MatchResult() {
     const { appData, authKey, loading, error } = useAppContext();
-    const { backgrounds, badges, matches, players } = appData; // Added players
+    const { backgrounds, badges, matches, players } = appData;
 
-    // State for match result specific fields
     const [homeTeamBadge, setHomeTeamBadge] = useState('');
     const [awayTeamBadge, setAwayTeamBadge] = useState('');
     const [homeTeamScore, setHomeTeamScore] = useState('');
     const [awayTeamScore, setAwayTeamScore] = useState('');
-    // MODIFIED: scorers state is now an array of objects
     const [scorers, setScorers] = useState([{ id: 1, name: '', minute: '', isPenalty: false }]);
-
-    // Shared state from template
     const [caption, setCaption] = useState('');
     const [selectedBackground, setSelectedBackground] = useState('');
     const [saveCustomBackground, setSaveCustomBackground] = useState(true);
@@ -174,7 +160,6 @@ export default function MatchResult() {
     const [isEditingImage, setIsEditingImage] = useState(false);
     const [generatedPreviews, setGeneratedPreviews] = useState([]);
 
-    // NEW: Handlers for dynamic scorer inputs
     const handleAddScorer = () => {
         const newScorer = { id: Date.now(), name: '', minute: '', isPenalty: false };
         setScorers([...scorers, newScorer]);
@@ -186,14 +171,11 @@ export default function MatchResult() {
 
     const handleScorerUpdate = (id, field, value) => {
         const newScorers = scorers.map(scorer => {
-            if (scorer.id === id) {
-                return { ...scorer, [field]: value };
-            }
+            if (scorer.id === id) { return { ...scorer, [field]: value }; }
             return scorer;
         });
         setScorers(newScorers);
     };
-
 
     const handleMatchSelect = (eventId) => {
         setBadgeMessage('');
@@ -231,10 +213,16 @@ export default function MatchResult() {
             if (!badge) return 'Unknown Team';
             return badge.Name.replace(/.png/i, '').substring(14);
         };
+
+        // NEW: Determine scorer key prefix
+        const homeBadgeObject = badges.find(b => b.Link === homeTeamBadge);
+        const isGlannauHome = homeBadgeObject && homeBadgeObject.Name.toLowerCase().includes('glannau');
+        const scorerKeyPrefix = isGlannauHome ? 'home_team_scorer' : 'away_team_scorer';
+
         const gameInfo = {
             homeTeam: getTeamNameFromBadge(homeTeamBadge), awayTeam: getTeamNameFromBadge(awayTeamBadge),
             homeTeamScore, awayTeamScore,
-            scorers: formatScorersForWebhook(scorers) // Send formatted scorers
+            scorers: formatScorersForWebhook(scorers, scorerKeyPrefix)
         };
         const payload = { page: 'matchResult', gameInfo };
         try {
@@ -250,14 +238,19 @@ export default function MatchResult() {
         if (!authKey || !selectedBackground) { alert('Please ensure you have an Authorization Key and have selected a background.'); return; }
         setIsSubmitting(true); setMessage('');
 
-        // MODIFIED: Use the new formatting function for the payload
-        const formattedScorers = formatScorersForWebhook(scorers);
+        // NEW: Determine if Glannau is the home team based on the selected badge
+        const homeBadgeObject = badges.find(b => b.Link === homeTeamBadge);
+        const isGlannauHome = homeBadgeObject && homeBadgeObject.Name.toLowerCase().includes('glannau');
+        const scorerKeyPrefix = isGlannauHome ? 'home_team_scorer' : 'away_team_scorer';
+
+        // MODIFIED: Use the new formatting function with the correct prefix
+        const formattedScorers = formatScorersForWebhook(scorers, scorerKeyPrefix);
 
         const payload = {
             action,
             home_team_badge: homeTeamBadge, away_team_badge: awayTeamBadge,
             home_team_score: homeTeamScore, away_team_score: awayTeamScore,
-            ...formattedScorers, // Spread the scorer_1, scorer_2, ... keys into the payload
+            ...formattedScorers,
             background: selectedBackground, caption, save_background: saveCustomBackground
         };
 
@@ -276,7 +269,6 @@ export default function MatchResult() {
         } finally { setIsSubmitting(false); }
     };
 
-    // --- Other handlers (handleGeneratePreview, handlePostToSocial, etc.) remain unchanged ---
     const handleGeneratePreview = () => triggerWorkflow('result');
     const handleYoloPost = () => triggerWorkflow('yoloResult');
     const handleBackToEdit = () => { setView('CONFIG'); setPreviewUrl(''); setMessage(''); };
@@ -312,10 +304,11 @@ export default function MatchResult() {
         } catch (err) { setMessage(`Error: ${err.message}`); console.error('Image Edit Error:', err);
         } finally { setIsEditingImage(false); }
     };
-    // --- End of unchanged handlers ---
 
     if (loading) return <p className={styles.notice}>Loading assets...</p>;
     if (error) return <p className={`${styles.notice} ${styles.error}`}>{error}</p>;
+
+    // --- JSX for PREVIEW and CONFIG views remains unchanged below this line ---
 
     if (view === 'PREVIEW') {
         return (
@@ -395,10 +388,9 @@ export default function MatchResult() {
                 </div>
             </div>
             
-            {/* MODIFIED: Scorers section */}
             <div className={styles.section}>
                  <div className={styles.sectionHeader}>
-                    <h3 className={styles.sectionTitle}>Goal Scorers</h3>
+                    <h3 className={styles.sectionTitle}>Goal Scorers (Y Glannau only)</h3>
                 </div>
                 <div className={styles.scorersContainer}>
                     {scorers.map((scorer) => (
@@ -416,8 +408,6 @@ export default function MatchResult() {
                 </button>
             </div>
 
-
-            {/* --- Background and Caption sections remain unchanged --- */}
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>Background</h3>
@@ -455,8 +445,6 @@ export default function MatchResult() {
                     </button>
                 </div>
             </div>
-            {/* --- End of unchanged sections --- */}
-
 
             <div className={styles.actionsContainer}>
                 <button type="submit" disabled={isSubmitting} className={styles.actionButton}>{isSubmitting ? 'Generating...' : 'Generate Preview'}</button>
