@@ -12,6 +12,34 @@ import { useAppContext } from '@/app/context/AppContext';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
 import { UploadIcon, GalleryIcon } from './UpNextAnnouncementIcons';
 
+// NEW: Helper function to format the date as requested
+const formatDateForWebhook = (dateString) => {
+    if (!dateString) return ''; // Return empty if no date is provided
+
+    // Create a date object, ensuring it's treated as UTC to avoid timezone issues
+    const date = new Date(dateString + 'T00:00:00Z');
+
+    const dayOfWeek = date.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' });
+    const dayOfMonth = date.getUTCDate();
+    const month = date.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' });
+
+    // Function to get the correct ordinal suffix (st, nd, rd, th)
+    const getOrdinalSuffix = (day) => {
+        if (day > 3 && day < 21) return 'th';
+        switch (day % 10) {
+            case 1: return "st";
+            case 2: return "nd";
+            case 3: return "rd";
+            default: return "th";
+        }
+    };
+
+    const suffix = getOrdinalSuffix(dayOfMonth);
+
+    return `${dayOfWeek} ${dayOfMonth}${suffix} ${month}`;
+};
+
+
 export default function UpNextAnnouncement() {
     const { appData, authKey, loading, error } = useAppContext();
     const { backgrounds, badges, matches } = appData;
@@ -100,7 +128,23 @@ export default function UpNextAnnouncement() {
         if (!authKey || !selectedBackground) { alert('Please ensure you have an Authorization Key and have selected a background.'); return; }
         setIsSubmitting(true);
         setMessage('');
-        const payload = { action, home_team_badge: homeTeamBadge, away_team_badge: awayTeamBadge, match_date: matchDate, kick_off_time: kickOffTime, venue, team: teamType, background: selectedBackground, caption, save_background: saveCustomBackground };
+
+        // MODIFIED: Use the helper function to format the date before sending
+        const formattedDate = formatDateForWebhook(matchDate);
+
+        const payload = {
+            action,
+            home_team_badge: homeTeamBadge,
+            away_team_badge: awayTeamBadge,
+            match_date: formattedDate, // Use the newly formatted date
+            kick_off_time: kickOffTime,
+            venue,
+            team: teamType,
+            background: selectedBackground,
+            caption,
+            save_background: saveCustomBackground
+        };
+
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
             const result = await response.json();
