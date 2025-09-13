@@ -100,7 +100,7 @@ const ScorerInput = ({ scorer, onUpdate, onRemove, players }) => {
 };
 
 
-// MODIFIED: Helper function now determines home/away and returns all 16 keys.
+// MODIFIED: Fallback value for unused scorers is now a single space " ".
 const formatScorersForWebhook = (scorers, isGlannauHome) => {
     const groupedScorers = {};
 
@@ -134,8 +134,9 @@ const formatScorersForWebhook = (scorers, isGlannauHome) => {
     const awayScorers = isGlannauHome ? [] : glannauScorerLines;
 
     for (let i = 1; i <= 8; i++) {
-        payload[`home_team_scorer_${i}`] = homeScorers[i - 1] || "";
-        payload[`away_team_scorer_${i}`] = awayScorers[i - 1] || "";
+        // Changed from || "" to || " " to ensure placeholder replacement
+        payload[`home_team_scorer_${i}`] = homeScorers[i - 1] || " ";
+        payload[`away_team_scorer_${i}`] = awayScorers[i - 1] || " ";
     }
 
     return payload;
@@ -224,7 +225,7 @@ export default function MatchResult() {
         const gameInfo = {
             homeTeam: getTeamNameFromBadge(homeTeamBadge), awayTeam: getTeamNameFromBadge(awayTeamBadge),
             homeTeamScore, awayTeamScore,
-            scorers: formatScorersForWebhook(scorers, isGlannauHome) // MODIFIED: Pass boolean flag
+            scorers: formatScorersForWebhook(scorers, isGlannauHome)
         };
         const payload = { page: 'matchResult', gameInfo };
         try {
@@ -243,7 +244,6 @@ export default function MatchResult() {
         const homeBadgeObject = badges.find(b => b.Link === homeTeamBadge);
         const isGlannauHome = homeBadgeObject && homeBadgeObject.Name.toLowerCase().includes('glannau');
         
-        // MODIFIED: Pass boolean flag instead of a prefix
         const formattedScorers = formatScorersForWebhook(scorers, isGlannauHome);
 
         const payload = {
