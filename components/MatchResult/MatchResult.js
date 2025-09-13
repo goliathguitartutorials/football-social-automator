@@ -6,22 +6,158 @@
  * ==========================================================
  */
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import styles from './MatchResult.module.css';
 import { useAppContext } from '@/app/context/AppContext';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
 import { UploadIcon, GalleryIcon, GenerateIcon, EditIcon } from './MatchResultIcons';
+import { AddIcon, RemoveIcon } from './MatchResultIcons'; // NEW: Icons for add/remove
+
+// NEW: Autocomplete sub-component for player names
+const PlayerAutocomplete = ({ value, onSelect, players }) => {
+    const [searchTerm, setSearchTerm] = useState(value);
+    const [isOpen, setIsOpen] = useState(false);
+    const wrapperRef = useRef(null);
+
+    const filteredPlayers = searchTerm
+        ? players.filter(p => p.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
+        : players;
+
+    useEffect(() => { setSearchTerm(value); }, [value]);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [wrapperRef]);
+
+    const handleSelect = (playerName) => {
+        setSearchTerm(playerName);
+        onSelect(playerName);
+        setIsOpen(false);
+    };
+
+    return (
+        <div className={styles.autocompleteWrapper} ref={wrapperRef}>
+            <input
+                type="text"
+                className={styles.autocompleteInput}
+                placeholder="Player Name or 'OG'"
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); onSelect(e.target.value); setIsOpen(true); }}
+                onFocus={() => setIsOpen(true)}
+            />
+            {isOpen && filteredPlayers.length > 0 && (
+                <ul className={styles.autocompleteList}>
+                    {filteredPlayers.map(player => (
+                        <li key={player.row_number} onClick={() => handleSelect(player.fullName)}>
+                            {player.fullName}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+};
+
+// NEW: Sub-component for a single scorer input row
+const ScorerInput = ({ scorer, onUpdate, onRemove, players }) => {
+    return (
+        <div className={styles.scorerRow}>
+            <div className={styles.scorerPlayer}>
+                <PlayerAutocomplete
+                    value={scorer.name}
+                    onSelect={(name) => onUpdate(scorer.id, 'name', name)}
+                    players={players}
+                />
+            </div>
+            <div className={styles.scorerMinute}>
+                <input
+                    type="number"
+                    placeholder="Min"
+                    value={scorer.minute}
+                    onChange={(e) => onUpdate(scorer.id, 'minute', e.target.value)}
+                    className={styles.minuteInput}
+                />
+            </div>
+            <div className={styles.scorerPenalty}>
+                <input
+                    type="checkbox"
+                    id={`penalty-${scorer.id}`}
+                    checked={scorer.isPenalty}
+                    onChange={(e) => onUpdate(scorer.id, 'isPenalty', e.target.checked)}
+                />
+                <label htmlFor={`penalty-${scorer.id}`}>P</label>
+            </div>
+            <button type="button" onClick={() => onRemove(scorer.id)} className={styles.removeScorerBtn}>
+                <RemoveIcon />
+            </button>
+        </div>
+    );
+};
+
+
+// NEW: Helper function to format scorers for the webhook
+const formatScorersForWebhook = (scorers) => {
+    const groupedScorers = {};
+
+    // Group goals by player name
+    scorers.forEach(scorer => {
+        if (!scorer.name || !scorer.minute) return;
+
+        // Standardize Own Goal
+        const key = scorer.name.trim().toUpperCase() === 'OG' ? 'OG' : scorer.name.trim();
+
+        if (!groupedScorers[key]) {
+            groupedScorers[key] = [];
+        }
+        groupedScorers[key].push({
+            minute: scorer.minute,
+            isPenalty: scorer.isPenalty
+        });
+    });
+
+    const formattedLines = Object.entries(groupedScorers).map(([name, goals]) => {
+        // Sort goals by minute
+        goals.sort((a, b) => parseInt(a.minute) - parseInt(b.minute));
+        
+        const goalStrings = goals.map(g => `${g.minute}'${g.isPenalty ? ' (P)' : ''}`).join(', ');
+
+        if (name === 'OG') {
+            return `OG ${goalStrings}`;
+        }
+
+        const nameParts = name.split(' ');
+        const formattedName = nameParts.length > 1
+            ? `${nameParts[0].charAt(0).toUpperCase()}. ${nameParts.slice(1).join(' ')}`
+            : name;
+        
+        return `${formattedName} ${goalStrings}`;
+    });
+
+    // Create payload with up to 8 scorers, filling blanks if necessary
+    const payload = {};
+    for (let i = 1; i <= 8; i++) {
+        payload[`scorer_${i}`] = formattedLines[i - 1] || "";
+    }
+    return payload;
+};
 
 export default function MatchResult() {
     const { appData, authKey, loading, error } = useAppContext();
-    const { backgrounds, badges, matches } = appData;
+    const { backgrounds, badges, matches, players } = appData; // Added players
 
     // State for match result specific fields
     const [homeTeamBadge, setHomeTeamBadge] = useState('');
     const [awayTeamBadge, setAwayTeamBadge] = useState('');
     const [homeTeamScore, setHomeTeamScore] = useState('');
     const [awayTeamScore, setAwayTeamScore] = useState('');
-    const [scorers, setScorers] = useState('');
+    // MODIFIED: scorers state is now an array of objects
+    const [scorers, setScorers] = useState([{ id: 1, name: '', minute: '', isPenalty: false }]);
 
     // Shared state from template
     const [caption, setCaption] = useState('');
@@ -38,122 +174,109 @@ export default function MatchResult() {
     const [isEditingImage, setIsEditingImage] = useState(false);
     const [generatedPreviews, setGeneratedPreviews] = useState([]);
 
+    // NEW: Handlers for dynamic scorer inputs
+    const handleAddScorer = () => {
+        const newScorer = { id: Date.now(), name: '', minute: '', isPenalty: false };
+        setScorers([...scorers, newScorer]);
+    };
+
+    const handleRemoveScorer = (id) => {
+        setScorers(scorers.filter(s => s.id !== id));
+    };
+
+    const handleScorerUpdate = (id, field, value) => {
+        const newScorers = scorers.map(scorer => {
+            if (scorer.id === id) {
+                return { ...scorer, [field]: value };
+            }
+            return scorer;
+        });
+        setScorers(newScorers);
+    };
+
+
     const handleMatchSelect = (eventId) => {
         setBadgeMessage('');
         if (!eventId) {
-            setHomeTeamBadge('');
-            setAwayTeamBadge('');
-            setHomeTeamScore('');
-            setAwayTeamScore('');
-            setScorers('');
+            setHomeTeamBadge(''); setAwayTeamBadge(''); setHomeTeamScore(''); setAwayTeamScore('');
+            setScorers([{ id: 1, name: '', minute: '', isPenalty: false }]);
             return;
         }
         const selectedMatch = matches.find(m => m.eventId === eventId);
         if (!selectedMatch) return;
-
-        // Logic to find and set team badges
         const [homeTeamName, awayTeamName] = selectedMatch.title.split(' vs ');
         const glannauBadge = badges.find(b => b.Name.toLowerCase().includes('glannau'))?.Link || '';
-        let foundHomeBadge = '';
-        let foundAwayBadge = '';
-
+        let foundHomeBadge = ''; let foundAwayBadge = '';
         if (homeTeamName.toLowerCase().includes('glannau')) { foundHomeBadge = glannauBadge; }
         if (awayTeamName.toLowerCase().includes('glannau')) { foundAwayBadge = glannauBadge; }
-
         const oppositionName = homeTeamName.toLowerCase().includes('glannau') ? awayTeamName : homeTeamName;
         const normalizedOppositionName = oppositionName.toLowerCase().replace(/ fc| afc| town| city| dev| development| u19s| pheonix/g, '').trim();
-
         const oppositionBadge = badges.find(badge => {
             if (badge.Name.toLowerCase().includes('glannau')) return false;
             const normalizedBadgeName = badge.Name.toLowerCase().replace('.png', '').split('-').pop();
             return normalizedOppositionName.includes(normalizedBadgeName);
         })?.Link || '';
-
         if (oppositionBadge) {
             if (homeTeamName.toLowerCase().includes('glannau')) { foundAwayBadge = oppositionBadge; } else { foundHomeBadge = oppositionBadge; }
         } else if (!homeTeamName.toLowerCase().includes('glannau') && !awayTeamName.toLowerCase().includes('glannau')) {
             setBadgeMessage("Could not automatically match badges. Please select manually.");
-        } else {
-            setBadgeMessage("Opposition badge not matched. Please select manually.");
-        }
-        setHomeTeamBadge(foundHomeBadge);
-        setAwayTeamBadge(foundAwayBadge);
+        } else { setBadgeMessage("Opposition badge not matched. Please select manually."); }
+        setHomeTeamBadge(foundHomeBadge); setAwayTeamBadge(foundAwayBadge);
     };
 
     const handleGenerateCaption = async () => {
-        setIsGeneratingCaption(true);
-        setCaption('');
-
+        setIsGeneratingCaption(true); setCaption('');
         const getTeamNameFromBadge = (badgeUrl) => {
             const badge = badges.find(b => b.Link === badgeUrl);
             if (!badge) return 'Unknown Team';
             return badge.Name.replace(/.png/i, '').substring(14);
         };
-        
         const gameInfo = {
-            homeTeam: getTeamNameFromBadge(homeTeamBadge),
-            awayTeam: getTeamNameFromBadge(awayTeamBadge),
-            homeTeamScore,
-            awayTeamScore,
-            scorers
+            homeTeam: getTeamNameFromBadge(homeTeamBadge), awayTeam: getTeamNameFromBadge(awayTeamBadge),
+            homeTeamScore, awayTeamScore,
+            scorers: formatScorersForWebhook(scorers) // Send formatted scorers
         };
-        
         const payload = { page: 'matchResult', gameInfo };
-
         try {
             const response = await fetch('/api/generate-caption', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
             if (!response.ok) { throw new Error('Failed to generate caption.'); }
             const result = await response.json();
             setCaption(result.caption || 'Sorry, could not generate a caption.');
-        } catch (err) {
-            setCaption(`Error: ${err.message}`);
-        } finally {
-            setIsGeneratingCaption(false);
-        }
+        } catch (err) { setCaption(`Error: ${err.message}`);
+        } finally { setIsGeneratingCaption(false); }
     };
 
     const triggerWorkflow = async (action) => {
-        if (!authKey || !selectedBackground) {
-            alert('Please ensure you have an Authorization Key and have selected a background.');
-            return;
-        }
-        setIsSubmitting(true);
-        setMessage('');
+        if (!authKey || !selectedBackground) { alert('Please ensure you have an Authorization Key and have selected a background.'); return; }
+        setIsSubmitting(true); setMessage('');
+
+        // MODIFIED: Use the new formatting function for the payload
+        const formattedScorers = formatScorersForWebhook(scorers);
 
         const payload = {
             action,
-            home_team_badge: homeTeamBadge,
-            away_team_badge: awayTeamBadge,
-            home_team_score: homeTeamScore,
-            away_team_score: awayTeamScore,
-            scorers,
-            background: selectedBackground,
-            caption,
-            save_background: saveCustomBackground
+            home_team_badge: homeTeamBadge, away_team_badge: awayTeamBadge,
+            home_team_score: homeTeamScore, away_team_score: awayTeamScore,
+            ...formattedScorers, // Spread the scorer_1, scorer_2, ... keys into the payload
+            background: selectedBackground, caption, save_background: saveCustomBackground
         };
 
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Failed to trigger workflow.');
-
             if (action === 'result') {
                 const imageUrl = result[0]?.data?.data?.content;
                 if (!imageUrl) throw new Error("Image URL not found in API response.");
                 setPreviewUrl(imageUrl);
                 setGeneratedPreviews(prev => [...new Set([imageUrl, ...prev])]);
                 setView('PREVIEW');
-            } else if (action === 'yoloResult') {
-                setMessage('YOLO post successfully generated and sent!');
-            }
-        } catch (err) {
-            setMessage(`Error: ${err.message}`);
-            console.error('Workflow Trigger Error:', err);
-        } finally {
-            setIsSubmitting(false);
-        }
+            } else if (action === 'yoloResult') { setMessage('YOLO post successfully generated and sent!'); }
+        } catch (err) { setMessage(`Error: ${err.message}`); console.error('Workflow Trigger Error:', err);
+        } finally { setIsSubmitting(false); }
     };
 
+    // --- Other handlers (handleGeneratePreview, handlePostToSocial, etc.) remain unchanged ---
     const handleGeneratePreview = () => triggerWorkflow('result');
     const handleYoloPost = () => triggerWorkflow('yoloResult');
     const handleBackToEdit = () => { setView('CONFIG'); setPreviewUrl(''); setMessage(''); };
@@ -162,29 +285,20 @@ export default function MatchResult() {
     const handleSelectPreview = (url) => { setPreviewUrl(url); setView('PREVIEW'); };
 
     const handlePostToSocial = async () => {
-        setIsSubmitting(true);
-        setMessage('');
+        setIsSubmitting(true); setMessage('');
         const payload = { action: 'post_image', imageUrl: previewUrl, caption: caption };
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Failed to post to social media.');
             setMessage('Successfully posted to social media!');
-        } catch (err) {
-            setMessage(`Error: ${err.message}`);
-            console.error('Post to Social Error:', err);
-        } finally {
-            setIsSubmitting(false);
-        }
+        } catch (err) { setMessage(`Error: ${err.message}`); console.error('Post to Social Error:', err);
+        } finally { setIsSubmitting(false); }
     };
     
     const handleEditImage = async () => {
-        if (!editPrompt) {
-            alert('Please provide instructions for the image edit.');
-            return;
-        }
-        setIsEditingImage(true);
-        setMessage('');
+        if (!editPrompt) { alert('Please provide instructions for the image edit.'); return; }
+        setIsEditingImage(true); setMessage('');
         const payload = { action: 'edit_image', imageUrl: previewUrl, prompt: editPrompt };
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
@@ -195,20 +309,17 @@ export default function MatchResult() {
             setPreviewUrl(newImageUrl);
             setGeneratedPreviews(prev => [...new Set([newImageUrl, ...prev])]);
             setMessage('Image successfully updated!');
-        } catch (err) {
-            setMessage(`Error: ${err.message}`);
-            console.error('Image Edit Error:', err);
-        } finally {
-            setIsEditingImage(false);
-        }
+        } catch (err) { setMessage(`Error: ${err.message}`); console.error('Image Edit Error:', err);
+        } finally { setIsEditingImage(false); }
     };
+    // --- End of unchanged handlers ---
 
     if (loading) return <p className={styles.notice}>Loading assets...</p>;
     if (error) return <p className={`${styles.notice} ${styles.error}`}>{error}</p>;
 
     if (view === 'PREVIEW') {
         return (
-            <div className={styles.previewContainer}>
+             <div className={styles.previewContainer}>
                 <h2>Preview & Refine</h2>
                 <div className={styles.previewLayout}>
                     <div className={styles.previewImageWrapper}>
@@ -281,13 +392,32 @@ export default function MatchResult() {
                         <label htmlFor="awayTeamScore">Away Team Score</label>
                         <input type="number" id="awayTeamScore" placeholder="e.g., 1" value={awayTeamScore} onChange={(e) => setAwayTeamScore(e.target.value)} required />
                     </div>
-                     <div className={styles.formGroupFull}>
-                        <label htmlFor="scorers">Scorers</label>
-                        <textarea id="scorers" className={styles.scorersTextarea} placeholder="e.g., John Smith (23', 67'), Jane Doe (89')" value={scorers} onChange={(e) => setScorers(e.target.value)} rows={4} />
-                    </div>
                 </div>
             </div>
+            
+            {/* MODIFIED: Scorers section */}
+            <div className={styles.section}>
+                 <div className={styles.sectionHeader}>
+                    <h3 className={styles.sectionTitle}>Goal Scorers</h3>
+                </div>
+                <div className={styles.scorersContainer}>
+                    {scorers.map((scorer) => (
+                        <ScorerInput
+                            key={scorer.id}
+                            scorer={scorer}
+                            onUpdate={handleScorerUpdate}
+                            onRemove={handleRemoveScorer}
+                            players={players || []}
+                        />
+                    ))}
+                </div>
+                <button type="button" onClick={handleAddScorer} className={styles.addScorerBtn}>
+                    <AddIcon /> Add Scorer
+                </button>
+            </div>
 
+
+            {/* --- Background and Caption sections remain unchanged --- */}
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h3 className={styles.sectionTitle}>Background</h3>
@@ -315,7 +445,6 @@ export default function MatchResult() {
                     </div>
                 )}
             </div>
-            
             <div className={styles.section}>
                 <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Post Caption</h3></div>
                 <textarea className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here, or generate one with AI..." rows={5} />
@@ -326,6 +455,8 @@ export default function MatchResult() {
                     </button>
                 </div>
             </div>
+            {/* --- End of unchanged sections --- */}
+
 
             <div className={styles.actionsContainer}>
                 <button type="submit" disabled={isSubmitting} className={styles.actionButton}>{isSubmitting ? 'Generating...' : 'Generate Preview'}</button>
