@@ -1,15 +1,516 @@
-.container {
-  width: 100%;
-  background-color: var(--surface-dark);
-  padding: 4rem 2rem;
-  border-radius: 0 0 0.5rem 0.5rem;
-  text-align: center;
+/*
+ * ==========================================================
+ * COMPONENT: Match Result
+ * PAGE: /
+ * FILE: /components/MatchResult/MatchResult.module.css
+ * ==========================================================
+ */
+
+.pageContainer {
+    padding: 2rem;
+    background-color: var(--surface-dark, #1a1d2e);
+    border-radius: 8px;
+    color: var(--text-primary, #fff);
 }
-.title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
+
+.section {
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border-color, #4a5568);
+    padding-bottom: 2rem;
 }
-.placeholder {
-  color: var(--text-secondary);
+.section:last-of-type {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+    font-size: 1.5rem;
+    color: var(--text-primary, #fff);
+    margin: 0;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.formGroup, .formGroupFull {
+    display: flex;
+    flex-direction: column;
+}
+
+.formGroupFull {
+    grid-column: 1 / -1;
+}
+
+.formGroup label, .formGroupFull label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-secondary, #a0aec0);
+}
+
+.formGroup input, .formGroup select, .formGroupFull select, .formGroupFull textarea {
+    padding: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color, #4a5568);
+    background-color: #374151;
+    color: var(--text-primary, #fff);
+    font-size: 1rem;
+}
+/* NEW: Style for scorers textarea */
+.scorersTextarea {
+    resize: vertical;
+    font-family: inherit;
+}
+
+.backgroundTabs {
+    display: flex;
+    gap: 0.25rem;
+    background-color: #2d3748;
+    padding: 0.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #4a5568);
+}
+
+.tabButton {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    background-color: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-secondary, #a0aec0);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.tabButton:hover {
+    background-color: var(--border-color, #4a5568);
+    color: var(--text-primary, #fff);
+}
+
+.tabButton.active {
+    background-color: var(--accent-color, #3182ce);
+    color: var(--text-primary, #fff);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.tabIcon {
+    display: flex;
+    align-items: center;
+}
+
+.tabLabel {
+    line-height: 1;
+}
+
+.customBackgroundContainer {
+    margin-top: 1.5rem;
+}
+
+.checkboxContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.backgroundGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.backgroundItem {
+    border: 3px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    aspect-ratio: 1 / 1;
+}
+
+.backgroundItem:hover {
+    transform: scale(1.05);
+    border-color: var(--accent-color-hover, #63b3ed);
+}
+
+.backgroundItem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.backgroundItem.selected {
+    border-color: var(--accent-color, #48bb78);
+    box-shadow: 0 0 15px var(--accent-color-hover, rgba(72, 187, 120, 0.6));
+    transform: scale(1.05);
+}
+
+.previewsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.previewItem {
+    border: 3px solid var(--border-color, #4a5568);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    aspect-ratio: 1 / 1;
+}
+
+.previewItem:hover {
+    transform: scale(1.05);
+    border-color: var(--accent-color-hover, #63b3ed);
+}
+
+.previewItem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.captionTextarea {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background-color: #374151;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 120px;
+}
+
+.aiButtonContainer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.aiButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: #4a5568;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.aiButton:hover {
+    background-color: #6b7280;
+}
+
+.actionsContainer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.actionButton, .yoloButton {
+    padding: 0.85rem 2.2rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.actionButton {
+    background-color: var(--accent-color, #3182ce);
+    color: #fff;
+}
+.actionButton:hover {
+    background-color: var(--accent-color-hover, #2b6cb0);
+}
+
+.yoloButton {
+    background-color: #ef4444;
+    color: #fff;
+}
+.yoloButton:hover {
+    background-color: #dc2626;
+}
+
+.actionButton:disabled, .yoloButton:disabled {
+    background-color: #4b5563;
+    cursor: not-allowed;
+}
+
+.yoloAction {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.notice {
+    padding: 2rem;
+    text-align: center;
+}
+.error {
+    color: #fca5a5;
+}
+
+.badgeNotice {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #f6ad55;
+    font-style: italic;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* ========== PREVIEW VIEW STYLES ========== */
+.previewContainer {
+    padding: 2rem;
+    background-color: var(--surface-dark, #1a1d2e);
+    border-radius: 8px;
+}
+
+.previewContainer h2 {
+    text-align: center;
+}
+
+.previewLayout {
+    display: flex;
+    gap: 2rem;
+    margin: 2rem 0;
+    align-items: flex-start;
+}
+
+.previewImageWrapper {
+    flex: 1 1 50%;
+    min-width: 280px;
+    position: relative;
+}
+
+.imageOverlay {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 0.5rem;
+    z-index: 10;
+}
+
+.previewImage {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color, #4a5568);
+}
+
+.previewControls {
+    flex: 1 1 50%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    text-align: left;
+}
+
+.previewSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.previewSectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.previewSectionHeader label {
+    font-weight: 500;
+    color: var(--text-secondary, #a0aec0);
+}
+
+.previewCaptionTextarea, .editPromptTextarea {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background-color: #374151;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 1rem;
+    resize: vertical;
+}
+
+.editImageButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: #718096;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    align-self: flex-end;
+}
+
+.editImageButton:hover {
+    background-color: #4a5568;
+}
+
+.editImageButton:disabled {
+    background-color: #4b5563;
+    cursor: not-allowed;
+}
+
+.previewActions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.backButton, .postButton {
+    font-weight: bold;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.3s, opacity 0.3s;
+}
+.backButton:disabled, .postButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.backButton {
+    background-color: #4b5563;
+    color: var(--text-primary, #fff);
+}
+.backButton:hover:not(:disabled) {
+    background-color: #6b7280;
+}
+
+.postButton {
+    background-color: var(--accent-color, #3182ce);
+    color: white;
+}
+.postButton:hover:not(:disabled) {
+    background-color: var(--accent-color-hover, #2b6cb0);
+}
+
+.message {
+    margin-top: 1.5rem;
+    font-weight: 500;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+/* ========== MOBILE RESPONSIVE STYLES ========== */
+@media (max-width: 768px) {
+    .pageContainer, .previewContainer {
+        padding: 1rem;
+    }
+
+    .sectionHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .sectionHeader:has(> .sectionTitle) {
+        align-items: center;
+        width: 100%;
+    }
+
+    .backgroundTabs {
+        width: 100%;
+    }
+
+    .actionsContainer {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 1.5rem;
+    }
+    
+    .yoloAction {
+        display: block;
+        text-align: center;
+    }
+
+    .actionButton, .yoloButton {
+        width: 100%;
+        padding: 1rem;
+    }
+    
+    .aiButtonContainer {
+        justify-content: center;
+    }
+    
+    .aiButton {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .previewLayout {
+        flex-direction: column;
+    }
+    
+    .previewImageWrapper, .previewControls {
+        width: 100%;
+    }
+    
+    .editImageButton {
+        align-self: stretch;
+    }
+
+    .previewActions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .previewSectionHeader {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .previewSectionHeader label {
+        text-align: center;
+    }
 }
