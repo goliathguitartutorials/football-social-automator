@@ -1,9 +1,9 @@
 /*
- * =================================================================
+ * ==========================================================
  * COMPONENT: Home Page
  * PAGE: /
  * FILE: /app/page.js
- * =================================================================
+ * ==========================================================
  */
 'use client';
 
@@ -12,7 +12,8 @@ import styles from './page.module.css';
 import DesktopNav from '@/components/Navigation/DesktopNav';
 import MobileNav from '@/components/Navigation/MobileNav';
 import CreatePage from '@/components/CreatePage/CreatePage';
-import SettingsPage from '@/components/SettingsPage/SettingsPage'; // MODIFIED: Import the new component
+import SettingsPage from '@/components/SettingsPage/SettingsPage';
+import AssetsPage from '@/components/AssetsPage/AssetsPage'; // NEW: Import the AssetsPage component
 
 // --- Placeholder Pages ---
 const SchedulePage = () => (
@@ -38,8 +39,10 @@ const MainContent = ({ view }) => {
       return <SchedulePage />;
     case 'live':
       return <LiveMatchPage />;
+    case 'assets': // NEW: Add a case for the 'assets' view
+      return <AssetsPage />;
     case 'settings':
-      return <SettingsPage />; // MODIFIED: Render the new SettingsPage component
+      return <SettingsPage />;
     default:
       return <CreatePage />;
   }
