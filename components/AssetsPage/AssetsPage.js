@@ -19,7 +19,8 @@ const dataURLtoBlob = (dataurl) => {
     const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1];
     const bstr = atob(arr[1]);
     let n = bstr.length;
-    const u8arr = new UintArray(n);
+    // --- THIS LINE IS NOW CORRECTED ---
+    const u8arr = new Uint8Array(n); 
     while(n--){
         u8arr[n] = bstr.charCodeAt(n);
     }
@@ -32,7 +33,6 @@ const assetTabs = [
 ];
 
 export default function AssetsPage() {
-    // --- MODIFIED: Using the correct 'refreshAppData' function from the context ---
     const { appData, refreshAppData, authKey } = useAppContext();
     const allAssets = [...(appData.backgrounds || []), ...(appData.badges || [])];
 
@@ -76,7 +76,6 @@ export default function AssetsPage() {
     }, [currentPath, directoryTree]);
 
     const handleRefresh = async () => {
-        // --- MODIFIED: Calling the correct function ---
         await refreshAppData();
     };
 
@@ -104,7 +103,6 @@ export default function AssetsPage() {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Failed to manage asset.');
             
-            // --- MODIFIED: Calling the correct function ---
             await refreshAppData();
             handleCloseModal();
             return { success: true };
@@ -143,7 +141,6 @@ export default function AssetsPage() {
             if (!response.ok) throw new Error(result.error || 'Failed to upload asset.');
             
             setMessage('Asset uploaded successfully! Refreshing data...');
-            // --- MODIFIED: Calling the correct function ---
             await refreshAppData();
             setMessage('Asset uploaded and data refreshed!');
 
