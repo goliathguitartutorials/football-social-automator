@@ -31,7 +31,6 @@ export function AppProvider({ children }) {
         sessionStorage.removeItem('appData');
 
         try {
-            // CORRECTED: Reverted to fetching from ONLY the single, correct endpoint.
             const response = await fetch('/api/get-app-data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -42,16 +41,20 @@ export function AppProvider({ children }) {
                 throw new Error("Authorization failed. Please check your key.");
             }
             if (!response.ok) {
-                // This is the error message you were seeing.
                 throw new Error("Failed to fetch app data from the server.");
             }
 
             const rawData = await response.json();
             
-            // The processData function will now correctly handle the combined array.
-            processData(rawData);
+            // --- THIS IS THE FIX ---
+            // This ensures we are working with an array, whether the API returns a
+            // direct array `[]` or a nested object like `{ "data": [...] }`.
+            const dataArray = Array.isArray(rawData) ? rawData : rawData.data || [];
             
-            sessionStorage.setItem('appData', JSON.stringify(rawData));
+            // Pass the guaranteed-to-be-an-array data to the processing function.
+            processData(dataArray);
+            
+            sessionStorage.setItem('appData', JSON.stringify(dataArray));
             setAuthStatus('success');
             
         } catch (err) {
@@ -63,11 +66,10 @@ export function AppProvider({ children }) {
         }
     };
 
-    // CORRECTED: This function now correctly parses players, assets, AND matches from a single array.
-    const processData = (rawData) => {
+    const processData = (dataArray) => {
         // Filter by the 'class' property for players and assets
-        const players = rawData.filter((item) => item.class === 'player');
-        const assets = rawData.filter((item) => item.class === 'asset');
+        const players = dataArray.filter((item) => item.class === 'player');
+        const assets = dataArray.filter((item) => item.class === 'asset');
         
         // Further filter assets by their 'Type' property
         const backgrounds = assets.filter((asset) => asset.Type === 'background');
@@ -75,7 +77,7 @@ export function AppProvider({ children }) {
         badges.sort((a, b) => a.Name.localeCompare(b.Name));
 
         // Filter by the 'type' property for matches
-        const matches = rawData.filter((item) => item.type === 'Match');
+        const matches = dataArray.filter((item) => item.type === 'Match');
         matches.sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
 
         setAppData({ players, backgrounds, badges, matches });
@@ -88,6 +90,16 @@ export function AppProvider({ children }) {
             setError(null);
         }
     };
+    
+    // --- MODIFIED: The function to refresh data is authorizeAndFetchData ---
+    // We pass the authKey which is already stored in our state.
+    const refreshAppData = () => {
+        if (authKey) {
+            authorizeAndFetchData(authKey);
+        } else {
+            setError("Cannot refresh data: No authorization key is present.");
+        }
+    };
 
     const value = {
         authKey,
@@ -97,6 +109,7 @@ export function AppProvider({ children }) {
         error,
         authStatus,
         authorizeAndFetchData,
+        refreshAppData, // --- NEW: Exposing a dedicated refresh function
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
