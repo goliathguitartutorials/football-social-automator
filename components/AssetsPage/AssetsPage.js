@@ -99,6 +99,7 @@ export default function AssetsPage() {
                 body: JSON.stringify({ action, ...payload }),
             });
 
+            // This line requires the response to be valid JSON
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Failed to manage asset.');
             
@@ -251,7 +252,8 @@ export default function AssetsPage() {
                                 <div className={styles.formGrid}>
                                     <div className={styles.formGroup}>
                                         <label htmlFor="assetName">Asset Name</label>
-                                        <input type="text" id="assetName" value={assetName} onChange={(e) => setAssetName(e.content.target.value)} placeholder="e.g., Player Goal Celebration" required />
+                                        {/* --- THIS LINE IS NOW CORRECTED --- */}
+                                        <input type="text" id="assetName" value={assetName} onChange={(e) => setAssetName(e.target.value)} placeholder="e.g., Player Goal Celebration" required />
                                     </div>
                                     <div className={styles.formGroup}>
                                         <label htmlFor="assetType">Asset Type</label>
