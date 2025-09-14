@@ -1,9 +1,9 @@
 /*
- * =================================================================
+ * ==========================================================
  * COMPONENT: Navigation Icons
  * PAGE: (Shared)
  * FILE: /components/Navigation/Icons.js
- * =================================================================
+ * ==========================================================
  */
 
 // A simple wrapper to handle sizing and styling
@@ -41,6 +41,13 @@ export const ScheduleIcon = () => (
 export const LiveMatchIcon = () => (
   <Icon>
     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+  </Icon>
+);
+
+// NEW: AssetIcon added for the asset manager
+export const AssetIcon = () => (
+  <Icon>
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
   </Icon>
 );
 
