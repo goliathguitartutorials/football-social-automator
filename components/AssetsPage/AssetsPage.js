@@ -77,13 +77,15 @@ export default function AssetsPage() {
             const imageBlob = dataURLtoBlob(croppedImage);
             const formData = new FormData();
             
-            formData.append('action', 'add_asset');
+            // MODIFIED: No longer need the 'action' field.
+            // The API route itself defines the action.
             formData.append('assetName', assetName);
             formData.append('assetType', assetType);
             formData.append('assetFolder', assetFolder);
             formData.append('file', imageBlob, `${assetName.replace(/\s+/g, '_')}.jpg`);
 
-            const response = await fetch('/api/trigger-workflow', {
+            // --- MODIFIED: Use the new dedicated API route ---
+            const response = await fetch('/api/upload-asset', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${authKey}` },
                 body: formData,
