@@ -24,7 +24,19 @@ const dataURLtoBlob = (dataurl) => {
     return new Blob([u8arr], {type:mime});
 }
 
-// A simple SVG icon for the refresh button
+// --- NEW: SVG Icons for Tabs ---
+const ManageIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+    </svg>
+);
+
+const AddIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+    </svg>
+);
+
 const RefreshIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="23 4 23 10 17 10"></polyline>
@@ -36,6 +48,9 @@ const RefreshIcon = () => (
 export default function AssetsPage() {
     const { appData, fetchAppData, authKey } = useAppContext();
     const allAssets = [...(appData.backgrounds || []), ...(appData.badges || [])];
+
+    // MODIFIED: State for active tab
+    const [activeTab, setActiveTab] = useState('manage');
 
     // State for the upload form
     const [assetName, setAssetName] = useState('');
@@ -58,8 +73,8 @@ export default function AssetsPage() {
             return acc;
         }, {});
         return {
-            ...groups,
-            all: allAssets
+            all: allAssets,
+            ...groups
         };
     }, [allAssets]);
 
@@ -87,13 +102,12 @@ export default function AssetsPage() {
             formData.append('assetName', assetName);
             formData.append('assetType', assetType);
             formData.append('assetFolder', assetFolder);
-            // Append the blob as a file. The third argument is the filename.
             formData.append('file', imageBlob, `${assetName.replace(/\s+/g, '_')}.jpg`);
 
             const response = await fetch('/api/trigger-workflow', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${authKey}` },
-                body: formData, // The browser will automatically set the correct Content-Type for FormData
+                body: formData,
             });
 
             const result = await response.json();
@@ -102,14 +116,15 @@ export default function AssetsPage() {
             }
             
             setMessage('Asset uploaded successfully! Refreshing data...');
-            await fetchAppData(authKey); // Re-fetch all data to get the new asset
+            await fetchAppData(authKey);
             setMessage('Asset uploaded and data refreshed!');
 
-            // Reset form
+            // Reset form and switch back to manage tab
             setAssetName('');
             setAssetType('Background');
             setAssetFolder('backgrounds/misc');
             setCroppedImage('');
+            setActiveTab('manage');
 
         } catch (err) {
             setMessage(`Error: ${err.message}`);
@@ -128,67 +143,90 @@ export default function AssetsPage() {
                     <span>Refresh Data</span>
                 </button>
             </header>
+            
+            {/* --- NEW: Tab Navigation --- */}
+            <div className={styles.tabs}>
+                <button 
+                    className={`${styles.tabButton} ${activeTab === 'manage' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('manage')}
+                >
+                    <ManageIcon />
+                    <span>Manage Assets</span>
+                </button>
+                <button 
+                    className={`${styles.tabButton} ${activeTab === 'add' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('add')}
+                >
+                    <AddIcon />
+                    <span>Add New Asset</span>
+                </button>
+            </div>
 
-            <section className={styles.section}>
-                <div className={styles.sectionHeader}>
-                    <h3 className={styles.sectionTitle}>View Assets</h3>
-                    <div className={styles.formGroup}>
-                        <label htmlFor="folderFilter">Filter by Folder</label>
-                        <select id="folderFilter" value={selectedFolder} onChange={(e) => setSelectedFolder(e.target.value)}>
-                            {folders.map(folder => (
-                                <option key={folder} value={folder}>{folder}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-                {assetsToDisplay.length > 0 ? (
-                    <div className={styles.assetGrid}>
-                        {assetsToDisplay.map(asset => (
-                            <div key={asset.Link} className={styles.assetItem}>
-                                <img src={asset.Link} alt={asset.Name} className={styles.assetImage} />
-                                <div className={styles.assetInfo}>
-                                    <p className={styles.assetName}>{asset.Name}</p>
-                                    <p className={styles.assetFolder}>{asset.Folder}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p>No assets found in this folder.</p>
-                )}
-            </section>
-
-            <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>Add New Asset</h3>
-                <form onSubmit={handleUpload} className={styles.uploadForm}>
-                    <div className={styles.formGrid}>
+            {/* --- MODIFIED: Conditional Rendering based on activeTab --- */}
+            {activeTab === 'manage' && (
+                <section className={styles.section}>
+                    <div className={styles.sectionHeader}>
+                        <h3 className={styles.sectionTitle}>View Assets</h3>
                         <div className={styles.formGroup}>
-                            <label htmlFor="assetName">Asset Name</label>
-                            <input type="text" id="assetName" value={assetName} onChange={(e) => setAssetName(e.target.value)} placeholder="e.g., Player Goal Celebration" required />
-                        </div>
-                        <div className={styles.formGroup}>
-                            <label htmlFor="assetType">Asset Type</label>
-                            <select id="assetType" value={assetType} onChange={(e) => setAssetType(e.target.value)}>
-                                <option value="Background">Background</option>
-                                <option value="Badge">Badge</option>
+                            <label htmlFor="folderFilter">Filter by Folder</label>
+                            <select id="folderFilter" value={selectedFolder} onChange={(e) => setSelectedFolder(e.target.value)}>
+                                {folders.map(folder => (
+                                    <option key={folder} value={folder}>{folder.charAt(0).toUpperCase() + folder.slice(1)}</option>
+                                ))}
                             </select>
                         </div>
-                        <div className={styles.formGroup}>
-                            <label htmlFor="assetFolder">Folder</label>
-                            <input type="text" id="assetFolder" value={assetFolder} onChange={(e) => setAssetFolder(e.target.value)} placeholder="e.g., backgrounds/first-team" required />
+                    </div>
+                    {assetsToDisplay.length > 0 ? (
+                        <div className={styles.assetGrid}>
+                            {assetsToDisplay.map(asset => (
+                                <div key={asset.Link} className={styles.assetItem}>
+                                    <img src={asset.Link} alt={asset.Name} className={styles.assetImage} />
+                                    <div className={styles.assetInfo}>
+                                        <p className={styles.assetName}>{asset.Name}</p>
+                                        <p className={styles.assetFolder}>{asset.Folder}</p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </div>
-                    <div className={styles.imageEditorContainer}>
-                        <ImageEditor onCropComplete={(dataUrl) => setCroppedImage(dataUrl)} />
-                    </div>
-                    <div className={styles.actionsContainer}>
-                        <button type="submit" className={styles.actionButton} disabled={isUploading}>
-                            {isUploading ? 'Uploading...' : 'Upload Asset'}
-                        </button>
-                    </div>
-                     {message && <p className={styles.message}>{message}</p>}
-                </form>
-            </section>
+                    ) : (
+                        <p>No assets found in this folder.</p>
+                    )}
+                </section>
+            )}
+
+            {activeTab === 'add' && (
+                <section className={styles.section}>
+                    <h3 className={styles.sectionTitle}>Add New Asset</h3>
+                    <form onSubmit={handleUpload} className={styles.uploadForm}>
+                        <div className={styles.formGrid}>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="assetName">Asset Name</label>
+                                <input type="text" id="assetName" value={assetName} onChange={(e) => setAssetName(e.target.value)} placeholder="e.g., Player Goal Celebration" required />
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="assetType">Asset Type</label>
+                                <select id="assetType" value={assetType} onChange={(e) => setAssetType(e.target.value)}>
+                                    <option value="Background">Background</option>
+                                    <option value="Badge">Badge</option>
+                                </select>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="assetFolder">Folder</label>
+                                <input type="text" id="assetFolder" value={assetFolder} onChange={(e) => setAssetFolder(e.target.value)} placeholder="e.g., backgrounds/first-team" required />
+                            </div>
+                        </div>
+                        <div className={styles.imageEditorContainer}>
+                            <ImageEditor onCropComplete={(dataUrl) => setCroppedImage(dataUrl)} />
+                        </div>
+                        <div className={styles.actionsContainer}>
+                            <button type="submit" className={styles.actionButton} disabled={isUploading}>
+                                {isUploading ? 'Uploading...' : 'Upload Asset'}
+                            </button>
+                        </div>
+                         {message && <p className={styles.message}>{message}</p>}
+                    </form>
+                </section>
+            )}
         </div>
     );
 }
