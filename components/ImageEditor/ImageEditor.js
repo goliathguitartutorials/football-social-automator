@@ -7,29 +7,38 @@
  */
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react'; // MODIFIED: Added useEffect
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import styles from './ImageEditor.module.css';
 
 const ASPECT_RATIO = 1080 / 1350;
-const MIN_WIDTH = 400;
 
-export default function ImageEditor({ onCropComplete }) {
-    const [imgSrc, setImgSrc] = useState('');
+// MODIFIED: Component now accepts initialImageUrl prop
+export default function ImageEditor({ onCropComplete, initialImageUrl = '' }) {
+    const [imgSrc, setImgSrc] = useState(initialImageUrl);
     const [crop, setCrop] = useState();
     const [croppedImageUrl, setCroppedImageUrl] = useState('');
-    const [isCropping, setIsCropping] = useState(false);
+    const [isCropping, setIsCropping] = useState(!!initialImageUrl);
     const imgRef = useRef(null);
     const fileInputRef = useRef(null);
-    const [fileName, setFileName] = useState('');
+    const [fileName, setFileName] = useState(initialImageUrl ? 'Current Asset' : '');
+
+    // --- NEW: Effect to handle initialImageUrl prop ---
+    useEffect(() => {
+        if (initialImageUrl) {
+            setImgSrc(initialImageUrl);
+            setIsCropping(true);
+            setCroppedImageUrl(''); // Clear any previous final crop
+        }
+    }, [initialImageUrl]);
 
     const onSelectFile = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         setFileName(file.name);
-        setCroppedImageUrl(''); // Reset previous preview
+        setCroppedImageUrl('');
         
         const reader = new FileReader();
         reader.addEventListener('load', () => {
@@ -63,7 +72,6 @@ export default function ImageEditor({ onCropComplete }) {
         setCroppedImageUrl(dataUrl);
         setIsCropping(false);
 
-        // Pass the cropped image data URL back to the parent component
         if (onCropComplete) {
             onCropComplete(dataUrl);
         }
@@ -75,7 +83,6 @@ export default function ImageEditor({ onCropComplete }) {
         setIsCropping(false);
         setFileName('');
         if (fileInputRef.current) fileInputRef.current.value = '';
-        // Also inform the parent that the image has been removed
         if (onCropComplete) {
             onCropComplete(''); 
         }
@@ -83,20 +90,12 @@ export default function ImageEditor({ onCropComplete }) {
 
     return (
         <div className={styles.container}>
-            {!imgSrc && (
+            {/* MODIFIED: Logic to show upload state or not */}
+            {!imgSrc && !initialImageUrl && (
                 <div className={styles.uploadInitialState}>
                     <p className={styles.uploadText}>Upload a Custom Background</p>
-                    <input 
-                        id="custom-bg-upload"
-                        ref={fileInputRef} 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={onSelectFile}
-                        className={styles.fileInput}
-                    />
-                    <label htmlFor="custom-bg-upload" className={styles.uploadButton}>
-                        Choose File
-                    </label>
+                    <input id="custom-bg-upload" ref={fileInputRef} type="file" accept="image/*" onChange={onSelectFile} className={styles.fileInput}/>
+                    <label htmlFor="custom-bg-upload" className={styles.uploadButton}>Choose File</label>
                     {fileName && <p className={styles.fileName}>{fileName}</p>}
                 </div>
             )}
@@ -104,7 +103,7 @@ export default function ImageEditor({ onCropComplete }) {
             {imgSrc && isCropping && (
                 <div className={styles.cropperContainer}>
                     <ReactCrop crop={crop} onChange={(c) => setCrop(c)} aspect={ASPECT_RATIO} minWidth={100}>
-                        <img ref={imgRef} src={imgSrc} onLoad={onImageLoad} alt="To be cropped" style={{ maxHeight: '60vh' }} />
+                        <img ref={imgRef} src={imgSrc} onLoad={onImageLoad} alt="To be cropped" style={{ maxHeight: '60vh', objectFit: 'contain' }} crossOrigin="anonymous" />
                     </ReactCrop>
                     <button type="button" onClick={handleConfirmCrop} className={styles.utilityButton}>
                         Confirm Crop
@@ -114,11 +113,12 @@ export default function ImageEditor({ onCropComplete }) {
 
             {croppedImageUrl && !isCropping && (
                 <div className={styles.previewContainer}>
-                    <p>Your selected background:</p>
+                    <p>New cropped preview:</p>
                     <img src={croppedImageUrl} alt="Cropped Preview" className={styles.previewImage} />
                     <div className={styles.imageActions}>
                         <button onClick={() => setIsCropping(true)} className={styles.utilityButton}>Re-crop</button>
-                        <button onClick={resetImage} className={styles.utilityButton}>Change Image</button>
+                        {/* MODIFIED: Don't show "Change Image" when editing an existing asset */}
+                        {!initialImageUrl && <button onClick={resetImage} className={styles.utilityButton}>Change Image</button>}
                     </div>
                 </div>
             )}
