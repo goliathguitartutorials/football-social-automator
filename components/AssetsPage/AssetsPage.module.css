@@ -1,0 +1,188 @@
+/*
+ * ==========================================================
+ * COMPONENT: Assets Page
+ * PAGE: /assets
+ * FILE: /components/AssetsPage/AssetsPage.module.css
+ * ==========================================================
+ */
+
+.container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+
+.title {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.refreshButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--text-secondary);
+    background-color: var(--surface-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.refreshButton:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-color);
+}
+
+.section {
+    background-color: var(--surface-dark);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.assetGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1.5rem;
+}
+
+.assetItem {
+    background-color: var(--background-dark);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.assetItem:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1);
+}
+
+.assetImage {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+}
+
+.assetInfo {
+    padding: 0.75rem;
+}
+
+.assetName {
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.assetFolder {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.uploadForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.formGroup label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.formGroup input,
+.formGroup select {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+.imageEditorContainer {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.actionsContainer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.actionButton {
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: var(--accent-color);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.actionButton:hover {
+    background-color: var(--accent-color-hover);
+}
+
+.actionButton:disabled {
+    background-color: #374151;
+    cursor: not-allowed;
+}
+
+.message {
+    text-align: center;
+    font-weight: 500;
+    margin-top: 1rem;
+}
