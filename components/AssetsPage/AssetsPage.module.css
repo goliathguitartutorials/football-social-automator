@@ -8,77 +8,66 @@
 
 .container {
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem; /* MODIFIED: Reduced gap for tighter layout */
 }
 
 .header {
+    margin-bottom: 2rem;
+}
+
+/* --- SUB NAVIGATION (Copied from CreatePage for consistency) --- */
+.subNav {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 1rem;
-}
-
-.title {
-    font-size: 1.8rem;
-    font-weight: 700;
-}
-
-.refreshButton {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-    font-weight: bold;
-    color: var(--text-secondary);
-    background-color: var(--surface-dark);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.refreshButton:hover {
-    color: var(--text-primary);
-    border-color: var(--accent-color);
-}
-
-/* --- NEW: TABS --- */
-.tabs {
-    display: flex;
-    gap: 0.5rem;
+    justify-content: space-around;
     border-bottom: 1px solid var(--border-color);
 }
 
-.tabButton {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    background-color: transparent;
+.navButton {
+    background: none;
     border: none;
-    border-bottom: 3px solid transparent;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
+    flex-grow: 1;
+    padding: 8px 4px;
+    border-bottom: 3px solid transparent;
     transform: translateY(1px);
+    transition: all 0.2s ease-in-out;
 }
 
-.tabButton:hover {
+.navButton:hover {
     color: var(--text-primary);
 }
 
-.tabButton.active {
+.navButton.active {
     color: var(--accent-color);
     border-bottom-color: var(--accent-color);
 }
-/* --- END TABS --- */
 
+.navIcon {
+    margin-bottom: 4px;
+}
+
+.navIcon svg {
+    fill: none;
+}
+
+.navLabel {
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-align: center;
+}
+/* --- END SUB NAVIGATION --- */
+
+/* Content Area for selected tab */
+.contentArea {
+    /* Styles for the main content area below the header nav */
+}
+
+/* Section styling for Manage and Add views */
 .section {
     background-color: var(--surface-dark);
     border-radius: 8px;
@@ -89,14 +78,36 @@
 .sectionHeader {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-end; /* Align items to the bottom for better look */
     margin-bottom: 1.5rem;
+    gap: 1.5rem; /* Add gap between items */
 }
 
 .sectionTitle {
     font-size: 1.5rem;
     font-weight: 600;
-    margin-bottom: 1rem; /* MODIFIED: Standardized margin */
+    margin-bottom: 1rem;
+}
+
+.refreshButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem; /* Adjusted padding to match form inputs */
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--text-secondary);
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap; /* Prevent button text from wrapping */
+}
+
+.refreshButton:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-color);
 }
 
 .assetGrid {
@@ -125,98 +136,57 @@
     display: block;
 }
 
-.assetInfo {
-    padding: 0.75rem;
-}
+.assetInfo { padding: 0.75rem; }
+.assetName { font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.assetFolder { font-size: 0.8rem; color: var(--text-secondary); }
 
-.assetName {
-    font-weight: 500;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+.uploadForm { display: flex; flex-direction: column; gap: 1.5rem; }
+.formGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+.formGroup { display: flex; flex-direction: column; gap: 0.5rem; }
+.formGroup label { font-weight: 500; color: var(--text-secondary); }
+.formGroup input, .formGroup select { width: 100%; padding: 0.75rem; background-color: var(--background-dark); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 1rem; }
+.formGroup input:focus, .formGroup select:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4); }
 
-.assetFolder {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-}
+.imageEditorContainer { width: 100%; max-width: 600px; margin: 0 auto; }
+.actionsContainer { display: flex; justify-content: flex-end; }
 
-.uploadForm {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
+.actionButton { padding: 0.75rem 2rem; font-size: 1rem; font-weight: bold; color: #fff; background-color: var(--accent-color); border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; }
+.actionButton:hover { background-color: var(--accent-color-hover); }
+.actionButton:disabled { background-color: #374151; cursor: not-allowed; }
 
-.formGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-}
+.message { text-align: center; font-weight: 500; margin-top: 1rem; }
 
-.formGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
+/* --- DESKTOP STYLES (Copied from CreatePage for consistency) --- */
+@media (min-width: 768px) {
+    .subNav {
+        justify-content: flex-start;
+        gap: 0.5rem;
+    }
 
-.formGroup label {
-    font-weight: 500;
-    color: var(--text-secondary);
-}
+    .navButton {
+        flex-direction: row;
+        flex-grow: 0;
+        padding: 0.75rem 1.5rem;
+    }
 
-.formGroup input,
-.formGroup select {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: var(--background-dark);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-primary);
-    font-size: 1rem;
-}
+    .navIcon {
+        display: block;
+        margin-bottom: 0;
+        margin-right: 0.5rem;
+    }
 
-.formGroup input:focus,
-.formGroup select:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
-}
+    .navLabel {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
 
-.imageEditorContainer {
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-}
+    .navButton.active .navLabel,
+    .navButton:hover .navLabel {
+        color: var(--text-primary);
+    }
 
-.actionsContainer {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.actionButton {
-    padding: 0.75rem 2rem;
-    font-size: 1rem;
-    font-weight: bold;
-    color: #fff;
-    background-color: var(--accent-color);
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.actionButton:hover {
-    background-color: var(--accent-color-hover);
-}
-
-.actionButton:disabled {
-    background-color: #374151;
-    cursor: not-allowed;
-}
-
-.message {
-    text-align: center;
-    font-weight: 500;
-    margin-top: 1rem;
+    .navButton.active .navLabel, .navButton.active {
+        color: var(--accent-color);
+    }
 }
