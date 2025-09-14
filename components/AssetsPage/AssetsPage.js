@@ -77,14 +77,11 @@ export default function AssetsPage() {
             const imageBlob = dataURLtoBlob(croppedImage);
             const formData = new FormData();
             
-            // MODIFIED: No longer need the 'action' field.
-            // The API route itself defines the action.
             formData.append('assetName', assetName);
             formData.append('assetType', assetType);
             formData.append('assetFolder', assetFolder);
             formData.append('file', imageBlob, `${assetName.replace(/\s+/g, '_')}.jpg`);
 
-            // --- MODIFIED: Use the new dedicated API route ---
             const response = await fetch('/api/upload-asset', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${authKey}` },
@@ -108,54 +105,6 @@ export default function AssetsPage() {
         }
     };
 
-    const ContentArea = () => {
-        if (activeTab === 'add') {
-            return (
-                <section className={styles.section}>
-                    <h3 className={styles.sectionTitle}>Add New Asset</h3>
-                    <form onSubmit={handleUpload} className={styles.uploadForm}>
-                        <div className={styles.formGrid}>
-                            <div className={styles.formGroup}><label htmlFor="assetName">Asset Name</label><input type="text" id="assetName" value={assetName} onChange={(e) => setAssetName(e.target.value)} placeholder="e.g., Player Goal Celebration" required /></div>
-                            <div className={styles.formGroup}><label htmlFor="assetType">Asset Type</label><select id="assetType" value={assetType} onChange={(e) => setAssetType(e.target.value)}><option value="Background">Background</option><option value="Badge">Badge</option></select></div>
-                            <div className={styles.formGroup}><label htmlFor="assetFolder">Folder</label><input type="text" id="assetFolder" value={assetFolder} onChange={(e) => setAssetFolder(e.target.value)} placeholder="e.g., backgrounds/first-team" required /></div>
-                        </div>
-                        <div className={styles.imageEditorContainer}><ImageEditor onCropComplete={(dataUrl) => setCroppedImage(dataUrl)} /></div>
-                        <div className={styles.actionsContainer}><button type="submit" className={styles.actionButton} disabled={isUploading}>{isUploading ? 'Uploading...' : 'Upload Asset'}</button></div>
-                        {message && <p className={styles.message}>{message}</p>}
-                    </form>
-                </section>
-            );
-        }
-
-        // Default to 'manage' tab
-        return (
-            <section className={styles.section}>
-                <div className={styles.sectionHeader}>
-                    <div className={styles.formGroup}>
-                        <label htmlFor="folderFilter">Filter by Folder</label>
-                        <select id="folderFilter" value={selectedFolder} onChange={(e) => setSelectedFolder(e.target.value)}>
-                            {folders.map(folder => (<option key={folder} value={folder}>{folder.charAt(0).toUpperCase() + folder.slice(1)}</option>))}
-                        </select>
-                    </div>
-                    <button onClick={handleRefresh} className={styles.refreshButton} title="Refresh all app data"><RefreshIcon /><span>Refresh Data</span></button>
-                </div>
-                {assetsToDisplay.length > 0 ? (
-                    <div className={styles.assetGrid}>
-                        {assetsToDisplay.map(asset => (
-                            <div key={asset.Link} className={styles.assetItem}>
-                                <img src={asset.Link} alt={asset.Name} className={styles.assetImage} />
-                                <div className={styles.assetInfo}>
-                                    <p className={styles.assetName}>{asset.Name}</p>
-                                    <p className={styles.assetFolder}>{asset.Folder}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (<p>No assets found in this folder.</p>)}
-            </section>
-        );
-    };
-
     return (
         <div className={styles.container}>
             <header className={styles.header}>
@@ -168,8 +117,67 @@ export default function AssetsPage() {
                     ))}
                 </nav>
             </header>
+            
+            {/* --- MODIFIED: Content is now rendered directly inside the main component --- */}
             <div className={styles.contentArea}>
-                <ContentArea />
+                {activeTab === 'manage' && (
+                    <section className={styles.section}>
+                        <div className={styles.sectionHeader}>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="folderFilter">Filter by Folder</label>
+                                <select id="folderFilter" value={selectedFolder} onChange={(e) => setSelectedFolder(e.target.value)}>
+                                    {folders.map(folder => (<option key={folder} value={folder}>{folder.charAt(0).toUpperCase() + folder.slice(1)}</option>))}
+                                </select>
+                            </div>
+                            <button onClick={handleRefresh} className={styles.refreshButton} title="Refresh all app data"><RefreshIcon /><span>Refresh Data</span></button>
+                        </div>
+                        {assetsToDisplay.length > 0 ? (
+                            <div className={styles.assetGrid}>
+                                {assetsToDisplay.map(asset => (
+                                    <div key={asset.Link} className={styles.assetItem}>
+                                        <img src={asset.Link} alt={asset.Name} className={styles.assetImage} />
+                                        <div className={styles.assetInfo}>
+                                            <p className={styles.assetName}>{asset.Name}</p>
+                                            <p className={styles.assetFolder}>{asset.Folder}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (<p>No assets found in this folder.</p>)}
+                    </section>
+                )}
+
+                {activeTab === 'add' && (
+                    <section className={styles.section}>
+                        <h3 className={styles.sectionTitle}>Add New Asset</h3>
+                        <form onSubmit={handleUpload} className={styles.uploadForm}>
+                            <div className={styles.formGrid}>
+                                <div className={styles.formGroup}>
+                                    <label htmlFor="assetName">Asset Name</label>
+                                    <input type="text" id="assetName" value={assetName} onChange={(e) => setAssetName(e.target.value)} placeholder="e.g., Player Goal Celebration" required />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label htmlFor="assetType">Asset Type</label>
+                                    <select id="assetType" value={assetType} onChange={(e) => setAssetType(e.target.value)}>
+                                        <option value="Background">Background</option>
+                                        <option value="Badge">Badge</option>
+                                    </select>
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label htmlFor="assetFolder">Folder</label>
+                                    <input type="text" id="assetFolder" value={assetFolder} onChange={(e) => setAssetFolder(e.target.value)} placeholder="e.g., backgrounds/first-team" required />
+                                </div>
+                            </div>
+                            <div className={styles.imageEditorContainer}>
+                                <ImageEditor onCropComplete={(dataUrl) => setCroppedImage(dataUrl)} />
+                            </div>
+                            <div className={styles.actionsContainer}>
+                                <button type="submit" className={styles.actionButton} disabled={isUploading}>{isUploading ? 'Uploading...' : 'Upload Asset'}</button>
+                            </div>
+                            {message && <p className={styles.message}>{message}</p>}
+                        </form>
+                    </section>
+                )}
             </div>
         </div>
     );
