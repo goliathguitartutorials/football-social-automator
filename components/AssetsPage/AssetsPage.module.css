@@ -10,7 +10,7 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 2.5rem;
+    gap: 1.5rem; /* MODIFIED: Reduced gap for tighter layout */
 }
 
 .header {
@@ -46,6 +46,39 @@
     border-color: var(--accent-color);
 }
 
+/* --- NEW: TABS --- */
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tabButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background-color: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    transform: translateY(1px);
+}
+
+.tabButton:hover {
+    color: var(--text-primary);
+}
+
+.tabButton.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+}
+/* --- END TABS --- */
+
 .section {
     background-color: var(--surface-dark);
     border-radius: 8px;
@@ -63,6 +96,7 @@
 .sectionTitle {
     font-size: 1.5rem;
     font-weight: 600;
+    margin-bottom: 1rem; /* MODIFIED: Standardized margin */
 }
 
 .assetGrid {
