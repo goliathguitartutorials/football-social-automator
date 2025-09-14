@@ -133,7 +133,6 @@ export default function AssetsPage() {
             await refreshAppData();
             setMessage('Asset uploaded and data refreshed!');
             
-            // Reset form
             setNewAssetName(''); setCroppedImage(''); setUploadPath(''); setDestinationFolder(''); setActiveTab('manage');
         } catch (err) {
             setMessage(`Error: ${err.message}`);
@@ -144,6 +143,9 @@ export default function AssetsPage() {
 
     const manageBreadcrumbClick = (index) => {
         if (index < 0) { setCurrentPath(''); } else { setCurrentPath(manageView.breadcrumbs.slice(0, index + 1).join('/')); }
+    };
+    const manageFolderClick = (folder) => {
+        setCurrentPath(currentPath ? `${currentPath}/${folder}` : folder);
     };
     const uploadBreadcrumbClick = (index) => {
         if (index < 0) { setUploadPath(''); } else { setUploadPath(uploadFolderView.breadcrumbs.slice(0, index + 1).join('/')); }
@@ -161,7 +163,56 @@ export default function AssetsPage() {
                 </header>
                 <div className={styles.contentArea}>
                     {activeTab === 'manage' && (
-                        <section className={styles.section}>{/* MANAGE TAB CONTENT - UNCHANGED */}</section>
+                        <section className={styles.section}>
+                            {/* --- MANAGE TAB CONTENT - RESTORED --- */}
+                            <div className={styles.sectionHeader}>
+                                <nav className={styles.breadcrumbs}>
+                                    <button onClick={() => manageBreadcrumbClick(-1)} title="Go to root folder"><HomeIcon /></button>
+                                    {manageView.breadcrumbs.map((part, index) => (
+                                        <span key={index}>
+                                            <span className={styles.breadcrumbSeparator}>/</span>
+                                            <button onClick={() => manageBreadcrumbClick(index)}>{part}</button>
+                                        </span>
+                                    ))}
+                                </nav>
+                            </div>
+
+                            {manageView.subfolders.length > 0 && (
+                                <div className={styles.folderGrid}>
+                                    {manageView.subfolders.map(folder => (
+                                        <button key={folder} className={styles.folderItem} onClick={() => manageFolderClick(folder)}>
+                                            <FolderIcon />
+                                            <span className={styles.folderName}>{folder}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            
+                            {manageView.assets.length > 0 && (
+                                <div className={styles.assetGrid}>
+                                    {manageView.assets.map(asset => (
+                                        <button key={asset.Link} className={styles.assetItemButton} onClick={() => handleAssetClick(asset)}>
+                                            <img src={asset.Link} alt={asset.Name} className={styles.assetImage} />
+                                            <div className={styles.assetInfo}>
+                                                <p className={styles.assetName}>{asset.Name}</p>
+                                                <p className={styles.assetFolder}>{asset.Folder}</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            
+                            {manageView.subfolders.length === 0 && manageView.assets.length === 0 && (
+                                <p className={styles.emptyMessage}>This folder is empty.</p>
+                            )}
+
+                            <div className={styles.footerActions}>
+                                <button onClick={handleRefresh} className={styles.refreshButton} title="Refresh all app data">
+                                    <RefreshIcon />
+                                    <span>Refresh App Data</span>
+                                </button>
+                            </div>
+                        </section>
                     )}
                     {activeTab === 'add' && (
                         <section className={styles.section}>
