@@ -32,7 +32,8 @@ const assetTabs = [
 ];
 
 export default function AssetsPage() {
-    const { appData, fetchAppData, authKey } = useAppContext();
+    // --- MODIFIED: Using the correct 'refreshAppData' function from the context ---
+    const { appData, refreshAppData, authKey } = useAppContext();
     const allAssets = [...(appData.backgrounds || []), ...(appData.badges || [])];
 
     const [activeTab, setActiveTab] = useState('manage');
@@ -75,7 +76,8 @@ export default function AssetsPage() {
     }, [currentPath, directoryTree]);
 
     const handleRefresh = async () => {
-        await fetchAppData(authKey);
+        // --- MODIFIED: Calling the correct function ---
+        await refreshAppData();
     };
 
     const handleAssetClick = (asset) => {
@@ -99,11 +101,11 @@ export default function AssetsPage() {
                 body: JSON.stringify({ action, ...payload }),
             });
 
-            // This line requires the response to be valid JSON
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Failed to manage asset.');
             
-            await fetchAppData(authKey);
+            // --- MODIFIED: Calling the correct function ---
+            await refreshAppData();
             handleCloseModal();
             return { success: true };
 
@@ -141,7 +143,8 @@ export default function AssetsPage() {
             if (!response.ok) throw new Error(result.error || 'Failed to upload asset.');
             
             setMessage('Asset uploaded successfully! Refreshing data...');
-            await fetchAppData(authKey);
+            // --- MODIFIED: Calling the correct function ---
+            await refreshAppData();
             setMessage('Asset uploaded and data refreshed!');
 
             setAssetName('');
@@ -252,7 +255,6 @@ export default function AssetsPage() {
                                 <div className={styles.formGrid}>
                                     <div className={styles.formGroup}>
                                         <label htmlFor="assetName">Asset Name</label>
-                                        {/* --- THIS LINE IS NOW CORRECTED --- */}
                                         <input type="text" id="assetName" value={assetName} onChange={(e) => setAssetName(e.target.value)} placeholder="e.g., Player Goal Celebration" required />
                                     </div>
                                     <div className={styles.formGroup}>
