@@ -26,7 +26,6 @@ const dataURLtoBlob = (dataurl) => {
     return new Blob([u8arr], {type:mime});
 }
 
-// --- NEW: Constants for aspect ratios ---
 const ASSET_TYPES = {
     background: { label: 'Background', aspect: 1080 / 1350 },
     badge: { label: 'Badge', aspect: 1 / 1 },
@@ -44,12 +43,10 @@ export default function AssetsPage() {
     const [activeTab, setActiveTab] = useState('manage');
     const [message, setMessage] = useState('');
     
-    // --- State for Manage Tab ---
     const [currentPath, setCurrentPath] = useState('');
     const [selectedAsset, setSelectedAsset] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // --- State for Add New Tab ---
     const [newAssetName, setNewAssetName] = useState('');
     const [uploadAssetType, setUploadAssetType] = useState('background');
     const [croppedImage, setCroppedImage] = useState('');
@@ -58,7 +55,6 @@ export default function AssetsPage() {
     const [newFolderName, setNewFolderName] = useState('');
     const [destinationFolder, setDestinationFolder] = useState('');
 
-    // --- Directory logic for both tabs ---
     const directoryTree = useMemo(() => {
         const tree = {};
         allAssets.forEach(asset => {
@@ -144,9 +140,12 @@ export default function AssetsPage() {
     const manageBreadcrumbClick = (index) => {
         if (index < 0) { setCurrentPath(''); } else { setCurrentPath(manageView.breadcrumbs.slice(0, index + 1).join('/')); }
     };
+
+    // --- THIS FUNCTION IS NOW RESTORED ---
     const manageFolderClick = (folder) => {
         setCurrentPath(currentPath ? `${currentPath}/${folder}` : folder);
     };
+
     const uploadBreadcrumbClick = (index) => {
         if (index < 0) { setUploadPath(''); } else { setUploadPath(uploadFolderView.breadcrumbs.slice(0, index + 1).join('/')); }
         setDestinationFolder('');
@@ -164,7 +163,6 @@ export default function AssetsPage() {
                 <div className={styles.contentArea}>
                     {activeTab === 'manage' && (
                         <section className={styles.section}>
-                            {/* --- MANAGE TAB CONTENT - RESTORED --- */}
                             <div className={styles.sectionHeader}>
                                 <nav className={styles.breadcrumbs}>
                                     <button onClick={() => manageBreadcrumbClick(-1)} title="Go to root folder"><HomeIcon /></button>
