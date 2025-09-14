@@ -41,3 +41,16 @@ export const RefreshIcon = () => (
         <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
     </Icon>
 );
+
+// --- NEW ICONS ---
+export const FolderIcon = () => (
+    <Icon>
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+    </Icon>
+);
+
+export const HomeIcon = () => (
+    <Icon>
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </Icon>
+);
