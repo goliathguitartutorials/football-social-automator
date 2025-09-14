@@ -1,20 +1,21 @@
 /*
- * =================================================================
+ * ==========================================================
  * COMPONENT: Desktop Navigation
  * PAGE: (Shared)
  * FILE: /components/Navigation/DesktopNav.js
- * =================================================================
+ * ==========================================================
  */
 'use client';
 
 import styles from './DesktopNav.module.css';
-import { CreateIcon, ScheduleIcon, LiveMatchIcon, SettingsIcon } from './Icons';
+import { CreateIcon, ScheduleIcon, LiveMatchIcon, AssetIcon, SettingsIcon } from './Icons';
 
 // Define the main navigation items
 const navItems = [
   { id: 'create', label: 'Create Post', icon: <CreateIcon /> },
   { id: 'schedule', label: 'Schedule', icon: <ScheduleIcon /> },
   { id: 'live', label: 'Live Match', icon: <LiveMatchIcon /> },
+  { id: 'assets', label: 'Assets', icon: <AssetIcon /> }, // NEW: Assets button added
   { id: 'settings', label: 'Settings', icon: <SettingsIcon /> },
 ];
 
