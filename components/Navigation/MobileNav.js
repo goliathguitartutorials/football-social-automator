@@ -1,19 +1,20 @@
 /*
- * =================================================================
+ * ==========================================================
  * COMPONENT: Mobile Navigation
  * PAGE: (Shared)
  * FILE: /components/Navigation/MobileNav.js
- * =================================================================
+ * ==========================================================
  */
 'use client';
 
 import styles from './MobileNav.module.css';
-import { CreateIcon, ScheduleIcon, LiveMatchIcon, SettingsIcon } from './Icons';
+import { CreateIcon, ScheduleIcon, LiveMatchIcon, AssetIcon, SettingsIcon } from './Icons';
 
 const navItems = [
   { id: 'create', label: 'Create', icon: <CreateIcon /> },
   { id: 'schedule', label: 'Schedule', icon: <ScheduleIcon /> },
   { id: 'live', label: 'Live', icon: <LiveMatchIcon /> },
+  { id: 'assets', label: 'Assets', icon: <AssetIcon /> }, // NEW: Assets button added
   { id: 'settings', label: 'Settings', icon: <SettingsIcon /> },
 ];
 
