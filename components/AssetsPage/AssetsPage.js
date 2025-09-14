@@ -11,7 +11,7 @@ import { useState, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
 import styles from './AssetsPage.module.css';
-import { ManageIcon, AddIcon, RefreshIcon } from './AssetsPageIcons';
+import { ManageIcon, AddIcon, RefreshIcon, FolderIcon, HomeIcon } from './AssetsPageIcons';
 
 // Helper function to convert Data URL to a Blob for file upload
 const dataURLtoBlob = (dataurl) => {
@@ -45,20 +45,40 @@ export default function AssetsPage() {
     const [isUploading, setIsUploading] = useState(false);
     const [message, setMessage] = useState('');
 
-    const [selectedFolder, setSelectedFolder] = useState('all');
+    // --- MODIFIED: State for new directory navigation ---
+    const [currentPath, setCurrentPath] = useState('');
 
-    const groupedAssets = useMemo(() => {
-        const groups = allAssets.reduce((acc, asset) => {
-            const folder = asset.Folder || 'uncategorized';
-            if (!acc[folder]) { acc[folder] = []; }
-            acc[folder].push(asset);
-            return acc;
-        }, {});
-        return { all: allAssets, ...groups };
+    // --- NEW: Build a nested directory tree from the flat asset list ---
+    const directoryTree = useMemo(() => {
+        const tree = {};
+        allAssets.forEach(asset => {
+            const pathParts = (asset.Folder || 'uncategorized').split('/').filter(p => p);
+            let currentNode = tree;
+            pathParts.forEach(part => {
+                if (!currentNode[part]) {
+                    currentNode[part] = { '__assets': [] };
+                }
+                currentNode = currentNode[part];
+            });
+            currentNode['__assets'].push(asset);
+        });
+        return tree;
     }, [allAssets]);
 
-    const folders = useMemo(() => Object.keys(groupedAssets).sort(), [groupedAssets]);
-    const assetsToDisplay = groupedAssets[selectedFolder] || [];
+    // --- NEW: Determine what to display based on the currentPath ---
+    const currentView = useMemo(() => {
+        const pathParts = currentPath.split('/').filter(p => p);
+        let currentNode = directoryTree;
+        for (const part of pathParts) {
+            currentNode = currentNode[part] || { '__assets': [] };
+        }
+
+        const subfolders = Object.keys(currentNode).filter(key => key !== '__assets');
+        const assets = currentNode['__assets'] || [];
+
+        return { subfolders, assets, breadcrumbs: pathParts };
+    }, [currentPath, directoryTree]);
+
 
     const handleRefresh = async () => {
         await fetchAppData(authKey);
@@ -105,6 +125,21 @@ export default function AssetsPage() {
         }
     };
 
+    // --- NEW: Handlers for directory navigation ---
+    const handleFolderClick = (folder) => {
+        setCurrentPath(currentPath ? `${currentPath}/${folder}` : folder);
+    };
+
+    const handleBreadcrumbClick = (index) => {
+        if (index < 0) { // Home button
+            setCurrentPath('');
+        } else {
+            const newPath = currentView.breadcrumbs.slice(0, index + 1).join('/');
+            setCurrentPath(newPath);
+        }
+    };
+
+
     return (
         <div className={styles.container}>
             <header className={styles.header}>
@@ -118,22 +153,41 @@ export default function AssetsPage() {
                 </nav>
             </header>
             
-            {/* --- MODIFIED: Content is now rendered directly inside the main component --- */}
             <div className={styles.contentArea}>
                 {activeTab === 'manage' && (
                     <section className={styles.section}>
+                        {/* --- MODIFIED: Section header with breadcrumbs --- */}
                         <div className={styles.sectionHeader}>
-                            <div className={styles.formGroup}>
-                                <label htmlFor="folderFilter">Filter by Folder</label>
-                                <select id="folderFilter" value={selectedFolder} onChange={(e) => setSelectedFolder(e.target.value)}>
-                                    {folders.map(folder => (<option key={folder} value={folder}>{folder.charAt(0).toUpperCase() + folder.slice(1)}</option>))}
-                                </select>
-                            </div>
+                            <nav className={styles.breadcrumbs}>
+                                <button onClick={() => handleBreadcrumbClick(-1)} title="Go to root folder">
+                                    <HomeIcon />
+                                </button>
+                                {currentView.breadcrumbs.map((part, index) => (
+                                    <span key={index}>
+                                        <span className={styles.breadcrumbSeparator}>/</span>
+                                        <button onClick={() => handleBreadcrumbClick(index)}>{part}</button>
+                                    </span>
+                                ))}
+                            </nav>
                             <button onClick={handleRefresh} className={styles.refreshButton} title="Refresh all app data"><RefreshIcon /><span>Refresh Data</span></button>
                         </div>
-                        {assetsToDisplay.length > 0 ? (
+
+                        {/* --- NEW: Display for subfolders --- */}
+                        {currentView.subfolders.length > 0 && (
+                            <div className={styles.folderGrid}>
+                                {currentView.subfolders.map(folder => (
+                                    <button key={folder} className={styles.folderItem} onClick={() => handleFolderClick(folder)}>
+                                        <FolderIcon />
+                                        <span className={styles.folderName}>{folder}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        
+                        {/* --- MODIFIED: Display for assets in the current path --- */}
+                        {currentView.assets.length > 0 && (
                             <div className={styles.assetGrid}>
-                                {assetsToDisplay.map(asset => (
+                                {currentView.assets.map(asset => (
                                     <div key={asset.Link} className={styles.assetItem}>
                                         <img src={asset.Link} alt={asset.Name} className={styles.assetImage} />
                                         <div className={styles.assetInfo}>
@@ -143,7 +197,12 @@ export default function AssetsPage() {
                                     </div>
                                 ))}
                             </div>
-                        ) : (<p>No assets found in this folder.</p>)}
+                        )}
+                        
+                        {/* --- NEW: Message for empty folders --- */}
+                        {currentView.subfolders.length === 0 && currentView.assets.length === 0 && (
+                            <p className={styles.emptyMessage}>This folder is empty.</p>
+                        )}
                     </section>
                 )}
 
