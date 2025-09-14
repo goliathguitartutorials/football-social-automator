@@ -78,10 +78,51 @@
 .sectionHeader {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end; /* Align items to the bottom for better look */
+    align-items: center; /* Adjusted alignment */
     margin-bottom: 1.5rem;
     gap: 1.5rem; /* Add gap between items */
+    flex-wrap: wrap; /* Allow wrapping on small screens */
 }
+
+/* --- NEW: Breadcrumbs Styles --- */
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.breadcrumbs button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumbs button:hover {
+    color: var(--text-primary);
+    background-color: var(--background-dark);
+}
+
+.breadcrumbs span button {
+    color: var(--accent-color);
+    font-weight: 500;
+}
+.breadcrumbs span button:hover {
+    text-decoration: underline;
+    color: var(--accent-color-hover);
+}
+.breadcrumbSeparator {
+    margin-right: 0.5rem;
+}
+/* --- END Breadcrumbs --- */
+
 
 .sectionTitle {
     font-size: 1.5rem;
@@ -93,7 +134,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.65rem 1rem; /* Adjusted padding to match form inputs */
+    padding: 0.65rem 1rem;
     font-size: 0.9rem;
     font-weight: bold;
     color: var(--text-secondary);
@@ -102,13 +143,52 @@
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
-    white-space: nowrap; /* Prevent button text from wrapping */
+    white-space: nowrap;
 }
 
 .refreshButton:hover {
     color: var(--text-primary);
     border-color: var(--accent-color);
 }
+
+/* --- NEW: Folder Grid Styles --- */
+.folderGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem; /* Space between folders and assets */
+    padding-bottom: 1.5rem; /* More space */
+    border-bottom: 1px solid var(--border-color);
+}
+
+.folderItem {
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.folderItem:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border-color: var(--accent-color);
+    color: var(--text-primary);
+}
+
+.folderName {
+    font-weight: 500;
+    word-break: break-all;
+}
+/* --- END Folder Grid --- */
 
 .assetGrid {
     display: grid;
@@ -139,6 +219,13 @@
 .assetInfo { padding: 0.75rem; }
 .assetName { font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .assetFolder { font-size: 0.8rem; color: var(--text-secondary); }
+
+/* --- NEW: Empty Folder Message --- */
+.emptyMessage {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
 
 .uploadForm { display: flex; flex-direction: column; gap: 1.5rem; }
 .formGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
