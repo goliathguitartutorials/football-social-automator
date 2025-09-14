@@ -78,13 +78,13 @@
 .sectionHeader {
     display: flex;
     justify-content: space-between;
-    align-items: center; /* Adjusted alignment */
+    align-items: center; /* MODIFIED: This fixes the wrapping issue */
     margin-bottom: 1.5rem;
-    gap: 1.5rem; /* Add gap between items */
-    flex-wrap: wrap; /* Allow wrapping on small screens */
+    gap: 1.5rem;
+    flex-wrap: wrap;
 }
 
-/* --- NEW: Breadcrumbs Styles --- */
+/* --- Breadcrumbs Styles --- */
 .breadcrumbs {
     display: flex;
     align-items: center;
@@ -130,6 +130,15 @@
     margin-bottom: 1rem;
 }
 
+/* --- MODIFIED: Styles for footer actions area --- */
+.footerActions {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: center;
+}
+
 .refreshButton {
     display: inline-flex;
     align-items: center;
@@ -151,7 +160,7 @@
     border-color: var(--accent-color);
 }
 
-/* --- NEW: Folder Grid Styles --- */
+/* --- Folder Grid Styles --- */
 .folderGrid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -196,18 +205,23 @@
     gap: 1.5rem;
 }
 
-.assetItem {
+/* --- NEW: Styling for asset item as a button --- */
+.assetItemButton {
     background-color: var(--background-dark);
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--border-color);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
 }
 
-.assetItem:hover {
+.assetItemButton:hover {
     transform: translateY(-4px);
     box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1);
 }
+/* --- END --- */
 
 .assetImage {
     width: 100%;
@@ -220,13 +234,14 @@
 .assetName { font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .assetFolder { font-size: 0.8rem; color: var(--text-secondary); }
 
-/* --- NEW: Empty Folder Message --- */
+/* --- Empty Folder Message --- */
 .emptyMessage {
     text-align: center;
     padding: 2rem;
     color: var(--text-secondary);
 }
 
+/* --- ADD NEW ASSET FORM STYLES --- */
 .uploadForm { display: flex; flex-direction: column; gap: 1.5rem; }
 .formGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
 .formGroup { display: flex; flex-direction: column; gap: 0.5rem; }
