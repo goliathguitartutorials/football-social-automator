@@ -9,11 +9,10 @@
 
 import styles from './MonthView.module.css';
 import PostPreview from '../PostPreview/PostPreview';
-import { MoreIcon } from '../SchedulePageIcons';
+import { MoreIcon, PlusIcon } from '../SchedulePageIcons';
 
-export default function MonthView({ currentDate, posts, onPostClick, onMoreClick, onDayClick, isMobile = false }) {
+export default function MonthView({ currentDate, posts, onPostClick, onMoreClick, onDayClick, onNewPostClick, isMobile = false }) {
   const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  // CORRECTED: Removed the duplicate "new" keyword
   const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   const startDay = startOfMonth.getDay();
   const daysInMonth = endOfMonth.getDate();
@@ -44,20 +43,26 @@ export default function MonthView({ currentDate, posts, onPostClick, onMoreClick
 
       days.push(
         <div key={date.toISOString()} className={styles.day} {...dayProps}>
+          {!isMobile && (
+            <div className={styles.addPostArea} onClick={() => onNewPostClick(date)}>
+              <PlusIcon />
+              <span>Add Post</span>
+            </div>
+          )}
           <span>{date.getDate()}</span>
           <div className={styles.posts}>
             {dayPosts.slice(0, maxPosts).map(post => (
               <PostPreview 
                 key={post.id} 
                 post={post} 
-                onClick={!isMobile ? onPostClick : () => {}} // Disable individual click on mobile
+                onClick={!isMobile ? onPostClick : () => {}}
                 isMobileCalendarView={isMobile} 
               />
             ))}
             {dayPosts.length > maxPosts && (
               <button
                 className={styles.moreButton}
-                onClick={isMobile ? undefined : (e) => { e.stopPropagation(); onMoreClick(date); }} // Prevent click bubbling on desktop
+                onClick={isMobile ? undefined : (e) => { e.stopPropagation(); onMoreClick(date); }}
               >
                 <MoreIcon />
                 {!isMobile && <span>{dayPosts.length - maxPosts} more</span>}
