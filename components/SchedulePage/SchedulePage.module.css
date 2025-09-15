@@ -1,0 +1,121 @@
+/*
+ * ==========================================================
+ * COMPONENT: SchedulePage
+ * PAGE: /schedule
+ * FILE: /components/SchedulePage/SchedulePage.module.css
+ ==========================================================
+ */
+.schedulePage {
+    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.calendarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.calendarHeader > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.calendarHeader h2 {
+    margin: 0 10px;
+    color: var(--text-primary);
+    min-width: 200px;
+    text-align: center;
+}
+
+.calendarHeader button {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.calendarHeader button:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.calendarHeader button.activeView {
+    background-color: var(--accent-color);
+    color: var(--background-dark);
+    border-color: var(--accent-color);
+}
+
+.calendarGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    flex-grow: 1;
+}
+
+.dayName, .day {
+    border: 1px solid var(--border-color);
+    background-color: var(--surface-dark);
+    padding: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.dayName {
+    font-weight: bold;
+    text-align: center;
+    color: var(--text-secondary);
+    height: auto;
+}
+
+.day {
+    min-height: 150px;
+}
+
+.day span {
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.posts {
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.moreButton {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    padding: 5px;
+    border-radius: 4px;
+    width: 100%;
+    justify-content: center;
+    margin-top: auto;
+}
+
+.moreButton:hover {
+    background-color: var(--background-dark);
+}
