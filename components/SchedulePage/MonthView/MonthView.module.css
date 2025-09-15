@@ -7,7 +7,6 @@
  */
 .calendarGrid {
     display: grid;
-    /* MODIFIED: This ensures uniform column widths and prevents overflow */
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 5px;
     flex-grow: 1;
@@ -74,6 +73,11 @@
 }
 
 /* Styles for mobile calendar view */
+.mobileGrid .dayName {
+    /* ADDED: Explicitly center day name text */
+    text-align: center;
+}
+
 .mobileGrid .day {
     height: 90px;
     padding: 5px;
@@ -82,11 +86,14 @@
 .mobileGrid .day span {
     font-size: 0.8rem;
     margin-bottom: 3px;
-    text-align: right;
+    /* MODIFIED: Center the date number */
+    text-align: center;
 }
 
 .mobileGrid .posts {
     margin-top: 3px;
+    /* MODIFIED: Reduced gap to fit more items */
+    gap: 3px;
 }
 
 .mobileGrid .moreButton {
