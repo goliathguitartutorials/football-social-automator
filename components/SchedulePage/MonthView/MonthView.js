@@ -11,13 +11,12 @@ import styles from './MonthView.module.css';
 import PostPreview from '../PostPreview/PostPreview';
 import { MoreIcon } from '../SchedulePageIcons';
 
-export default function MonthView({ currentDate, posts, onPostClick, onMoreClick, isMobile = false }) {
+export default function MonthView({ currentDate, posts, onPostClick, onMoreClick, onDayClick, isMobile = false }) {
   const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  const endOfMonth = new new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   const startDay = startOfMonth.getDay();
   const daysInMonth = endOfMonth.getDate();
   
-  // MODIFIED: Increased max posts on mobile to show more text previews
   const maxPosts = isMobile ? 3 : 2;
 
   const renderDays = () => {
@@ -37,22 +36,27 @@ export default function MonthView({ currentDate, posts, onPostClick, onMoreClick
                postDate.getFullYear() === date.getFullYear();
       });
 
+      const dayProps = {};
+      if (isMobile && onDayClick) {
+        dayProps.onClick = () => onDayClick(date);
+      }
+
       days.push(
-        <div key={date.toISOString()} className={styles.day}>
+        <div key={date.toISOString()} className={styles.day} {...dayProps}>
           <span>{date.getDate()}</span>
           <div className={styles.posts}>
             {dayPosts.slice(0, maxPosts).map(post => (
               <PostPreview 
                 key={post.id} 
                 post={post} 
-                onClick={onPostClick} 
+                onClick={!isMobile ? onPostClick : () => {}} // Disable individual click on mobile
                 isMobileCalendarView={isMobile} 
               />
             ))}
             {dayPosts.length > maxPosts && (
               <button
                 className={styles.moreButton}
-                onClick={() => onMoreClick(date)}
+                onClick={isMobile ? undefined : (e) => { e.stopPropagation(); onMoreClick(date); }} // Prevent click bubbling on desktop
               >
                 <MoreIcon />
                 {!isMobile && <span>{dayPosts.length - maxPosts} more</span>}
