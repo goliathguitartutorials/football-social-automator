@@ -9,7 +9,8 @@
 import { useState, useEffect } from 'react';
 import styles from './UpNextForm.module.css';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
-import { UploadIcon, GalleryIcon, GenerateIcon } from '@/components/UpNextAnnouncement/UpNextAnnouncementIcons';
+// MODIFIED: The import path has been updated to the new location of the icons file.
+import { UploadIcon, GalleryIcon, GenerateIcon } from '@/components/CreatePage/UpNextAnnouncement/UpNextAnnouncementIcons';
 
 // Helper function to format the date as requested
 const formatDateForWebhook = (dateString) => {
