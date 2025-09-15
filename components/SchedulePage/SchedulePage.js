@@ -22,6 +22,7 @@ export default function SchedulePage({ appData }) {
   const [viewType, setViewType] = useState('month'); // month, week
   const [dayViewDate, setDayViewDate] = useState(new Date());
   const { width } = useWindowSize();
+  const isMobile = width && width <= 768;
 
   const openModal = (post) => {
     setSelectedPost(post);
@@ -85,15 +86,8 @@ export default function SchedulePage({ appData }) {
   };
 
   const renderActiveView = () => {
-    const isMobile = width && width <= 768;
-
     if (viewMode === 'list') {
-      return (
-        <MobileScheduleView
-          posts={scheduledPosts}
-          onPostClick={openModal}
-        />
-      );
+      return <MobileScheduleView posts={scheduledPosts} onPostClick={openModal} />;
     }
 
     if (viewMode === 'day') {
@@ -103,35 +97,21 @@ export default function SchedulePage({ appData }) {
                postDate.getMonth() === dayViewDate.getMonth() &&
                postDate.getFullYear() === dayViewDate.getFullYear();
       });
-      return (
-        <MobileScheduleView
-          posts={dayPosts}
-          onPostClick={openModal}
-        />
-      );
+      return <MobileScheduleView posts={dayPosts} onPostClick={openModal} />;
     }
     
     if (viewMode === 'calendar') {
-      if (isMobile) {
-        return <MonthView
-          currentDate={currentDate}
-          posts={currentPosts}
-          onDayClick={handleDayClick} // Use new handler for mobile
-          isMobile={true}
-        />;
-      }
-
       if (viewType === 'month') {
         return <MonthView
           currentDate={currentDate}
           posts={currentPosts}
-          onPostClick={openModal} // Keep old handler for desktop
-          onMoreClick={(date) => handleDayClick(date)}
-          isMobile={false}
+          onDayClick={handleDayClick}
+          onPostClick={openModal}
+          onMoreClick={handleDayClick}
+          isMobile={isMobile}
         />;
       }
-
-      if (viewType === 'week') {
+      if (viewType === 'week' && !isMobile) {
         return <WeekView
           currentDate={currentDate}
           posts={currentPosts}
@@ -139,13 +119,15 @@ export default function SchedulePage({ appData }) {
         />;
       }
     }
-
     return null;
   };
 
   const getHeaderText = () => {
     if (viewMode === 'day') {
       return dayViewDate.toLocaleString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    if (viewMode === 'list') {
+        return "All Scheduled Posts";
     }
     if (viewType === 'month') {
       return currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -154,24 +136,52 @@ export default function SchedulePage({ appData }) {
       return `${getStartOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric' })} - ${getEndOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`;
     }
     return '';
+  };
+
+  const handleCalendarClick = () => {
+    setViewMode('calendar');
+    // Default to month view if coming from another mode
+    if (viewMode !== 'calendar') {
+      setViewType('month');
+    }
   }
 
+  const navButtons = [
+    { id: 'calendar', label: 'Calendar', icon: <CalendarIcon />, onClick: handleCalendarClick },
+    { id: 'list', label: 'List', icon: <ListIcon />, onClick: () => setViewMode('list') },
+    { id: 'day', label: 'Day', icon: <DayIcon />, onClick: () => handleDayClick(new Date()) },
+  ];
+
   return (
-    <div className={styles.schedulePage}>
-      <div className={styles.calendarHeader}>
-        <div>
-          <button onClick={handlePrev}>&lt;</button>
-          <h2>{getHeaderText()}</h2>
-          <button onClick={handleNext}>&gt;</button>
+    <div className={styles.container}>
+      <header className={styles.header}>
+        <nav className={styles.subNav}>
+          {navButtons.map((button) => (
+            <button
+              key={button.id}
+              className={`${styles.navButton} ${viewMode === button.id ? styles.active : ''}`}
+              onClick={button.onClick}
+            >
+              <span className={styles.navIcon}>{button.icon}</span>
+              <span className={styles.navLabel}>{button.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className={styles.secondaryHeader}>
+            <div className={styles.dateNav}>
+                <button onClick={handlePrev}>&lt;</button>
+                <h2>{getHeaderText()}</h2>
+                <button onClick={handleNext}>&gt;</button>
+            </div>
+            {!isMobile && viewMode === 'calendar' && (
+                <div className={styles.viewTypeNav}>
+                    <button onClick={() => setViewType('month')} className={viewType === 'month' ? styles.activeViewType : ''}>Month</button>
+                    <button onClick={() => setViewType('week')} className={viewType === 'week' ? styles.activeViewType : ''}>Week</button>
+                </div>
+            )}
         </div>
-        <div>
-          <button onClick={() => { setViewMode('calendar'); setViewType('month'); }} className={`${viewType === 'month' && viewMode === 'calendar' ? styles.activeView : ''} ${styles.desktopOnlyButton}`}><MonthIcon /><span>Month</span></button>
-          <button onClick={() => { setViewMode('calendar'); setViewType('week'); }} className={`${viewType === 'week' && viewMode === 'calendar' ? styles.activeView : ''} ${styles.desktopOnlyButton}`}><WeekIcon /><span>Week</span></button>
-          <button onClick={() => { setViewMode('day'); setDayViewDate(currentDate); }} className={`${viewMode === 'day' ? styles.activeView : ''}`}><DayIcon /><span>Day</span></button>
-          <button onClick={() => setViewMode('calendar')} className={`${viewMode === 'calendar' ? styles.activeView : ''}`}><CalendarIcon /><span>Calendar</span></button>
-          <button onClick={() => setViewMode('list')} className={`${viewMode === 'list' ? styles.activeView : ''}`}><ListIcon /><span>List</span></button>
-        </div>
-      </div>
+      </header>
       
       <div className={styles.calendarContainer}>
         {renderActiveView()}
