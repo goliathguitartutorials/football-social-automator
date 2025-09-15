@@ -2,7 +2,7 @@
  * ==========================================================
  * COMPONENT: Up Next Announcement Icons
  * PAGE: /
- * FILE: /components/UpNextAnnouncement/UpNextAnnouncementIcons.js
+ * FILE: /components/CreatePage/UpNextAnnouncement/UpNextAnnouncementIcons.js
  * ==========================================================
  */
 // A simple wrapper to handle sizing and styling for all icons
