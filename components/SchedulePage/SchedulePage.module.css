@@ -76,12 +76,13 @@
     font-weight: bold;
     text-align: center;
     color: var(--text-secondary);
-    height: auto; /* Ensures height is based on content */
+    height: auto; 
 }
 
 .day {
-    min-height: 150px;
-    display: flex; /* Flex properties now only apply to .day */
+    /* MODIFIED: Set a fixed height for all day cells */
+    height: 150px; 
+    display: flex;
     flex-direction: column;
 }
 
@@ -98,7 +99,7 @@
     flex-direction: column;
     gap: 5px;
     flex-grow: 1;
-    overflow-y: auto;
+    overflow-y: auto; /* This will be hidden due to fixed height, but good practice */
 }
 
 .moreButton {
@@ -114,27 +115,28 @@
     border-radius: 4px;
     width: 100%;
     justify-content: center;
-    margin-top: auto;
+    /* MODIFIED: Pushes the button to the bottom of the cell */
+    margin-top: auto; 
 }
 
 .moreButton:hover {
     background-color: var(--background-dark);
 }
 
-/* NEW: Media query for responsive header on mobile */
+/* Media query for responsive header on mobile */
 @media (max-width: 768px) {
     .schedulePage {
         padding: 15px;
     }
 
     .calendarHeader {
-        flex-direction: column; /* Stacks the date nav and view buttons */
+        flex-direction: column;
         align-items: center;
-        gap: 15px; /* Adds space between the stacked items */
+        gap: 15px;
     }
 
     .calendarHeader > div {
         width: 100%;
-        justify-content: center; /* Center-aligns the buttons in each group */
+        justify-content: center;
     }
 }
