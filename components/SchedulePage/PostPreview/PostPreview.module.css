@@ -3,15 +3,14 @@
  * COMPONENT: PostPreview
  * PAGE: /schedule
  * FILE: /components/SchedulePage/PostPreview/PostPreview.module.css
- ==========================================================
+ * ==========================================================
  */
 .postPreview {
     display: flex;
     align-items: center;
     gap: 8px;
     background-color: var(--background-dark);
-    /* MODIFIED: Reduced vertical padding */
-    padding: 3px 5px; 
+    padding: 3px 5px;
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s;
@@ -38,21 +37,47 @@
 }
 
 .postTime {
-    /* MODIFIED: Slightly smaller font */
-    font-size: 0.75rem; 
+    font-size: 0.75rem;
     font-weight: bold;
     color: var(--text-primary);
 }
 
 .postCaption {
-    /* MODIFIED: Slightly smaller font */
-    font-size: 0.75rem; 
+    font-size: 0.75rem;
     color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     margin: 0;
 }
+
+/* Mobile Calendar Compact View Styles */
+.mobileCalendarPreview {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background-color: var(--background-dark);
+    padding: 3px 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    width: 100%;
+}
+
+.mobileCalendarPreview:hover {
+    background-color: var(--accent-color-dark);
+}
+
+.mobileCalendarPreview .postTime {
+    font-size: 0.7rem;
+}
+
+.mobileCalendarPreview .postCaption {
+    font-size: 0.7rem;
+}
+
 
 /* List View Styles */
 .postPreview.listView {
