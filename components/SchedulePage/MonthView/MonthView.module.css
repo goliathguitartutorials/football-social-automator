@@ -17,6 +17,7 @@
     border: 1px solid var(--border-color);
     background-color: var(--surface-dark);
     padding: 10px;
+    position: relative; /* Needed for positioning the add post area */
 }
 
 .dayName {
@@ -50,6 +51,37 @@
     flex-direction: column;
     gap: 5px;
     flex-grow: 1;
+    position: relative; /* Ensure posts render above the add area */
+    z-index: 2;
+}
+
+/* ADDED: Styles for the clickable add post area on desktop */
+.addPostArea {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    background-color: rgba(17, 24, 39, 0.8);
+    color: var(--text-secondary);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 1;
+}
+
+.day:hover .addPostArea {
+    opacity: 1;
+}
+
+.addPostArea svg {
+    width: 24px;
+    height: 24px;
 }
 
 .moreButton {
@@ -74,7 +106,6 @@
 
 /* Styles for mobile calendar view */
 .mobileGrid .dayName {
-    /* ADDED: Explicitly center day name text */
     text-align: center;
 }
 
@@ -86,13 +117,11 @@
 .mobileGrid .day span {
     font-size: 0.8rem;
     margin-bottom: 3px;
-    /* MODIFIED: Center the date number */
     text-align: center;
 }
 
 .mobileGrid .posts {
     margin-top: 3px;
-    /* MODIFIED: Reduced gap to fit more items */
     gap: 3px;
 }
 
