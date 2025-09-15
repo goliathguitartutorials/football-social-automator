@@ -3,7 +3,7 @@
  * COMPONENT: MobileScheduleView
  * PAGE: /schedule
  * FILE: /components/SchedulePage/MobileScheduleView/MobileScheduleView.module.css
- ==========================================================
+ * ==========================================================
  */
 .mobileView {
     padding: 10px;
@@ -27,4 +27,31 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+/* ADDED: Styles for the new post placeholder button */
+.newPostButton {
+    background: none;
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+}
+
+.newPostButton:hover {
+    background-color: var(--surface-dark);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.newPostButton svg {
+    width: 20px;
+    height: 20px;
 }
