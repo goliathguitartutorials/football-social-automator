@@ -16,10 +16,10 @@ export default function PostPreview({ post, onClick, isListView = false, isMobil
     hour12: false
   });
 
-  // MODIFIED: Render a text-only view for the mobile calendar grid
+  // Render a text-only view for the mobile calendar grid
   if (isMobileCalendarView) {
     return (
-      <div className={styles.mobileTextPreview} onClick={() => onClick(post)}>
+      <div className={styles.mobileTextPreview}>
         {post.post_caption}
       </div>
     );
