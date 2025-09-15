@@ -17,7 +17,7 @@
     border: 1px solid var(--border-color);
     background-color: var(--surface-dark);
     padding: 10px;
-    position: relative; /* Needed for positioning the add post area */
+    position: relative;
 }
 
 .dayName {
@@ -51,37 +51,41 @@
     flex-direction: column;
     gap: 5px;
     flex-grow: 1;
-    position: relative; /* Ensure posts render above the add area */
-    z-index: 2;
 }
 
-/* ADDED: Styles for the clickable add post area on desktop */
-.addPostArea {
+/* ADDED: Styles for the new corner add post button on desktop */
+.addPostButton {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 5px;
+    right: 5px;
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    gap: 8px;
-    background-color: rgba(17, 24, 39, 0.8);
-    color: var(--text-secondary);
     cursor: pointer;
     opacity: 0;
-    transition: opacity 0.2s;
-    z-index: 1;
+    transition: opacity 0.2s, background-color 0.2s;
+    z-index: 10; /* Ensure it's above other elements */
 }
 
-.day:hover .addPostArea {
+.day:hover .addPostButton {
     opacity: 1;
 }
 
-.addPostArea svg {
-    width: 24px;
-    height: 24px;
+.addPostButton:hover {
+    background-color: var(--accent-color);
+    color: var(--background-dark);
+    border-color: var(--accent-color);
+}
+
+.addPostButton svg {
+    width: 16px;
+    height: 16px;
 }
 
 .moreButton {
@@ -98,6 +102,8 @@
     width: 100%;
     justify-content: center;
     margin-top: auto;
+    position: relative;
+    z-index: 5;
 }
 
 .moreButton:hover {
