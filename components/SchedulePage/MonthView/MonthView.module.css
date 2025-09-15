@@ -3,7 +3,7 @@
  * COMPONENT: MonthView
  * PAGE: /schedule
  * FILE: /components/SchedulePage/MonthView/MonthView.module.css
- ==========================================================
+ * ==========================================================
  */
 .calendarGrid {
     display: grid;
@@ -31,6 +31,10 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+}
+
+.day.emptyDay {
+    background-color: var(--background-dark);
 }
 
 .day span {
@@ -66,4 +70,30 @@
 
 .moreButton:hover {
     background-color: var(--background-dark);
+}
+
+/* Styles for mobile calendar view */
+.mobileGrid .day {
+    height: 90px;
+    padding: 5px;
+}
+
+.mobileGrid .day span {
+    font-size: 0.8rem;
+    margin-bottom: 3px;
+    text-align: right;
+}
+
+.mobileGrid .posts {
+    margin-top: 3px;
+}
+
+.mobileGrid .moreButton {
+    padding: 2px;
+    margin-top: 5px;
+    justify-content: center;
+}
+
+.mobileGrid .moreButton span {
+    display: none;
 }
