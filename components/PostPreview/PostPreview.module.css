@@ -1,0 +1,80 @@
+/*
+ * ==========================================================
+ * COMPONENT: PostPreview
+ * PAGE: /schedule
+ * FILE: /components/PostPreview/PostPreview.module.css
+ ==========================================================
+ */
+.postPreview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--background-dark);
+    padding: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: 1px solid var(--border-color);
+}
+
+.postPreview:hover {
+    background-color: var(--accent-color-dark);
+}
+
+.previewImage {
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.postDetails {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+}
+
+.postTime {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+.postCaption {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+/* List View Styles */
+.postPreview.listView {
+    padding: 10px;
+}
+
+.postPreview.listView .previewImage {
+    width: 50px;
+    height: 50px;
+}
+
+.postPreview.listView .postDetails {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.postPreview.listView .postTime {
+    font-size: 0.9rem;
+}
+
+.postPreview.listView .postCaption {
+    font-size: 0.9rem;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
