@@ -13,9 +13,9 @@ import styles from './CreatePage.module.css';
 import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, BespokeIcon } from './CreatePageIcons';
 
 import MatchDayAnnouncement from './MatchDayAnnouncement/MatchDayAnnouncement';
-// MODIFIED: Import path updated for SquadAnnouncement
 import SquadAnnouncement from './SquadAnnouncement/SquadAnnouncement';
-import MatchResult from '@/components/MatchResult/MatchResult';
+// MODIFIED: Import path updated for MatchResult
+import MatchResult from './MatchResult/MatchResult';
 import BespokePost from '@/components/BespokePost/BespokePost';
 import UpNextAnnouncement from './UpNextAnnouncement/UpNextAnnouncement';
 
