@@ -1,0 +1,69 @@
+/*
+ * ==========================================================
+ * COMPONENT: MonthView
+ * PAGE: /schedule
+ * FILE: /components/SchedulePage/MonthView/MonthView.module.css
+ ==========================================================
+ */
+.calendarGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    flex-grow: 1;
+}
+
+.dayName,
+.day {
+    border: 1px solid var(--border-color);
+    background-color: var(--surface-dark);
+    padding: 10px;
+}
+
+.dayName {
+    font-weight: bold;
+    text-align: center;
+    color: var(--text-secondary);
+    height: auto;
+}
+
+.day {
+    height: 180px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.day span {
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.posts {
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-grow: 1;
+}
+
+.moreButton {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    padding: 5px;
+    border-radius: 4px;
+    width: 100%;
+    justify-content: center;
+    margin-top: auto;
+}
+
+.moreButton:hover {
+    background-color: var(--background-dark);
+}
