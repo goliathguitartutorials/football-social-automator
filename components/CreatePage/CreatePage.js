@@ -16,8 +16,8 @@ import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnno
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
 import MatchResult from '@/components/MatchResult/MatchResult';
 import BespokePost from '@/components/BespokePost/BespokePost';
-// MODIFIED: Imported the new UpNextAnnouncement component
-import UpNextAnnouncement from '@/components/UpNextAnnouncement/UpNextAnnouncement';
+// MODIFIED: Import path updated to reflect the new location
+import UpNextAnnouncement from './UpNextAnnouncement/UpNextAnnouncement';
 
 const postTypes = [
     { id: 'upNext', label: 'Up Next', icon: <UpNextIcon /> },
