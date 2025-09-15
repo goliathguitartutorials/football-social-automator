@@ -1,0 +1,49 @@
+/*
+ * ==========================================================
+ * COMPONENT: WeekView
+ * PAGE: /schedule
+ * FILE: /components/SchedulePage/WeekView/WeekView.module.css
+ ==========================================================
+ */
+.calendarGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: auto 1fr; /* Headers auto-size, days take up remaining space */
+    gap: 5px;
+    flex-grow: 1;
+}
+
+.dayName,
+.day {
+    border: 1px solid var(--border-color);
+    background-color: var(--surface-dark);
+    padding: 10px;
+}
+
+.dayName {
+    font-weight: bold;
+    text-align: center;
+    color: var(--text-secondary);
+    height: auto;
+}
+
+.day {
+    min-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.day span {
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.posts {
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
