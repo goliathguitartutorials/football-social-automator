@@ -83,19 +83,21 @@
     flex-direction: column;
 }
 
-/* NEW: Specific styles for Month View */
+/* Specific styles for Month View */
 .monthView .day {
     height: 125px; /* Fixed height for consistency */
     overflow: hidden; /* Prevent scrollbar */
 }
 
-/* NEW: Specific styles for Week View */
+/* Specific styles for Week View */
 .weekView {
-    grid-auto-rows: min-content 1fr; /* First row (headers) is auto-sized, second row (days) takes remaining space */
+    grid-auto-rows: min-content 1fr; 
 }
 
 .weekView .day {
     min-height: 200px; /* A minimum height, but can grow */
+    /* MODIFIED: Add overflow-y for safety in case of very many posts */
+    overflow-y: auto;
 }
 
 .day span {
