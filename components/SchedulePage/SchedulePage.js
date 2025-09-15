@@ -48,7 +48,6 @@ export default function SchedulePage({ appData }) {
     return endOfWeek;
   };
 
-  // CORRECTED LINE: Access the `scheduledPosts` array directly from the appData object.
   const scheduledPosts = appData?.scheduledPosts || [];
 
   const currentPosts = scheduledPosts.filter(post => {
@@ -85,7 +84,6 @@ export default function SchedulePage({ appData }) {
     let displayDays = [];
 
     if (viewType === 'month') {
-      // Adjust for Monday start
       const adjustedStartDay = startDay === 0 ? 6 : startDay - 1;
       for (let i = 0; i < adjustedStartDay; i++) {
         days.push(<div key={`empty-${i}`} className={styles.day}></div>);
@@ -111,10 +109,12 @@ export default function SchedulePage({ appData }) {
         <div key={date.toISOString()} className={styles.day}>
           <span>{date.getDate()}</span>
           <div className={styles.posts}>
-            {dayPosts.slice(0, 3).map(post => (
+            {/* MODIFIED: Show max 2 posts */}
+            {dayPosts.slice(0, 2).map(post => (
               <PostPreview key={post.id} post={post} onClick={openModal} />
             ))}
-            {dayPosts.length > 3 && (
+            {/* MODIFIED: Show 'more' button if there are more than 2 posts */}
+            {dayPosts.length > 2 && (
               <button
                 className={styles.moreButton}
                 onClick={() => {
@@ -122,7 +122,7 @@ export default function SchedulePage({ appData }) {
                   setViewMode('list');
                 }}
               >
-                <MoreIcon /><span>{dayPosts.length - 3} more</span>
+                <MoreIcon /><span>{dayPosts.length - 2} more</span>
               </button>
             )}
           </div>
