@@ -51,23 +51,20 @@
     margin: 0;
 }
 
-/* MODIFIED: New styles for the text-only mobile calendar entries */
+/* Mobile Calendar Text-Only View */
 .mobileTextPreview {
     font-size: 0.7rem;
-    background-color: var(--accent-color-dark);
-    color: var(--text-primary);
+    background-color: var(--surface-dark);
+    color: var(--text-secondary);
     padding: 2px 4px;
     border-radius: 3px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    cursor: pointer;
     width: 100%;
     box-sizing: border-box;
-}
-
-.mobileTextPreview:hover {
-    opacity: 0.8;
+    /* ADDED: Border for better visual separation */
+    border-left: 3px solid var(--accent-color);
 }
 
 /* List View Styles */
