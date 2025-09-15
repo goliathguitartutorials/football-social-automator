@@ -14,9 +14,9 @@ import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, BespokeIcon } from './
 
 import MatchDayAnnouncement from './MatchDayAnnouncement/MatchDayAnnouncement';
 import SquadAnnouncement from './SquadAnnouncement/SquadAnnouncement';
-// MODIFIED: Import path updated for MatchResult
 import MatchResult from './MatchResult/MatchResult';
-import BespokePost from '@/components/BespokePost/BespokePost';
+// MODIFIED: Import path updated for BespokePost
+import BespokePost from './BespokePost/BespokePost';
 import UpNextAnnouncement from './UpNextAnnouncement/UpNextAnnouncement';
 
 const postTypes = [
