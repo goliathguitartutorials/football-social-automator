@@ -29,7 +29,7 @@
 .calendarHeader h2 {
     margin: 0 10px;
     color: var(--text-primary);
-    min-width: 200px;
+    min-width: 250px;
     text-align: center;
 }
 
@@ -43,6 +43,7 @@
     transition: all 0.2s;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
 }
 
@@ -66,19 +67,38 @@
 /* Media query for responsive header on mobile */
 @media (max-width: 768px) {
     .schedulePage {
-        /* MODIFIED: Reduced left/right padding to give calendar more space */
-        padding: 15px 5px;
+        /* MODIFIED: Further reduced left/right padding */
+        padding: 15px 2px;
     }
     .calendarHeader {
         flex-direction: column;
         align-items: center;
         gap: 15px;
     }
+    .calendarHeader h2 {
+        min-width: unset;
+        font-size: 1.1rem;
+    }
     .calendarHeader > div {
         width: 100%;
         justify-content: center;
     }
     .desktopOnlyButton {
-        display: none;
+        display: none !important; /* Use important to ensure override */
+    }
+
+    /* ADDED: Styles for vertical mobile buttons */
+    .calendarHeader button {
+        flex-direction: column;
+        font-size: 0.6rem;
+        padding: 6px;
+        gap: 2px;
+        width: 60px;
+        height: 55px;
+    }
+
+    .calendarHeader button svg {
+        width: 20px;
+        height: 20px;
     }
 }
