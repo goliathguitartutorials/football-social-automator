@@ -57,79 +57,10 @@
     border-color: var(--accent-color);
 }
 
-.calendarGrid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 5px;
+.calendarContainer {
     flex-grow: 1;
-}
-
-.dayName,
-.day {
-    border: 1px solid var(--border-color);
-    background-color: var(--surface-dark);
-    padding: 10px;
-}
-
-.dayName {
-    font-weight: bold;
-    text-align: center;
-    color: var(--text-secondary);
-    height: auto;
-}
-
-.day {
     display: flex;
     flex-direction: column;
-}
-
-/* Specific styles for Month View */
-.monthView .day {
-    /* MODIFIED: Increased height by ~50% to fit content without scrollbars */
-    height: 180px; 
-    overflow: hidden;
-}
-
-/* Specific styles for Week View */
-/* MODIFIED: Removed grid-auto-rows to fix inconsistent gaps */
-.weekView .day {
-    min-height: 200px; 
-    overflow-y: auto;
-}
-
-.day span {
-    color: var(--text-primary);
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-.posts {
-    margin-top: 5px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    flex-grow: 1;
-}
-
-.moreButton {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.8rem;
-    padding: 5px;
-    border-radius: 4px;
-    width: 100%;
-    justify-content: center;
-    margin-top: auto;
-}
-
-.moreButton:hover {
-    background-color: var(--background-dark);
 }
 
 /* Media query for responsive header on mobile */
