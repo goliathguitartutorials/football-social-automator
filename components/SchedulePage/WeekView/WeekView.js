@@ -8,7 +8,7 @@
 'use client';
 
 import styles from './WeekView.module.css';
-import PostPreview from '../../PostPreview/PostPreview';
+import PostPreview from '../PostPreview/PostPreview'; // MODIFIED PATH
 
 export default function WeekView({ currentDate, posts, onPostClick }) {
 
