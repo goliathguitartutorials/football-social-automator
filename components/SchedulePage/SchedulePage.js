@@ -109,11 +109,9 @@ export default function SchedulePage({ appData }) {
         <div key={date.toISOString()} className={styles.day}>
           <span>{date.getDate()}</span>
           <div className={styles.posts}>
-            {/* MODIFIED: Show max 2 posts */}
             {dayPosts.slice(0, 2).map(post => (
               <PostPreview key={post.id} post={post} onClick={openModal} />
             ))}
-            {/* MODIFIED: Show 'more' button if there are more than 2 posts */}
             {dayPosts.length > 2 && (
               <button
                 className={styles.moreButton}
@@ -155,7 +153,8 @@ export default function SchedulePage({ appData }) {
       {(viewMode === 'list' || (width && width <= 768)) ? (
         <MobileScheduleView posts={currentPosts} onPostClick={openModal} scrollToDate={scrollToDate} />
       ) : (
-        <div className={styles.calendarGrid}>
+        /* MODIFIED: Added dynamic class based on viewType */
+        <div className={`${styles.calendarGrid} ${viewType === 'month' ? styles.monthView : styles.weekView}`}>
           <div className={styles.dayName}>Mon</div>
           <div className={styles.dayName}>Tue</div>
           <div className={styles.dayName}>Wed</div>
