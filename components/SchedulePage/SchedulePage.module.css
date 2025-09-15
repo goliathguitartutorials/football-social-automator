@@ -5,57 +5,127 @@
  * FILE: /components/SchedulePage/SchedulePage.module.css
  * ==========================================================
  */
-.schedulePage {
-    padding: 20px;
+.container {
+    width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
 }
 
-.calendarHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+.header {
+    margin-bottom: 1.5rem;
     flex-shrink: 0;
 }
 
-.calendarHeader > div {
+/* Sub-navigation container */
+.subNav {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    justify-content: space-around;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.calendarHeader h2 {
-    margin: 0 10px;
+/* Default mobile styles for the navigation button */
+.navButton {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-grow: 1;
+    padding: 8px 4px;
+    border-bottom: 3px solid transparent;
+    transform: translateY(1px);
+    transition: all 0.2s ease-in-out;
+}
+
+.navButton:hover {
     color: var(--text-primary);
-    min-width: 250px;
+}
+
+.navButton.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+}
+
+.navIcon {
+    margin-bottom: 4px;
+}
+
+.navIcon svg {
+    fill: none;
+    width: 24px;
+    height: 24px;
+}
+
+.navLabel {
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.2;
     text-align: center;
 }
 
-.calendarHeader button {
+/* Secondary Header (Date Nav etc.) */
+.secondaryHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding: 0 10px;
+}
+
+.dateNav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    flex-grow: 1;
+}
+
+.dateNav h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    min-width: 150px;
+    text-align: center;
+}
+
+.dateNav button {
     background: none;
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    cursor: pointer;
 }
 
-.calendarHeader button:hover {
-    border-color: var(--accent-color);
-    color: var(--accent-color);
+.viewTypeNav {
+    display: flex;
+    align-items: center;
+    background-color: var(--surface-dark);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
 }
 
-.calendarHeader button.activeView {
+.viewTypeNav button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.viewTypeNav button.activeViewType {
     background-color: var(--accent-color);
     color: var(--background-dark);
-    border-color: var(--accent-color);
 }
 
 .calendarContainer {
@@ -64,41 +134,50 @@
     flex-direction: column;
 }
 
-/* Media query for responsive header on mobile */
-@media (max-width: 768px) {
-    .schedulePage {
-        /* MODIFIED: Further reduced left/right padding */
-        padding: 15px 2px;
-    }
-    .calendarHeader {
-        flex-direction: column;
-        align-items: center;
-        gap: 15px;
-    }
-    .calendarHeader h2 {
-        min-width: unset;
-        font-size: 1.1rem;
-    }
-    .calendarHeader > div {
-        width: 100%;
-        justify-content: center;
-    }
-    .desktopOnlyButton {
-        display: none !important; /* Use important to ensure override */
+/* DESKTOP STYLES */
+@media (min-width: 768px) {
+    .subNav {
+        justify-content: flex-start;
+        gap: 0.5rem;
     }
 
-    /* ADDED: Styles for vertical mobile buttons */
-    .calendarHeader button {
-        flex-direction: column;
-        font-size: 0.6rem;
-        padding: 6px;
-        gap: 2px;
-        width: 60px;
-        height: 55px;
+    .navButton {
+        flex-direction: row;
+        flex-grow: 0;
+        padding: 0.75rem 1.5rem;
     }
 
-    .calendarHeader button svg {
-        width: 20px;
-        height: 20px;
+    .navIcon {
+        margin-bottom: 0;
+        margin-right: 0.5rem;
+    }
+
+    .navLabel {
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .navButton.active .navLabel,
+    .navButton:hover .navLabel {
+        color: var(--text-primary);
+    }
+    
+    .navButton.active {
+        color: var(--accent-color);
+    }
+
+    .dateNav {
+        justify-content: flex-start;
+        flex-grow: 0;
+    }
+
+    .dateNav h2 {
+        font-size: 1.25rem;
+        min-width: 280px;
+    }
+
+    .dateNav button {
+        width: 35px;
+        height: 35px;
     }
 }
