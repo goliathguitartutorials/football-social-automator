@@ -51,33 +51,24 @@
     margin: 0;
 }
 
-/* Mobile Calendar Compact View Styles */
-.mobileCalendarPreview {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background-color: var(--background-dark);
-    padding: 3px 5px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    border: 1px solid var(--border-color);
-    overflow: hidden;
-    width: 100%;
-}
-
-.mobileCalendarPreview:hover {
+/* MODIFIED: New styles for the text-only mobile calendar entries */
+.mobileTextPreview {
+    font-size: 0.7rem;
     background-color: var(--accent-color-dark);
+    color: var(--text-primary);
+    padding: 2px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.mobileCalendarPreview .postTime {
-    font-size: 0.7rem;
+.mobileTextPreview:hover {
+    opacity: 0.8;
 }
-
-.mobileCalendarPreview .postCaption {
-    font-size: 0.7rem;
-}
-
 
 /* List View Styles */
 .postPreview.listView {
