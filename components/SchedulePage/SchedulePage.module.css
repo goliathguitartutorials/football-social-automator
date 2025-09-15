@@ -64,24 +64,26 @@
     flex-grow: 1;
 }
 
-.dayName, .day {
+/* MODIFIED: Separated dayName and day styles */
+.dayName,
+.day {
     border: 1px solid var(--border-color);
     background-color: var(--surface-dark);
     padding: 10px;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
 }
 
 .dayName {
     font-weight: bold;
     text-align: center;
     color: var(--text-secondary);
-    height: auto;
+    height: auto; /* Ensures height is based on content */
 }
 
 .day {
     min-height: 150px;
+    display: flex; /* Flex properties now only apply to .day */
+    flex-direction: column;
 }
 
 .day span {
