@@ -2,12 +2,12 @@
  * ==========================================================
  * COMPONENT: Bespoke Post
  * PAGE: /
- * FILE: /components/BespokePost/BespokePost.module.css
- ==========================================================
+ * FILE: /components/CreatePage/BespokePost/BespokePost.module.css
+ * ==========================================================
  */
 
 .container {
-    max-width: 600px; /* Constrain width for a better mobile-like view */
+    max-width: 600px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
