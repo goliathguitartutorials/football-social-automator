@@ -9,27 +9,29 @@
 import { useState } from 'react';
 import styles from './UpNextAnnouncement.module.css';
 import { useAppContext } from '@/app/context/AppContext';
-// MODIFIED: The import path has been updated to go up two directories.
 import UpNextForm from '../../common/PostCreationForms/UpNextForm/UpNextForm';
 import { GenerateIcon, EditIcon } from './UpNextAnnouncementIcons';
 
 const initialFormData = {
-    homeTeamBadge: '',
-    awayTeamBadge: '',
-    matchDate: '',
-    kickOffTime: '',
-    venue: '',
-    teamType: 'First Team',
-    caption: '',
-    selectedBackground: '',
-    saveCustomBackground: true,
+    homeTeamBadge: '', awayTeamBadge: '', matchDate: '', kickOffTime: '', venue: '',
+    teamType: 'First Team', caption: '', selectedBackground: '', saveCustomBackground: true,
     selectedMatchData: null,
 };
+
+const generateTimeSlots = () => {
+    const slots = [];
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 15) {
+            slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+        }
+    }
+    return slots;
+};
+const timeSlots = generateTimeSlots();
 
 export default function UpNextAnnouncement() {
     const { appData, authKey, loading, error } = useAppContext();
     const [formData, setFormData] = useState(initialFormData);
-    
     const [view, setView] = useState('CONFIG');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [previewUrl, setPreviewUrl] = useState('');
@@ -39,6 +41,10 @@ export default function UpNextAnnouncement() {
     const [isEditingImage, setIsEditingImage] = useState(false);
     const [generatedPreviews, setGeneratedPreviews] = useState([]);
     
+    // New state for scheduling from preview
+    const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().split('T')[0]);
+    const [scheduleTime, setScheduleTime] = useState('19:00');
+
     const handleGenerateCaption = async (gameInfo) => {
         setIsGeneratingCaption(true);
         setFormData(prev => ({ ...prev, caption: '' }));
@@ -64,15 +70,9 @@ export default function UpNextAnnouncement() {
         setMessage('');
 
         const payload = {
-            action,
-            home_team_badge: data.homeTeamBadge,
-            away_team_badge: data.awayTeamBadge,
-            match_date: data.match_date, // This is already formatted by the form
-            kick_off_time: data.kickOffTime,
-            venue: data.venue,
-            team: data.teamType,
-            background: data.selectedBackground,
-            caption: data.caption,
+            action, home_team_badge: data.homeTeamBadge, away_team_badge: data.awayTeamBadge,
+            match_date: data.match_date, kick_off_time: data.kickOffTime, venue: data.venue,
+            team: data.teamType, background: data.selectedBackground, caption: data.caption,
             save_background: data.saveCustomBackground
         };
 
@@ -88,24 +88,22 @@ export default function UpNextAnnouncement() {
                 setView('PREVIEW');
             } else if (action === 'yolo') {
                 setMessage('YOLO post successfully generated and sent!');
-                setFormData(initialFormData); // Reset form on success
+                setFormData(initialFormData);
             }
         } catch (err) {
             setMessage(`Error: ${err.message}`);
-            console.error('Workflow Trigger Error:', err);
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleGeneratePreview = (data) => triggerWorkflow('upNext', data);
+    const handleGeneratePreview = (data) => { setFormData(data); triggerWorkflow('upNext', data); };
     const handleYoloPost = (data) => triggerWorkflow('yolo', data);
     const handleBackToEdit = () => { setView('CONFIG'); setPreviewUrl(''); setMessage(''); };
     const handleSelectPreview = (url) => { setPreviewUrl(url); setView('PREVIEW'); };
 
     const handlePostToSocial = async () => {
-        setIsSubmitting(true);
-        setMessage('');
+        setIsSubmitting(true); setMessage('');
         const payload = { action: 'post_image', imageUrl: previewUrl, caption: formData.caption };
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
@@ -114,16 +112,14 @@ export default function UpNextAnnouncement() {
             setMessage('Successfully posted to social media!');
         } catch (err) {
             setMessage(`Error: ${err.message}`);
-            console.error('Post to Social Error:', err);
         } finally {
             setIsSubmitting(false);
         }
     };
-
+    
     const handleEditImage = async () => {
         if (!editPrompt) { alert('Please provide instructions for the image edit.'); return; }
-        setIsEditingImage(true);
-        setMessage('');
+        setIsEditingImage(true); setMessage('');
         const payload = { action: 'edit_image', imageUrl: previewUrl, prompt: editPrompt };
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
@@ -136,12 +132,43 @@ export default function UpNextAnnouncement() {
             setMessage('Image successfully updated!');
         } catch (err) {
             setMessage(`Error: ${err.message}`);
-            console.error('Image Edit Error:', err);
         } finally {
             setIsEditingImage(false);
         }
     };
+    
+    const handleSchedulePost = async () => {
+        if (!scheduleDate || !scheduleTime) {
+            alert('Please select a date and time to schedule the post.');
+            return;
+        }
+        setIsSubmitting(true);
+        setMessage('');
 
+        const [hours, minutes] = scheduleTime.split(':');
+        const finalScheduleDate = new Date(`${scheduleDate}T${hours}:${minutes}:00`);
+        
+        const payload = {
+            action: 'schedule_post',
+            schedule_time_utc: finalScheduleDate.toISOString(),
+            post_type: 'upNext',
+            image_gen_action: 'upNext',
+            ...formData,
+            background: previewUrl // Use the generated preview as the background
+        };
+
+        try {
+            const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to schedule post.');
+            setMessage('Post scheduled successfully!');
+        } catch (err) {
+            setMessage(`Error: ${err.message}`);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
     if (loading) return <p className={styles.notice}>Loading assets...</p>;
     if (error) return <p className={`${styles.notice} ${styles.error}`}>{error}</p>;
 
@@ -163,27 +190,26 @@ export default function UpNextAnnouncement() {
                                     {isGeneratingCaption ? 'Generating...' : 'Regenerate'}
                                 </button>
                             </div>
-                            <textarea
-                                id="previewCaption"
-                                className={styles.previewCaptionTextarea}
-                                value={formData.caption}
-                                onChange={(e) => setFormData(prev => ({ ...prev, caption: e.target.value }))}
-                                rows={8}
-                            />
+                            <textarea id="previewCaption" className={styles.previewCaptionTextarea} value={formData.caption} onChange={(e) => setFormData(prev => ({...prev, caption: e.target.value}))} rows={8} />
                         </div>
                         <div className={styles.previewSection}>
-                            <label htmlFor="editPrompt">Request Image Edit (Coming Soon)</label>
-                            <textarea
-                                id="editPrompt"
-                                className={styles.editPromptTextarea}
-                                value={editPrompt}
-                                onChange={(e) => setEditPrompt(e.target.value)}
-                                placeholder="e.g., make the background darker..."
-                                rows={3}
-                            />
+                            <label htmlFor="editPrompt">Request Image Edit</label>
+                            <textarea id="editPrompt" className={styles.editPromptTextarea} value={editPrompt} onChange={(e) => setEditPrompt(e.target.value)} placeholder="e.g., make the background darker..." rows={3} />
                             <button onClick={handleEditImage} className={styles.editImageButton} disabled={isEditingImage || isSubmitting}>
                                 <EditIcon />
                                 {isEditingImage ? 'Updating...' : 'Edit with AI'}
+                            </button>
+                        </div>
+                        <div className={styles.previewSection}>
+                            <label>Schedule Post</label>
+                            <div className={styles.scheduleInputs}>
+                                <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} />
+                                <select value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)}>
+                                    {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
+                                </select>
+                            </div>
+                            <button onClick={handleSchedulePost} className={styles.scheduleButton} disabled={isSubmitting || isEditingImage}>
+                                {isSubmitting ? 'Scheduling...' : 'Schedule'}
                             </button>
                         </div>
                     </div>
@@ -212,9 +238,7 @@ export default function UpNextAnnouncement() {
             />
             {generatedPreviews.length > 0 && (
                 <div className={styles.section}>
-                    <div className={styles.sectionHeader}>
-                        <h3 className={styles.sectionTitle}>Generated Previews</h3>
-                    </div>
+                    <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Generated Previews</h3></div>
                     <div className={styles.previewsGrid}>
                         {generatedPreviews.map((url, index) => (
                             <div key={index} className={styles.previewItem} onClick={() => handleSelectPreview(url)}>
