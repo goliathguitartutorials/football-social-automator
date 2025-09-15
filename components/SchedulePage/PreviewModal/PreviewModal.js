@@ -2,13 +2,13 @@
  * ==========================================================
  * COMPONENT: PreviewModal
  * PAGE: /schedule
- * FILE: /components/PreviewModal/PreviewModal.js
+ * FILE: /components/SchedulePage/PreviewModal/PreviewModal.js
  ==========================================================
  */
 import { useState } from 'react';
 import styles from './PreviewModal.module.css';
-import { EditIcon, DeleteIcon } from '../AssetDetailsModal/AssetDetailsModalIcons';
-import { CalendarIcon as RescheduleIcon } from '../SchedulePage/SchedulePageIcons';
+import { EditIcon, DeleteIcon } from '../../AssetDetailsModal/AssetDetailsModalIcons';
+import { CalendarIcon as RescheduleIcon } from '../SchedulePageIcons'; // MODIFIED PATH
 
 export default function PreviewModal({ post, onClose, onManagePost }) {
   if (!post) return null;
