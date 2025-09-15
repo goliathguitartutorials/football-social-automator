@@ -2,10 +2,9 @@
  * ==========================================================
  * COMPONENT: Match Day Announcement
  * PAGE: /
- * FILE: /components/MatchDayAnnouncement/MatchDayAnnouncement.module.css
- ==========================================================
+ * FILE: /components/CreatePage/MatchDayAnnouncement/MatchDayAnnouncement.module.css
+ * ==========================================================
  */
-
 .pageContainer {
     padding: 2rem;
     background-color: var(--surface-dark, #1a1d2e);
