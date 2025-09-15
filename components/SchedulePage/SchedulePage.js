@@ -11,16 +11,16 @@ import styles from './SchedulePage.module.css';
 import PreviewModal from './PreviewModal/PreviewModal';
 import MobileScheduleView from './MobileScheduleView/MobileScheduleView';
 import { useWindowSize } from '@/hooks/useWindowSize';
-import { CalendarIcon, ListIcon, MonthIcon, WeekIcon } from './SchedulePageIcons';
+import { CalendarIcon, DayIcon, ListIcon, MonthIcon, WeekIcon } from './SchedulePageIcons';
 import MonthView from './MonthView/MonthView';
 import WeekView from './WeekView/WeekView';
 
 export default function SchedulePage({ appData }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedPost, setSelectedPost] = useState(null);
-  const [viewMode, setViewMode] = useState('calendar'); // calendar, list
+  const [viewMode, setViewMode] = useState('calendar'); // calendar, list, day
   const [viewType, setViewType] = useState('month'); // month, week
-  const [listScrollTargetDate, setListScrollTargetDate] = useState(null);
+  const [dayViewDate, setDayViewDate] = useState(new Date());
   const { width } = useWindowSize();
 
   const openModal = (post) => {
@@ -31,9 +31,9 @@ export default function SchedulePage({ appData }) {
     setSelectedPost(null);
   };
 
-  const handleMoreClick = (date) => {
-    setListScrollTargetDate(date);
-    setViewMode('list');
+  const handleDayClick = (date) => {
+    setDayViewDate(date);
+    setViewMode('day');
   };
 
   const getStartOfWeek = (date) => {
@@ -65,7 +65,9 @@ export default function SchedulePage({ appData }) {
   });
 
   const handlePrev = () => {
-    if (viewType === 'month') {
+    if (viewMode === 'day') {
+      setDayViewDate(new Date(dayViewDate.getFullYear(), dayViewDate.getMonth(), dayViewDate.getDate() - 1));
+    } else if (viewType === 'month') {
       setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
     } else if (viewType === 'week') {
       setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7));
@@ -73,47 +75,58 @@ export default function SchedulePage({ appData }) {
   };
 
   const handleNext = () => {
-    if (viewType === 'month') {
+    if (viewMode === 'day') {
+      setDayViewDate(new Date(dayViewDate.getFullYear(), dayViewDate.getMonth(), dayViewDate.getDate() + 1));
+    } else if (viewType === 'month') {
       setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
     } else if (viewType === 'week') {
       setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 7));
     }
   };
 
-  const renderCalendarView = () => {
+  const renderActiveView = () => {
     const isMobile = width && width <= 768;
 
-    // List view is the same for both mobile and desktop toggle
     if (viewMode === 'list') {
       return (
         <MobileScheduleView
           posts={scheduledPosts}
           onPostClick={openModal}
-          scrollToDate={listScrollTargetDate}
+        />
+      );
+    }
+
+    if (viewMode === 'day') {
+      const dayPosts = scheduledPosts.filter(post => {
+        const postDate = new Date(post.scheduled_time_utc);
+        return postDate.getDate() === dayViewDate.getDate() &&
+               postDate.getMonth() === dayViewDate.getMonth() &&
+               postDate.getFullYear() === dayViewDate.getFullYear();
+      });
+      return (
+        <MobileScheduleView
+          posts={dayPosts}
+          onPostClick={openModal}
         />
       );
     }
     
-    // Calendar view logic
     if (viewMode === 'calendar') {
-      // On mobile, force MonthView and pass the isMobile prop
       if (isMobile) {
         return <MonthView
           currentDate={currentDate}
           posts={currentPosts}
-          onPostClick={openModal}
-          onMoreClick={handleMoreClick}
+          onDayClick={handleDayClick} // Use new handler for mobile
           isMobile={true}
         />;
       }
 
-      // On desktop, respect the month/week toggle
       if (viewType === 'month') {
         return <MonthView
           currentDate={currentDate}
           posts={currentPosts}
-          onPostClick={openModal}
-          onMoreClick={handleMoreClick}
+          onPostClick={openModal} // Keep old handler for desktop
+          onMoreClick={(date) => handleDayClick(date)}
           isMobile={false}
         />;
       }
@@ -130,29 +143,38 @@ export default function SchedulePage({ appData }) {
     return null;
   };
 
+  const getHeaderText = () => {
+    if (viewMode === 'day') {
+      return dayViewDate.toLocaleString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    if (viewType === 'month') {
+      return currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+    }
+    if (viewType === 'week') {
+      return `${getStartOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric' })} - ${getEndOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    }
+    return '';
+  }
+
   return (
     <div className={styles.schedulePage}>
       <div className={styles.calendarHeader}>
         <div>
           <button onClick={handlePrev}>&lt;</button>
-          <h2>
-            {viewType === 'month'
-              ? currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })
-              : `${getStartOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric' })} - ${getEndOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`
-            }
-          </h2>
+          <h2>{getHeaderText()}</h2>
           <button onClick={handleNext}>&gt;</button>
         </div>
         <div>
-          <button onClick={() => setViewType('month')} className={`${viewType === 'month' ? styles.activeView : ''} ${styles.desktopOnlyButton}`}><MonthIcon /><span>Month</span></button>
-          <button onClick={() => setViewType('week')} className={`${viewType === 'week' ? styles.activeView : ''} ${styles.desktopOnlyButton}`}><WeekIcon /><span>Week</span></button>
-          <button onClick={() => setViewMode('calendar')} className={viewMode === 'calendar' ? styles.activeView : ''}><CalendarIcon /></button>
-          <button onClick={() => setViewMode('list')} className={viewMode === 'list' ? styles.activeView : ''}><ListIcon /></button>
+          <button onClick={() => { setViewMode('calendar'); setViewType('month'); }} className={`${viewType === 'month' && viewMode === 'calendar' ? styles.activeView : ''} ${styles.desktopOnlyButton}`}><MonthIcon /><span>Month</span></button>
+          <button onClick={() => { setViewMode('calendar'); setViewType('week'); }} className={`${viewType === 'week' && viewMode === 'calendar' ? styles.activeView : ''} ${styles.desktopOnlyButton}`}><WeekIcon /><span>Week</span></button>
+          <button onClick={() => { setViewMode('day'); setDayViewDate(currentDate); }} className={`${viewMode === 'day' ? styles.activeView : ''}`}><DayIcon /><span>Day</span></button>
+          <button onClick={() => setViewMode('calendar')} className={`${viewMode === 'calendar' ? styles.activeView : ''}`}><CalendarIcon /><span>Calendar</span></button>
+          <button onClick={() => setViewMode('list')} className={`${viewMode === 'list' ? styles.activeView : ''}`}><ListIcon /><span>List</span></button>
         </div>
       </div>
       
       <div className={styles.calendarContainer}>
-        {renderCalendarView()}
+        {renderActiveView()}
       </div>
 
       {selectedPost && <PreviewModal post={selectedPost} onClose={closeModal} />}
