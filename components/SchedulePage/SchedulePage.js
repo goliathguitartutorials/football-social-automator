@@ -8,8 +8,8 @@
 'use client';
 import { useState } from 'react';
 import styles from './SchedulePage.module.css';
-import PreviewModal from '../PreviewModal/PreviewModal';
-import MobileScheduleView from '../MobileScheduleView/MobileScheduleView';
+import PreviewModal from './PreviewModal/PreviewModal'; // MODIFIED PATH
+import MobileScheduleView from './MobileScheduleView/MobileScheduleView'; // MODIFIED PATH
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { CalendarIcon, ListIcon, MonthIcon, WeekIcon } from './SchedulePageIcons';
 import MonthView from './MonthView/MonthView';
@@ -31,8 +31,6 @@ export default function SchedulePage({ appData }) {
   };
   
   const handleMoreClick = (date) => {
-    // This function can be used if you want to scroll to a specific date in list view
-    // setScrollToDate(date); 
     setViewMode('list');
   };
 
