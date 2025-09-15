@@ -69,21 +69,33 @@
     border: 1px solid var(--border-color);
     background-color: var(--surface-dark);
     padding: 10px;
-    overflow: hidden;
 }
 
 .dayName {
     font-weight: bold;
     text-align: center;
     color: var(--text-secondary);
-    height: auto; 
+    height: auto;
 }
 
 .day {
-    /* MODIFIED: Set a fixed height for all day cells */
-    height: 150px; 
     display: flex;
     flex-direction: column;
+}
+
+/* NEW: Specific styles for Month View */
+.monthView .day {
+    height: 125px; /* Fixed height for consistency */
+    overflow: hidden; /* Prevent scrollbar */
+}
+
+/* NEW: Specific styles for Week View */
+.weekView {
+    grid-auto-rows: min-content 1fr; /* First row (headers) is auto-sized, second row (days) takes remaining space */
+}
+
+.weekView .day {
+    min-height: 200px; /* A minimum height, but can grow */
 }
 
 .day span {
@@ -99,7 +111,6 @@
     flex-direction: column;
     gap: 5px;
     flex-grow: 1;
-    overflow-y: auto; /* This will be hidden due to fixed height, but good practice */
 }
 
 .moreButton {
@@ -115,8 +126,7 @@
     border-radius: 4px;
     width: 100%;
     justify-content: center;
-    /* MODIFIED: Pushes the button to the bottom of the cell */
-    margin-top: auto; 
+    margin-top: auto;
 }
 
 .moreButton:hover {
@@ -128,13 +138,11 @@
     .schedulePage {
         padding: 15px;
     }
-
     .calendarHeader {
         flex-direction: column;
         align-items: center;
         gap: 15px;
     }
-
     .calendarHeader > div {
         width: 100%;
         justify-content: center;
