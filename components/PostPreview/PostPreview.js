@@ -2,7 +2,7 @@
  * ==========================================================
  * COMPONENT: PostPreview
  * PAGE: /schedule
- * FILE: /components/PostPreview/PostPreview.js
+ * FILE: /components/SchedulePage/PostPreview/PostPreview.js
  ==========================================================
  */
 import styles from './PostPreview.module.css';
