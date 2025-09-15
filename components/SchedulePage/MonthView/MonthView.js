@@ -13,7 +13,8 @@ import { MoreIcon } from '../SchedulePageIcons';
 
 export default function MonthView({ currentDate, posts, onPostClick, onMoreClick, onDayClick, isMobile = false }) {
   const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const endOfMonth = new new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  // CORRECTED: Removed the duplicate "new" keyword
+  const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   const startDay = startOfMonth.getDay();
   const daysInMonth = endOfMonth.getDate();
   
