@@ -12,8 +12,9 @@ import React, { createContext, useState, useContext } from 'react';
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
+    // MODIFIED: Added scheduledPosts to the initial state
+    const [appData, setAppData] = useState({ players: [], backgrounds: [], badges: [], matches: [], scheduledPosts: [] });
     const [authKey, setAuthKey] = useState('');
-    const [appData, setAppData] = useState({ players: [], backgrounds: [], badges: [], matches: [] });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [authStatus, setAuthStatus] = useState('idle');
@@ -46,12 +47,8 @@ export function AppProvider({ children }) {
 
             const rawData = await response.json();
             
-            // --- THIS IS THE FIX ---
-            // This ensures we are working with an array, whether the API returns a
-            // direct array `[]` or a nested object like `{ "data": [...] }`.
             const dataArray = Array.isArray(rawData) ? rawData : rawData.data || [];
             
-            // Pass the guaranteed-to-be-an-array data to the processing function.
             processData(dataArray);
             
             sessionStorage.setItem('appData', JSON.stringify(dataArray));
@@ -60,7 +57,8 @@ export function AppProvider({ children }) {
         } catch (err) {
             setError(err.message);
             setAuthStatus('error');
-            setAppData({ players: [], backgrounds: [], badges: [], matches: [] });
+            // MODIFIED: Ensure scheduledPosts is cleared on error
+            setAppData({ players: [], backgrounds: [], badges: [], matches: [], scheduledPosts: [] });
         } finally {
             setLoading(false);
         }
@@ -71,6 +69,10 @@ export function AppProvider({ children }) {
         const players = dataArray.filter((item) => item.class === 'player');
         const assets = dataArray.filter((item) => item.class === 'asset');
         
+        // NEW: Filter for scheduled posts
+        const scheduledPosts = dataArray.filter((item) => item.class === 'scheduled_post');
+        scheduledPosts.sort((a, b) => new Date(a.scheduled_time_utc) - new Date(b.scheduled_time_utc));
+
         // Further filter assets by their 'Type' property
         const backgrounds = assets.filter((asset) => asset.Type === 'background');
         const badges = assets.filter((asset) => asset.Type === 'badge');
@@ -80,7 +82,8 @@ export function AppProvider({ children }) {
         const matches = dataArray.filter((item) => item.type === 'Match');
         matches.sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
 
-        setAppData({ players, backgrounds, badges, matches });
+        // MODIFIED: Add scheduledPosts to the final appData object
+        setAppData({ players, backgrounds, badges, matches, scheduledPosts });
     };
     
     const handleSetAuthKey = (key) => {
@@ -91,8 +94,6 @@ export function AppProvider({ children }) {
         }
     };
     
-    // --- MODIFIED: The function to refresh data is authorizeAndFetchData ---
-    // We pass the authKey which is already stored in our state.
     const refreshAppData = () => {
         if (authKey) {
             authorizeAndFetchData(authKey);
@@ -109,7 +110,7 @@ export function AppProvider({ children }) {
         error,
         authStatus,
         authorizeAndFetchData,
-        refreshAppData, // --- NEW: Exposing a dedicated refresh function
+        refreshAppData,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
