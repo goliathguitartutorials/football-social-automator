@@ -37,6 +37,12 @@ export default function SchedulePage({ appData }) {
     setViewMode('day');
   };
 
+  const handleNewPost = (date) => {
+    // Placeholder for future functionality
+    console.log("Request to schedule a new post for date:", date);
+    alert(`Placeholder: This will open a modal to create a new post for ${date.toLocaleDateString()}.`);
+  };
+
   const getStartOfWeek = (date) => {
     const day = date.getDay();
     const diff = date.getDate() - (day === 0 ? 6 : day - 1);
@@ -87,7 +93,7 @@ export default function SchedulePage({ appData }) {
 
   const renderActiveView = () => {
     if (viewMode === 'list') {
-      return <MobileScheduleView posts={scheduledPosts} onPostClick={openModal} />;
+      return <MobileScheduleView posts={scheduledPosts} onPostClick={openModal} onNewPostClick={handleNewPost} showDateHeaders={true} />;
     }
 
     if (viewMode === 'day') {
@@ -97,7 +103,9 @@ export default function SchedulePage({ appData }) {
                postDate.getMonth() === dayViewDate.getMonth() &&
                postDate.getFullYear() === dayViewDate.getFullYear();
       });
-      return <MobileScheduleView posts={dayPosts} onPostClick={openModal} />;
+      // Pass a single-entry "grouped" object to MobileScheduleView
+      const postsForDay = { [dayViewDate.toLocaleDateString()]: dayPosts };
+      return <MobileScheduleView postsByDate={postsForDay} onPostClick={openModal} onNewPostClick={handleNewPost} showDateHeaders={false} />;
     }
     
     if (viewMode === 'calendar') {
@@ -108,6 +116,7 @@ export default function SchedulePage({ appData }) {
           onDayClick={handleDayClick}
           onPostClick={openModal}
           onMoreClick={handleDayClick}
+          onNewPostClick={handleNewPost}
           isMobile={isMobile}
         />;
       }
@@ -140,7 +149,6 @@ export default function SchedulePage({ appData }) {
 
   const handleCalendarClick = () => {
     setViewMode('calendar');
-    // Default to month view if coming from another mode
     if (viewMode !== 'calendar') {
       setViewType('month');
     }
