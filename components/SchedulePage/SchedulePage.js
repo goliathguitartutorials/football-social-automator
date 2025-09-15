@@ -109,19 +109,31 @@ export default function SchedulePage({ appData }) {
         <div key={date.toISOString()} className={styles.day}>
           <span>{date.getDate()}</span>
           <div className={styles.posts}>
-            {dayPosts.slice(0, 2).map(post => (
-              <PostPreview key={post.id} post={post} onClick={openModal} />
-            ))}
-            {dayPosts.length > 2 && (
-              <button
-                className={styles.moreButton}
-                onClick={() => {
-                  setScrollToDate(date);
-                  setViewMode('list');
-                }}
-              >
-                <MoreIcon /><span>{dayPosts.length - 2} more</span>
-              </button>
+            {/* MODIFIED: Conditional rendering based on viewType */}
+            {viewType === 'month' ? (
+              <>
+                {dayPosts.slice(0, 2).map(post => (
+                  <PostPreview key={post.id} post={post} onClick={openModal} />
+                ))}
+                {dayPosts.length > 2 && (
+                  <button
+                    className={styles.moreButton}
+                    onClick={() => {
+                      setScrollToDate(date);
+                      setViewMode('list');
+                    }}
+                  >
+                    <MoreIcon /><span>{dayPosts.length - 2} more</span>
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                {/* For week view, show all posts with no limit */}
+                {dayPosts.map(post => (
+                  <PostPreview key={post.id} post={post} onClick={openModal} />
+                ))}
+              </>
             )}
           </div>
         </div>
@@ -153,7 +165,6 @@ export default function SchedulePage({ appData }) {
       {(viewMode === 'list' || (width && width <= 768)) ? (
         <MobileScheduleView posts={currentPosts} onPostClick={openModal} scrollToDate={scrollToDate} />
       ) : (
-        /* MODIFIED: Added dynamic class based on viewType */
         <div className={`${styles.calendarGrid} ${viewType === 'month' ? styles.monthView : styles.weekView}`}>
           <div className={styles.dayName}>Mon</div>
           <div className={styles.dayName}>Tue</div>
