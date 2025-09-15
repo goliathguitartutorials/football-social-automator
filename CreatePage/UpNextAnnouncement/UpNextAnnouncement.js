@@ -2,7 +2,7 @@
  * ==========================================================
  * COMPONENT: Up Next Announcement
  * PAGE: /
- * FILE: /components/UpNextAnnouncement/UpNextAnnouncement.js
+ * FILE: /components/CreatePage/UpNextAnnouncement/UpNextAnnouncement.js
  * ==========================================================
  */
 'use client';
