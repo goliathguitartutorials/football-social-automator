@@ -41,7 +41,12 @@ export default function MonthView({ currentDate, posts, onPostClick, onMoreClick
           <span>{date.getDate()}</span>
           <div className={styles.posts}>
             {dayPosts.slice(0, maxPosts).map(post => (
-              <PostPreview key={post.id} post={post} onClick={onPostClick} />
+              <PostPreview 
+                key={post.id} 
+                post={post} 
+                onClick={onPostClick} 
+                isMobileCalendarView={isMobile} 
+              />
             ))}
             {dayPosts.length > maxPosts && (
               <button
