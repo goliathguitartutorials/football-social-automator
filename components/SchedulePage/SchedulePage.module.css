@@ -85,18 +85,15 @@
 
 /* Specific styles for Month View */
 .monthView .day {
-    height: 125px; /* Fixed height for consistency */
-    overflow: hidden; /* Prevent scrollbar */
+    /* MODIFIED: Increased height by ~50% to fit content without scrollbars */
+    height: 180px; 
+    overflow: hidden;
 }
 
 /* Specific styles for Week View */
-.weekView {
-    grid-auto-rows: min-content 1fr; 
-}
-
+/* MODIFIED: Removed grid-auto-rows to fix inconsistent gaps */
 .weekView .day {
-    min-height: 200px; /* A minimum height, but can grow */
-    /* MODIFIED: Add overflow-y for safety in case of very many posts */
+    min-height: 200px; 
     overflow-y: auto;
 }
 
