@@ -9,7 +9,8 @@
 import { useState } from 'react';
 import styles from './UpNextAnnouncement.module.css';
 import { useAppContext } from '@/app/context/AppContext';
-import UpNextForm from '../common/PostCreationForms/UpNextForm/UpNextForm';
+// MODIFIED: The import path has been updated to go up two directories.
+import UpNextForm from '../../common/PostCreationForms/UpNextForm/UpNextForm';
 import { GenerateIcon, EditIcon } from './UpNextAnnouncementIcons';
 
 const initialFormData = {
