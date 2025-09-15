@@ -12,11 +12,11 @@ import Image from 'next/image';
 import styles from './CreatePage.module.css';
 import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, BespokeIcon } from './CreatePageIcons';
 
-import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnnouncement';
+// MODIFIED: Import path updated to reflect the new location
+import MatchDayAnnouncement from './MatchDayAnnouncement/MatchDayAnnouncement';
 import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
 import MatchResult from '@/components/MatchResult/MatchResult';
 import BespokePost from '@/components/BespokePost/BespokePost';
-// MODIFIED: Import path updated to reflect the new location
 import UpNextAnnouncement from './UpNextAnnouncement/UpNextAnnouncement';
 
 const postTypes = [
