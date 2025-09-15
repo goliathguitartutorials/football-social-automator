@@ -11,7 +11,7 @@ import styles from './SchedulePage.module.css';
 import PreviewModal from '../PreviewModal/PreviewModal';
 import PostPreview from '../PostPreview/PostPreview';
 import MobileScheduleView from '../MobileScheduleView/MobileScheduleView';
-import { useWindowSize } from '../../hooks/useWindowSize';
+import { useWindowSize } from '@/hooks/useWindowSize';
 import { CalendarIcon, ListIcon, MoreIcon, MonthIcon, WeekIcon } from './SchedulePageIcons';
 
 export default function SchedulePage({ appData }) {
@@ -48,8 +48,8 @@ export default function SchedulePage({ appData }) {
     return endOfWeek;
   };
 
-  // Assuming appData contains scheduled posts. Adjust if the structure is different.
-  const scheduledPosts = appData.filter(item => item.class === 'scheduled_post') || [];
+  // CORRECTED LINE: Default to an empty array if appData is not ready.
+  const scheduledPosts = (appData || []).filter(item => item.class === 'scheduled_post');
 
   const currentPosts = scheduledPosts.filter(post => {
     const postDate = new Date(post.scheduled_time_utc);
