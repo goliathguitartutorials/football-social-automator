@@ -7,7 +7,8 @@
  */
 .calendarGrid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    /* MODIFIED: This ensures uniform column widths and prevents overflow */
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 5px;
     flex-grow: 1;
 }
