@@ -17,7 +17,8 @@ export default function MonthView({ currentDate, posts, onPostClick, onMoreClick
   const startDay = startOfMonth.getDay();
   const daysInMonth = endOfMonth.getDate();
   
-  const maxPosts = isMobile ? 1 : 2;
+  // MODIFIED: Increased max posts on mobile to show more text previews
+  const maxPosts = isMobile ? 3 : 2;
 
   const renderDays = () => {
     const days = [];
