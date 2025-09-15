@@ -64,7 +64,6 @@
     flex-grow: 1;
 }
 
-/* MODIFIED: Separated dayName and day styles */
 .dayName,
 .day {
     border: 1px solid var(--border-color);
@@ -120,4 +119,22 @@
 
 .moreButton:hover {
     background-color: var(--background-dark);
+}
+
+/* NEW: Media query for responsive header on mobile */
+@media (max-width: 768px) {
+    .schedulePage {
+        padding: 15px;
+    }
+
+    .calendarHeader {
+        flex-direction: column; /* Stacks the date nav and view buttons */
+        align-items: center;
+        gap: 15px; /* Adds space between the stacked items */
+    }
+
+    .calendarHeader > div {
+        width: 100%;
+        justify-content: center; /* Center-aligns the buttons in each group */
+    }
 }
