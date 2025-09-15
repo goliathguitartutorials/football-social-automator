@@ -1,0 +1,30 @@
+/*
+ * ==========================================================
+ * COMPONENT: MobileScheduleView
+ * PAGE: /schedule
+ * FILE: /components/MobileScheduleView/MobileScheduleView.module.css
+ ==========================================================
+ */
+.mobileView {
+    padding: 10px;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.dayGroup h3 {
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.dayGroup:first-child h3 {
+    margin-top: 0;
+}
+
+.postsList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
