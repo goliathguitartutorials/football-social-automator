@@ -66,7 +66,8 @@
 /* Media query for responsive header on mobile */
 @media (max-width: 768px) {
     .schedulePage {
-        padding: 15px;
+        /* MODIFIED: Reduced left/right padding to give calendar more space */
+        padding: 15px 5px;
     }
     .calendarHeader {
         flex-direction: column;
