@@ -2,13 +2,13 @@
  * ==========================================================
  * COMPONENT: MobileScheduleView
  * PAGE: /schedule
- * FILE: /components/MobileScheduleView/MobileScheduleView.js
+ * FILE: /components/SchedulePage/MobileScheduleView/MobileScheduleView.js
  ==========================================================
  */
 'use client';
 import { useEffect, useRef } from 'react';
 import styles from './MobileScheduleView.module.css';
-import PostPreview from '../PostPreview/PostPreview';
+import PostPreview from '../PostPreview/PostPreview'; // MODIFIED PATH
 
 export default function MobileScheduleView({ posts, onPostClick, scrollToDate }) {
   const groupedPosts = posts.reduce((acc, post) => {
