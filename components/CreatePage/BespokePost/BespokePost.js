@@ -2,7 +2,7 @@
  * ==========================================================
  * COMPONENT: Bespoke Post
  * PAGE: / (as part of CreatePage)
- * FILE: /components/BespokePost/BespokePost.js
+ * FILE: /components/CreatePage/BespokePost/BespokePost.js
  * ==========================================================
  */
 'use client';
@@ -93,13 +93,9 @@ export default function BespokePost() {
         setIsSubmitting(true);
         setMessage('');
 
-        // 1. Create a FormData object
         const formData = new FormData();
-        
-        // 2. Convert the Base64 Data URL to a Blob
         const imageBlob = dataURLtoBlob(croppedImageUrl);
-
-        // 3. Append your data. The third argument is the filename n8n will see.
+        
         formData.append('action', 'bespoke_post');
         formData.append('text', text);
         formData.append('image', imageBlob, 'bespoke-post-image.jpg');
@@ -108,11 +104,9 @@ export default function BespokePost() {
             const response = await fetch('/api/trigger-workflow', {
                 method: 'POST',
                 headers: {
-                    // 4. DO NOT set the 'Content-Type' header. 
-                    // The browser will automatically set it to 'multipart/form-data' with the correct boundary.
                     'Authorization': `Bearer ${currentAuthKey}`,
                 },
-                body: formData, // 5. Send the FormData object as the body
+                body: formData,
             });
 
             const result = await response.json();

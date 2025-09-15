@@ -2,8 +2,8 @@
  * ==========================================================
  * COMPONENT: Squad Announcement Icons
  * PAGE: /
- * FILE: /components/SquadAnnouncement/SquadAnnouncementIcons.js
- ==========================================================
+ * FILE: /components/CreatePage/SquadAnnouncement/SquadAnnouncementIcons.js
+ * ==========================================================
  */
 // A simple wrapper to handle sizing and styling for all icons
 const Icon = ({ children }) => (

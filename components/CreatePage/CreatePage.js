@@ -12,12 +12,12 @@ import Image from 'next/image';
 import styles from './CreatePage.module.css';
 import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, BespokeIcon } from './CreatePageIcons';
 
-import MatchDayAnnouncement from '@/components/MatchDayAnnouncement/MatchDayAnnouncement';
-import SquadAnnouncement from '@/components/SquadAnnouncement/SquadAnnouncement';
-import MatchResult from '@/components/MatchResult/MatchResult';
-import BespokePost from '@/components/BespokePost/BespokePost';
-// MODIFIED: Imported the new UpNextAnnouncement component
-import UpNextAnnouncement from '@/components/UpNextAnnouncement/UpNextAnnouncement';
+import MatchDayAnnouncement from './MatchDayAnnouncement/MatchDayAnnouncement';
+import SquadAnnouncement from './SquadAnnouncement/SquadAnnouncement';
+import MatchResult from './MatchResult/MatchResult';
+// MODIFIED: Import path updated for BespokePost
+import BespokePost from './BespokePost/BespokePost';
+import UpNextAnnouncement from './UpNextAnnouncement/UpNextAnnouncement';
 
 const postTypes = [
     { id: 'upNext', label: 'Up Next', icon: <UpNextIcon /> },

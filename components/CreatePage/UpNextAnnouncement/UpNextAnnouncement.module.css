@@ -1,8 +1,8 @@
 /*
  * ==========================================================
- * COMPONENT: Match Result
+ * COMPONENT: Up Next Announcement
  * PAGE: /
- * FILE: /components/MatchResult/MatchResult.module.css
+ * FILE: /components/CreatePage/UpNextAnnouncement/UpNextAnnouncement.module.css
  * ==========================================================
  */
 
@@ -58,18 +58,13 @@
     color: var(--text-secondary, #a0aec0);
 }
 
-.formGroup input, .formGroup select, .formGroupFull select, .formGroupFull textarea {
+.formGroup input, .formGroup select, .formGroupFull select {
     padding: 0.75rem;
     border-radius: 6px;
     border: 1px solid var(--border-color, #4a5568);
     background-color: #374151;
     color: var(--text-primary, #fff);
     font-size: 1rem;
-}
-/* NEW: Style for scorers textarea */
-.scorersTextarea {
-    resize: vertical;
-    font-family: inherit;
 }
 
 .backgroundTabs {
@@ -163,6 +158,7 @@
     transform: scale(1.05);
 }
 
+/* NEW: Styles for the generated previews grid */
 .previewsGrid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -228,10 +224,11 @@
     background-color: #6b7280;
 }
 
+/* MODIFIED: Styles for the main action buttons */
 .actionsContainer {
     display: flex;
     justify-content: flex-end;
-    align-items: flex-end;
+    align-items: flex-end; /* Aligns items to the bottom */
     gap: 1.5rem;
     margin-top: 1rem;
 }
@@ -255,11 +252,11 @@
 }
 
 .yoloButton {
-    background-color: #ef4444;
+    background-color: #ef4444; /* MODIFIED: Light Red */
     color: #fff;
 }
 .yoloButton:hover {
-    background-color: #dc2626;
+    background-color: #dc2626; /* MODIFIED: Darker Red */
 }
 
 .actionButton:disabled, .yoloButton:disabled {
@@ -267,10 +264,18 @@
     cursor: not-allowed;
 }
 
+/* NEW: Container for YOLO button and its warning text */
 .yoloAction {
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+.yoloWarning {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 0.25rem; /* Reduced margin */
 }
 
 .notice {
@@ -470,7 +475,7 @@
     }
     
     .yoloAction {
-        display: block;
+        display: block; /* Let it take full width */
         text-align: center;
     }
 
@@ -513,137 +518,4 @@
     .previewSectionHeader label {
         text-align: center;
     }
-}
-
-/* ADD THESE STYLES to MatchResult.module.css */
-
-/* --- Styles for Dynamic Scorers --- */
-.scorersContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.scorerRow {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    background-color: #2d3748;
-    padding: 0.5rem;
-    border-radius: 6px;
-}
-
-.scorerPlayer {
-    flex: 1; /* Takes up most of the space */
-    position: relative;
-}
-
-.scorerMinute {
-    width: 70px; /* Fixed width for minute input */
-}
-
-.minuteInput {
-    width: 100%;
-    padding: 0.5rem;
-    border-radius: 4px;
-    border: 1px solid var(--border-color, #4a5568);
-    background-color: #374151;
-    color: var(--text-primary, #fff);
-    text-align: center;
-    -moz-appearance: textfield; /* Hides arrows in Firefox */
-}
-
-.minuteInput::-webkit-outer-spin-button,
-.minuteInput::-webkit-inner-spin-button {
-  -webkit-appearance: none; /* Hides arrows in Chrome, Safari */
-  margin: 0;
-}
-
-.scorerPenalty {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding-right: 0.5rem;
-}
-
-.scorerPenalty label {
-    font-weight: bold;
-    cursor: pointer;
-    user-select: none;
-}
-
-.removeScorerBtn, .addScorerBtn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    font-weight: 500;
-}
-
-.removeScorerBtn {
-    background-color: #c53030;
-    color: white;
-    padding: 0.5rem;
-    border-radius: 4px;
-}
-
-.removeScorerBtn:hover {
-    background-color: #9b2c2c;
-}
-
-.addScorerBtn {
-    background-color: #38a169;
-    color: white;
-    padding: 0.6rem 1.2rem;
-    border-radius: 6px;
-    font-size: 0.9rem;
-}
-
-.addScorerBtn:hover {
-    background-color: #2f855a;
-}
-
-/* --- Styles for Autocomplete Dropdown --- */
-.autocompleteWrapper {
-    position: relative;
-}
-
-.autocompleteInput {
-    width: 100%;
-    padding: 0.5rem;
-    border-radius: 4px;
-    border: 1px solid var(--border-color, #4a5568);
-    background-color: #374151;
-    color: var(--text-primary, #fff);
-    font-size: 1rem;
-}
-
-.autocompleteList {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: #2d3748;
-    border: 1px solid var(--border-color, #4a5568);
-    border-top: none;
-    border-radius: 0 0 6px 6px;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 100;
-}
-
-.autocompleteList li {
-    padding: 0.75rem;
-    cursor: pointer;
-}
-
-.autocompleteList li:hover {
-    background-color: var(--accent-color, #3182ce);
 }

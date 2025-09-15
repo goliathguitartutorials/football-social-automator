@@ -1,11 +1,10 @@
 /*
  * ==========================================================
- * COMPONENT: Match Result Icons
+ * COMPONENT: Match Day Announcement Icons
  * PAGE: /
- * FILE: /components/MatchResult/MatchResultIcons.js
+ * FILE: /components/CreatePage/MatchDayAnnouncement/MatchDayAnnouncementIcons.js
  * ==========================================================
  */
-
 // A simple wrapper to handle sizing and styling for all icons
 const Icon = ({ children }) => (
     <svg
@@ -54,22 +53,5 @@ export const GenerateIcon = () => (
 export const EditIcon = () => (
     <Icon>
         <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-    </Icon>
-);
-
-// ADD THESE ICONS to MatchResultIcons.js
-
-// An icon for adding an item
-export const AddIcon = () => (
-    <Icon>
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-    </Icon>
-);
-
-// An icon for removing an item
-export const RemoveIcon = () => (
-    <Icon>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
     </Icon>
 );
