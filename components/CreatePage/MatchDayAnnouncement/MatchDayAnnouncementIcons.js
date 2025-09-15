@@ -2,8 +2,8 @@
  * ==========================================================
  * COMPONENT: Match Day Announcement Icons
  * PAGE: /
- * FILE: /components/MatchDayAnnouncement/MatchDayAnnouncementIcons.js
- ==========================================================
+ * FILE: /components/CreatePage/MatchDayAnnouncement/MatchDayAnnouncementIcons.js
+ * ==========================================================
  */
 // A simple wrapper to handle sizing and styling for all icons
 const Icon = ({ children }) => (
