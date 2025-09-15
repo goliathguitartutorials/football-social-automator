@@ -8,7 +8,7 @@
 'use client';
 
 import styles from './MonthView.module.css';
-import PostPreview from '../../PostPreview/PostPreview';
+import PostPreview from '../PostPreview/PostPreview'; // MODIFIED PATH
 import { MoreIcon } from '../SchedulePageIcons';
 
 export default function MonthView({ currentDate, posts, onPostClick, onMoreClick }) {
