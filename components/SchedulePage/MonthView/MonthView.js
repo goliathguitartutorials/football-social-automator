@@ -44,10 +44,9 @@ export default function MonthView({ currentDate, posts, onPostClick, onMoreClick
       days.push(
         <div key={date.toISOString()} className={styles.day} {...dayProps}>
           {!isMobile && (
-            <div className={styles.addPostArea} onClick={() => onNewPostClick(date)}>
+            <button className={styles.addPostButton} onClick={() => onNewPostClick(date)}>
               <PlusIcon />
-              <span>Add Post</span>
-            </div>
+            </button>
           )}
           <span>{date.getDate()}</span>
           <div className={styles.posts}>
