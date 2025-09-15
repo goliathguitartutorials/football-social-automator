@@ -48,8 +48,8 @@ export default function SchedulePage({ appData }) {
     return endOfWeek;
   };
 
-  // CORRECTED LINE: Default to an empty array if appData is not ready.
-  const scheduledPosts = (appData || []).filter(item => item.class === 'scheduled_post');
+  // CORRECTED LINE: Access the `scheduledPosts` array directly from the appData object.
+  const scheduledPosts = appData?.scheduledPosts || [];
 
   const currentPosts = scheduledPosts.filter(post => {
     const postDate = new Date(post.scheduled_time_utc);
