@@ -16,12 +16,11 @@ export default function PostPreview({ post, onClick, isListView = false, isMobil
     hour12: false
   });
 
-  // Render a special compact view for the mobile calendar grid
+  // MODIFIED: Render a text-only view for the mobile calendar grid
   if (isMobileCalendarView) {
     return (
-      <div className={styles.mobileCalendarPreview} onClick={() => onClick(post)}>
-        <span className={styles.postTime}>{scheduledTime}</span>
-        <p className={styles.postCaption}>{post.post_caption}</p>
+      <div className={styles.mobileTextPreview} onClick={() => onClick(post)}>
+        {post.post_caption}
       </div>
     );
   }
