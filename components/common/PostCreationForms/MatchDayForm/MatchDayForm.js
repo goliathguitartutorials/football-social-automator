@@ -9,7 +9,8 @@
 import { useState, useEffect } from 'react';
 import styles from './MatchDayForm.module.css';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
-import { UploadIcon, GalleryIcon, GenerateIcon } from '@/components/MatchDayAnnouncement/MatchDayAnnouncementIcons';
+// MODIFIED: The import path has been updated to the new location of the icons file.
+import { UploadIcon, GalleryIcon, GenerateIcon } from '@/components/CreatePage/MatchDayAnnouncement/MatchDayAnnouncementIcons';
 
 // Helper function to format the date as requested
 const formatDateForWebhook = (dateString) => {
