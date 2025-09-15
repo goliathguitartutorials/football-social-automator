@@ -3,13 +3,13 @@
  * COMPONENT: SchedulePage
  * PAGE: /schedule
  * FILE: /components/SchedulePage/SchedulePage.js
- ==========================================================
+ * ==========================================================
  */
 'use client';
 import { useState } from 'react';
 import styles from './SchedulePage.module.css';
-import PreviewModal from './PreviewModal/PreviewModal'; // MODIFIED PATH
-import MobileScheduleView from './MobileScheduleView/MobileScheduleView'; // MODIFIED PATH
+import PreviewModal from './PreviewModal/PreviewModal';
+import MobileScheduleView from './MobileScheduleView/MobileScheduleView';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { CalendarIcon, ListIcon, MonthIcon, WeekIcon } from './SchedulePageIcons';
 import MonthView from './MonthView/MonthView';
@@ -20,6 +20,7 @@ export default function SchedulePage({ appData }) {
   const [selectedPost, setSelectedPost] = useState(null);
   const [viewMode, setViewMode] = useState('calendar'); // calendar, list
   const [viewType, setViewType] = useState('month'); // month, week
+  const [listScrollTargetDate, setListScrollTargetDate] = useState(null);
   const { width } = useWindowSize();
 
   const openModal = (post) => {
@@ -29,8 +30,9 @@ export default function SchedulePage({ appData }) {
   const closeModal = () => {
     setSelectedPost(null);
   };
-  
+
   const handleMoreClick = (date) => {
+    setListScrollTargetDate(date);
     setViewMode('list');
   };
 
@@ -79,25 +81,50 @@ export default function SchedulePage({ appData }) {
   };
 
   const renderCalendarView = () => {
-    if (viewMode === 'list' || (width && width <= 768)) {
-        return <MobileScheduleView posts={scheduledPosts} onPostClick={openModal} />;
-    }
+    const isMobile = width && width <= 768;
 
-    if (viewType === 'month') {
-        return <MonthView 
-            currentDate={currentDate} 
-            posts={currentPosts} 
-            onPostClick={openModal} 
-            onMoreClick={handleMoreClick} 
-        />;
+    // List view is the same for both mobile and desktop toggle
+    if (viewMode === 'list') {
+      return (
+        <MobileScheduleView
+          posts={scheduledPosts}
+          onPostClick={openModal}
+          scrollToDate={listScrollTargetDate}
+        />
+      );
     }
-
-    if (viewType === 'week') {
-        return <WeekView 
-            currentDate={currentDate} 
-            posts={currentPosts} 
-            onPostClick={openModal} 
+    
+    // Calendar view logic
+    if (viewMode === 'calendar') {
+      // On mobile, force MonthView and pass the isMobile prop
+      if (isMobile) {
+        return <MonthView
+          currentDate={currentDate}
+          posts={currentPosts}
+          onPostClick={openModal}
+          onMoreClick={handleMoreClick}
+          isMobile={true}
         />;
+      }
+
+      // On desktop, respect the month/week toggle
+      if (viewType === 'month') {
+        return <MonthView
+          currentDate={currentDate}
+          posts={currentPosts}
+          onPostClick={openModal}
+          onMoreClick={handleMoreClick}
+          isMobile={false}
+        />;
+      }
+
+      if (viewType === 'week') {
+        return <WeekView
+          currentDate={currentDate}
+          posts={currentPosts}
+          onPostClick={openModal}
+        />;
+      }
     }
 
     return null;
@@ -117,8 +144,8 @@ export default function SchedulePage({ appData }) {
           <button onClick={handleNext}>&gt;</button>
         </div>
         <div>
-          <button onClick={() => setViewType('month')} className={viewType === 'month' ? styles.activeView : ''}><MonthIcon /><span>Month</span></button>
-          <button onClick={() => setViewType('week')} className={viewType === 'week' ? styles.activeView : ''}><WeekIcon /><span>Week</span></button>
+          <button onClick={() => setViewType('month')} className={`${viewType === 'month' ? styles.activeView : ''} ${styles.desktopOnlyButton}`}><MonthIcon /><span>Month</span></button>
+          <button onClick={() => setViewType('week')} className={`${viewType === 'week' ? styles.activeView : ''} ${styles.desktopOnlyButton}`}><WeekIcon /><span>Week</span></button>
           <button onClick={() => setViewMode('calendar')} className={viewMode === 'calendar' ? styles.activeView : ''}><CalendarIcon /></button>
           <button onClick={() => setViewMode('list')} className={viewMode === 'list' ? styles.activeView : ''}><ListIcon /></button>
         </div>
