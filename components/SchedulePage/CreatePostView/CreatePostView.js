@@ -16,10 +16,10 @@ import UpNextForm from '@/components/common/PostCreationForms/UpNextForm/UpNextF
 import MatchDayForm from '@/components/common/PostCreationForms/MatchDayForm/MatchDayForm';
 import SquadForm from '@/components/common/PostCreationForms/SquadForm/SquadForm';
 import MatchResultForm from '@/components/common/PostCreationForms/MatchResultForm/MatchResultForm';
-import { formatScorersForWebhook } from '@/components/common/PostCreationForms/MatchResultForm/MatchResultForm';
 
-// Icons for Post Types
+// Icons
 import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon } from '@/components/CreatePage/CreatePageIcons';
+import { ArrowLeftIcon, ArrowRightIcon } from './CreatePostViewIcons';
 
 const postTypes = [
     { id: 'upNext', label: 'Up Next', component: UpNextForm, action: 'upNext', icon: <UpNextIcon /> },
@@ -90,33 +90,44 @@ const buildImageGenPayload = (formData, postType, players, badges) => {
 
 export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel }) {
     const { appData, authKey } = useAppContext();
-    const [view, setView] = useState('CONFIG'); // CONFIG, FORM, PREVIEW
-    
-    // Config state
+    const [view, setView] = useState('CONFIG');
     const [selectedDate, setSelectedDate] = useState('');
     const [selectedTime, setSelectedTime] = useState('');
-    // FIX: Set "Up Next" as the default post type
     const [selectedPostType, setSelectedPostType] = useState(postTypes[0]);
-
-    // Form & Preview state
-    const [formData, setFormData] = useState(null);
+    const [formData, setFormData] = useState({});
     const [previewUrl, setPreviewUrl] = useState('');
-
-    // General state
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState('');
+    const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
 
     useEffect(() => {
         if (scheduleDate) {
             setView('CONFIG');
             setSelectedDate(scheduleDate.toISOString().split('T')[0]);
             setSelectedTime(getNextIntervalTime());
-            setSelectedPostType(postTypes[0]); // Reset to default on re-entry
-            setFormData(null);
+            setSelectedPostType(postTypes[0]);
+            setFormData({ teamType: 'First Team', saveCustomBackground: true });
             setPreviewUrl('');
             setMessage('');
         }
     }, [scheduleDate]);
+
+    const handleGenerateCaption = async (gameInfo) => {
+        setIsGeneratingCaption(true);
+        setFormData(prev => ({ ...prev, caption: '' }));
+        const payload = { action: selectedPostType.id, gameInfo };
+        try {
+            const response = await fetch('/api/generate-caption', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
+            if (!response.ok) { throw new Error('Failed to generate caption.'); }
+            const result = await response.json();
+            const newCaption = result.caption || 'Sorry, could not generate a caption.';
+            setFormData(prev => ({ ...prev, caption: newCaption }));
+        } catch (err) {
+            setFormData(prev => ({ ...prev, caption: `Error: ${err.message}` }));
+        } finally {
+            setIsGeneratingCaption(false);
+        }
+    };
 
     const handleGeneratePreview = async (formPayload) => {
         setIsSubmitting(true);
@@ -171,8 +182,9 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         <div className={styles.pageContainer}>
             <div className={styles.viewHeader}>
                 <h1 className={styles.viewTitle}>Schedule New Post</h1>
-                {/* FIX: Added arrow icon to button */}
-                <button onClick={onCancel} className={styles.cancelButton}>&#x2190; Back to Calendar</button>
+                <button onClick={onCancel} className={styles.cancelButton}>
+                    <ArrowLeftIcon /> Back to Calendar
+                </button>
             </div>
 
             {activeBanner && (
@@ -192,7 +204,6 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             
             {view === 'CONFIG' && (
                 <section className={styles.section}>
-                    {/* FIX: Reordered sections and added new 'Select Post Type' header */}
                     <h3 className={styles.subHeader}>Select Post Type</h3>
                     <div className={styles.selectorGrid}>
                         {postTypes.map(type => (
@@ -215,27 +226,36 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                         </div>
                     </div>
                     <div className={styles.actions}>
-                         {/* FIX: Updated button text and added arrow icon */}
-                         <button className={styles.nextButton} onClick={() => setView('FORM')} disabled={!selectedPostType}>Add Details &#x2192;</button>
+                         <button className={styles.nextButton} onClick={() => setView('FORM')} disabled={!selectedPostType}>
+                            Add Details <ArrowRightIcon />
+                         </button>
                     </div>
                 </section>
             )}
 
             {view === 'FORM' && (
                 <section className={styles.section}>
-                    {/* FIX: Removed section title */}
                     <div className={styles.formWrapper}>
-                        <ActiveForm appData={appData} onSubmit={handleGeneratePreview} isSubmitting={isSubmitting} onYoloSubmit={()=>{}} onGenerateCaption={()=>{}} />
+                        <ActiveForm 
+                            appData={appData} 
+                            initialData={formData} 
+                            onSubmit={handleGeneratePreview} 
+                            onYoloSubmit={()=>{}} 
+                            onGenerateCaption={handleGenerateCaption}
+                            isSubmitting={isSubmitting}
+                            isGeneratingCaption={isGeneratingCaption}
+                        />
                     </div>
                      <div className={`${styles.actions} ${styles.formActions}`}>
-                        <button onClick={() => setView('CONFIG')} className={styles.backButton}>&larr; Back to Config</button>
+                        <button onClick={() => setView('CONFIG')} className={styles.backButton}>
+                            <ArrowLeftIcon /> Back to Config
+                        </button>
                     </div>
                 </section>
             )}
 
             {view === 'PREVIEW' && (
                 <section className={styles.section}>
-                    {/* FIX: Removed section title */}
                     <div className={styles.previewLayout}>
                         <div className={styles.previewImageWrapper}>
                              {isSubmitting && <div className={styles.imageOverlay}>{message ? message : 'Scheduling...'}</div>}
@@ -247,7 +267,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                                 <p>{new Date(selectedDate).toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} at {selectedTime}</p>
                             </div>
                             <div className={styles.actions}>
-                                <button onClick={() => setView('FORM')} className={styles.backButton} disabled={isSubmitting}>&larr; Back to Edit</button>
+                                <button onClick={() => setView('FORM')} className={styles.backButton} disabled={isSubmitting}><ArrowLeftIcon /> Back to Edit</button>
                                 <button className={styles.scheduleButton} onClick={handleSchedulePost} disabled={isSubmitting}>
                                     {isSubmitting ? 'Scheduling...' : 'Schedule Post'}
                                 </button>
