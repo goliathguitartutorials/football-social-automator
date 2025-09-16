@@ -1,7 +1,7 @@
 /*
  * ==========================================================
  * COMPONENT: UpNextForm
- * PAGE: Create Post, Schedule Post (Modal)
+ * PAGE: Create Post, Schedule Post
  * FILE: /components/common/PostCreationForms/UpNextForm/UpNextForm.js
  * ==========================================================
  */
@@ -9,10 +9,8 @@
 import { useState, useEffect } from 'react';
 import styles from './UpNextForm.module.css';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
-// MODIFIED: The import path has been updated to the new location of the icons file.
 import { UploadIcon, GalleryIcon, GenerateIcon } from '@/components/CreatePage/UpNextAnnouncement/UpNextAnnouncementIcons';
 
-// Helper function to format the date as requested
 const formatDateForWebhook = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString + 'T00:00:00Z');
@@ -34,13 +32,12 @@ const formatDateForWebhook = (dateString) => {
 
 export default function UpNextForm({ appData, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
     const { backgrounds, badges, matches } = appData;
-
     const [formData, setFormData] = useState(initialData || {});
     const [badgeMessage, setBadgeMessage] = useState('');
     const [backgroundSource, setBackgroundSource] = useState('gallery');
 
     useEffect(() => {
-        setFormData(initialData || {});
+        setFormData(prev => ({ ...prev, ...initialData }));
     }, [initialData]);
 
     const handleChange = (e) => {
