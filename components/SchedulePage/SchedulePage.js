@@ -98,7 +98,9 @@ export default function SchedulePage({ appData, onDataRefresh }) {
                 const postDate = new Date(post.scheduled_time_utc);
                 return postDate.getDate() === dayViewDate.getDate() && postDate.getMonth() === dayViewDate.getMonth() && postDate.getFullYear() === dayViewDate.getFullYear();
             });
-            const postsForDay = { [dayViewDate.toLocaleDateString()]: dayPosts };
+            // FIX: Use a reliable ISO date string for the key instead of a locale-dependent one.
+            const dateKey = dayViewDate.toISOString().split('T')[0];
+            const postsForDay = { [dateKey]: dayPosts };
             return <MobileScheduleView postsByDate={postsForDay} onPostClick={openPreviewModal} onNewPostClick={openCreateModal} showDateHeaders={false} />;
         }
         if (viewMode === 'calendar') {
