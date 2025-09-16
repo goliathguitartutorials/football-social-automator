@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import styles from './SchedulePage.module.css';
 import PreviewModal from './PreviewModal/PreviewModal';
-import CreatePostModal from './CreatePostModal/CreatePostModal';
+import CreatePostView from './CreatePostView/CreatePostView'; // UPDATED: Import new view
 import MobileScheduleView from './MobileScheduleView/MobileScheduleView';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { CalendarIcon, DayIcon, ListIcon } from './SchedulePageIcons';
@@ -19,22 +19,35 @@ import WeekView from './WeekView/WeekView';
 export default function SchedulePage({ appData, onDataRefresh }) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedPost, setSelectedPost] = useState(null);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newPostDate, setNewPostDate] = useState(null);
     const [viewMode, setViewMode] = useState('calendar'); // calendar, list, day
     const [viewType, setViewType] = useState('month'); // month, week
     const [dayViewDate, setDayViewDate] = useState(new Date());
+    
+    // NEW: State to manage switching to the creation view
+    const [isCreatingPost, setIsCreatingPost] = useState(false);
+
     const { width } = useWindowSize();
     const isMobile = width && width <= 768;
 
     const openPreviewModal = (post) => setSelectedPost(post);
     const closePreviewModal = () => setSelectedPost(null);
 
-    const openCreateModal = (date) => {
+    // UPDATED: Handlers to enter and exit the new creation view
+    const enterCreateMode = (date) => {
         setNewPostDate(date);
-        setIsCreateModalOpen(true);
+        setIsCreatingPost(true);
     };
-    const closeCreateModal = () => setIsCreateModalOpen(false);
+    
+    const exitCreateMode = () => {
+        setIsCreatingPost(false);
+        setNewPostDate(null);
+    };
+
+    const handlePostScheduled = () => {
+        onDataRefresh(); // Refresh the data to show the new post
+        exitCreateMode();   // Return to the calendar view
+    };
 
     const handleDayClick = (date) => {
         setDayViewDate(date);
@@ -91,24 +104,23 @@ export default function SchedulePage({ appData, onDataRefresh }) {
 
     const renderActiveView = () => {
         if (viewMode === 'list') {
-            return <MobileScheduleView posts={scheduledPosts} onPostClick={openPreviewModal} onNewPostClick={openCreateModal} showDateHeaders={true} />;
+            return <MobileScheduleView posts={scheduledPosts} onPostClick={openPreviewModal} onNewPostClick={enterCreateMode} showDateHeaders={true} />;
         }
         if (viewMode === 'day') {
             const dayPosts = scheduledPosts.filter(post => {
                 const postDate = new Date(post.scheduled_time_utc);
                 return postDate.getDate() === dayViewDate.getDate() && postDate.getMonth() === dayViewDate.getMonth() && postDate.getFullYear() === dayViewDate.getFullYear();
             });
-            // FIX: Use a reliable ISO date string for the key instead of a locale-dependent one.
             const dateKey = dayViewDate.toISOString().split('T')[0];
             const postsForDay = { [dateKey]: dayPosts };
-            return <MobileScheduleView postsByDate={postsForDay} onPostClick={openPreviewModal} onNewPostClick={openCreateModal} showDateHeaders={false} />;
+            return <MobileScheduleView postsByDate={postsForDay} onPostClick={openPreviewModal} onNewPostClick={enterCreateMode} showDateHeaders={false} />;
         }
         if (viewMode === 'calendar') {
             if (viewType === 'month') {
-                return <MonthView currentDate={currentDate} posts={currentPosts} onDayClick={handleDayClick} onPostClick={openPreviewModal} onMoreClick={handleDayClick} onNewPostClick={openCreateModal} isMobile={isMobile} />;
+                return <MonthView currentDate={currentDate} posts={currentPosts} onDayClick={handleDayClick} onPostClick={openPreviewModal} onMoreClick={handleDayClick} onNewPostClick={enterCreateMode} isMobile={isMobile} />;
             }
             if (viewType === 'week' && !isMobile) {
-                return <WeekView currentDate={currentDate} posts={currentPosts} onPostClick={openPreviewModal} onNewPostClick={openCreateModal} />;
+                return <WeekView currentDate={currentDate} posts={currentPosts} onPostClick={openPreviewModal} onNewPostClick={enterCreateMode} />;
             }
         }
         return null;
@@ -135,38 +147,49 @@ export default function SchedulePage({ appData, onDataRefresh }) {
         { id: 'day', label: 'Day', icon: <DayIcon />, onClick: () => handleDayClick(new Date()) },
     ];
 
+    // UPDATED: Main render logic now switches between creation view and calendar view
     return (
         <div className={styles.container}>
-            <header className={styles.header}>
-                <nav className={styles.subNav}>
-                    {navButtons.map((button) => (
-                        <button key={button.id} className={`${styles.navButton} ${viewMode === button.id ? styles.active : ''}`} onClick={button.onClick}>
-                            <span className={styles.navIcon}>{button.icon}</span>
-                            <span className={styles.navLabel}>{button.label}</span>
-                        </button>
-                    ))}
-                </nav>
-                <div className={styles.secondaryHeader}>
-                    <div className={styles.dateNav}>
-                        <button onClick={handlePrev}>&lt;</button>
-                        <h2>{getHeaderText()}</h2>
-                        <button onClick={handleNext}>&gt;</button>
-                    </div>
-                    {!isMobile && viewMode === 'calendar' && (
-                        <div className={styles.viewTypeNav}>
-                            <button onClick={() => setViewType('month')} className={viewType === 'month' ? styles.activeViewType : ''}>Month</button>
-                            <button onClick={() => setViewType('week')} className={viewType === 'week' ? styles.activeViewType : ''}>Week</button>
+            {isCreatingPost ? (
+                <CreatePostView
+                    scheduleDate={newPostDate}
+                    onPostScheduled={handlePostScheduled}
+                    onCancel={exitCreateMode}
+                />
+            ) : (
+                <>
+                    <header className={styles.header}>
+                        <nav className={styles.subNav}>
+                            {navButtons.map((button) => (
+                                <button key={button.id} className={`${styles.navButton} ${viewMode === button.id ? styles.active : ''}`} onClick={button.onClick}>
+                                    <span className={styles.navIcon}>{button.icon}</span>
+                                    <span className={styles.navLabel}>{button.label}</span>
+                                </button>
+                            ))}
+                        </nav>
+                        <div className={styles.secondaryHeader}>
+                            <div className={styles.dateNav}>
+                                <button onClick={handlePrev}>&lt;</button>
+                                <h2>{getHeaderText()}</h2>
+                                <button onClick={handleNext}>&gt;</button>
+                            </div>
+                            {!isMobile && viewMode === 'calendar' && (
+                                <div className={styles.viewTypeNav}>
+                                    <button onClick={() => setViewType('month')} className={viewType === 'month' ? styles.activeViewType : ''}>Month</button>
+                                    <button onClick={() => setViewType('week')} className={viewType === 'week' ? styles.activeViewType : ''}>Week</button>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            </header>
-            
-            <div className={styles.calendarContainer}>
-                {renderActiveView()}
-            </div>
+                    </header>
+                    
+                    <div className={styles.calendarContainer}>
+                        {renderActiveView()}
+                    </div>
+                </>
+            )}
 
             {selectedPost && <PreviewModal post={selectedPost} onClose={closePreviewModal} onDataRefresh={onDataRefresh} />}
-            {isCreateModalOpen && <CreatePostModal isOpen={isCreateModalOpen} onClose={closeCreateModal} scheduleDate={newPostDate} onPostScheduled={onDataRefresh} />}
+            {/* The CreatePostModal component is no longer rendered here */}
         </div>
     );
 }
