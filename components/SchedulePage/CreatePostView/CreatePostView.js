@@ -7,6 +7,7 @@
  */
 'use client';
 import { useState, useEffect } from 'react';
+import Image from 'next/image'; // NEW: Import Image component
 import styles from './CreatePostView.module.css';
 import { useAppContext } from '@/app/context/AppContext';
 
@@ -26,6 +27,14 @@ const postTypes = [
     { id: 'squad', label: 'Squad', component: SquadForm, action: 'squad_announcement', icon: <SquadIcon /> },
     { id: 'result', label: 'Result', component: MatchResultForm, action: 'result', icon: <ResultIcon /> },
 ];
+
+// NEW: Added banner image configuration from CreatePage.js
+const bannerImages = {
+    upNext: { src: '/upnext.png', position: 'middleMid' },
+    matchDay: { src: '/matchday.png', position: 'top' },
+    squad: { src: '/squad.png', position: 'top' },
+    result: { src: '/result.png', position: 'top' },
+};
 
 const generateTimeSlots = () => {
     const slots = [];
@@ -163,6 +172,8 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
     };
 
     const ActiveForm = selectedPostType?.component;
+    // NEW: Get the active banner based on the selected post type
+    const activeBanner = selectedPostType ? bannerImages[selectedPostType.id] : null;
 
     return (
         <div className={styles.pageContainer}>
@@ -170,6 +181,22 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                 <h1 className={styles.viewTitle}>Schedule New Post</h1>
                 <button onClick={onCancel} className={styles.cancelButton}>Back to Calendar</button>
             </div>
+
+            {/* NEW: Conditionally render the banner when a post type is selected */}
+            {activeBanner && (
+                <div className={styles.bannerContainer}>
+                    <Image
+                        key={selectedPostType.id}
+                        src={activeBanner.src}
+                        alt={`${selectedPostType.label} Banner`}
+                        fill
+                        priority
+                        placeholder="blur"
+                        blurDataURL={activeBanner.src}
+                        className={`${styles.bannerImage} ${styles[activeBanner.position]}`}
+                    />
+                </div>
+            )}
             
             {view === 'CONFIG' && (
                 <section className={styles.section}>
