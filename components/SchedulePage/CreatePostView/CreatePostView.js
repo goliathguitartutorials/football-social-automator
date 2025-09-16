@@ -7,7 +7,7 @@
  */
 'use client';
 import { useState, useEffect } from 'react';
-import Image from 'next/image'; // NEW: Import Image component
+import Image from 'next/image';
 import styles from './CreatePostView.module.css';
 import { useAppContext } from '@/app/context/AppContext';
 
@@ -28,7 +28,6 @@ const postTypes = [
     { id: 'result', label: 'Result', component: MatchResultForm, action: 'result', icon: <ResultIcon /> },
 ];
 
-// NEW: Added banner image configuration from CreatePage.js
 const bannerImages = {
     upNext: { src: '/upnext.png', position: 'middleMid' },
     matchDay: { src: '/matchday.png', position: 'top' },
@@ -62,7 +61,6 @@ const getNextIntervalTime = () => {
     return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 };
 
-// Helper to build the flat payload for image generation
 const buildImageGenPayload = (formData, postType, players, badges) => {
     const basePayload = {
         home_team_badge: formData.homeTeamBadge,
@@ -97,7 +95,8 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
     // Config state
     const [selectedDate, setSelectedDate] = useState('');
     const [selectedTime, setSelectedTime] = useState('');
-    const [selectedPostType, setSelectedPostType] = useState(null);
+    // FIX: Set "Up Next" as the default post type
+    const [selectedPostType, setSelectedPostType] = useState(postTypes[0]);
 
     // Form & Preview state
     const [formData, setFormData] = useState(null);
@@ -112,7 +111,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             setView('CONFIG');
             setSelectedDate(scheduleDate.toISOString().split('T')[0]);
             setSelectedTime(getNextIntervalTime());
-            setSelectedPostType(null);
+            setSelectedPostType(postTypes[0]); // Reset to default on re-entry
             setFormData(null);
             setPreviewUrl('');
             setMessage('');
@@ -123,9 +122,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         setIsSubmitting(true);
         setMessage('');
         setFormData(formPayload);
-
         const imageGenPayload = buildImageGenPayload(formPayload, selectedPostType, appData.players, appData.badges);
-
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(imageGenPayload) });
             const result = await response.json();
@@ -144,11 +141,9 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
     const handleSchedulePost = async () => {
         setIsSubmitting(true);
         setMessage('');
-
         const [hours, minutes] = selectedTime.split(':');
         const finalScheduleDate = new Date(selectedDate);
         finalScheduleDate.setUTCHours(hours, minutes, 0, 0);
-
         const schedulePayload = {
             action: 'schedule_post',
             schedule_time_utc: finalScheduleDate.toISOString(),
@@ -156,12 +151,10 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             image_gen_action: selectedPostType.action,
             ...buildImageGenPayload(formData, selectedPostType, appData.players, appData.badges)
         };
-
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(schedulePayload) });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Failed to schedule post.');
-            
             setMessage('Post scheduled successfully!');
             setTimeout(onPostScheduled, 1500);
         } catch (err) {
@@ -172,17 +165,16 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
     };
 
     const ActiveForm = selectedPostType?.component;
-    // NEW: Get the active banner based on the selected post type
     const activeBanner = selectedPostType ? bannerImages[selectedPostType.id] : null;
 
     return (
         <div className={styles.pageContainer}>
             <div className={styles.viewHeader}>
                 <h1 className={styles.viewTitle}>Schedule New Post</h1>
-                <button onClick={onCancel} className={styles.cancelButton}>Back to Calendar</button>
+                {/* FIX: Added arrow icon to button */}
+                <button onClick={onCancel} className={styles.cancelButton}>&#x2190; Back to Calendar</button>
             </div>
 
-            {/* NEW: Conditionally render the banner when a post type is selected */}
             {activeBanner && (
                 <div className={styles.bannerContainer}>
                     <Image
@@ -200,8 +192,15 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             
             {view === 'CONFIG' && (
                 <section className={styles.section}>
-                    <div className={styles.sectionHeader}>
-                        <h2 className={styles.sectionTitle}>1. Configure Date, Time & Type</h2>
+                    {/* FIX: Reordered sections and added new 'Select Post Type' header */}
+                    <h3 className={styles.subHeader}>Select Post Type</h3>
+                    <div className={styles.selectorGrid}>
+                        {postTypes.map(type => (
+                            <button key={type.id} className={`${styles.typeButton} ${selectedPostType?.id === type.id ? styles.selectedType : ''}`} onClick={() => setSelectedPostType(type)}>
+                                <span className={styles.typeIcon}>{type.icon}</span>
+                                {type.label}
+                            </button>
+                        ))}
                     </div>
                     <div className={styles.configForm}>
                         <div className={styles.inputGroup}>
@@ -215,38 +214,28 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                             </select>
                         </div>
                     </div>
-                    <div className={styles.selectorGrid}>
-                        {postTypes.map(type => (
-                            <button key={type.id} className={`${styles.typeButton} ${selectedPostType?.id === type.id ? styles.selectedType : ''}`} onClick={() => setSelectedPostType(type)}>
-                                <span className={styles.typeIcon}>{type.icon}</span>
-                                {type.label}
-                            </button>
-                        ))}
-                    </div>
                     <div className={styles.actions}>
-                         <button className={styles.nextButton} onClick={() => setView('FORM')} disabled={!selectedPostType}>Next: Add Details</button>
+                         {/* FIX: Updated button text and added arrow icon */}
+                         <button className={styles.nextButton} onClick={() => setView('FORM')} disabled={!selectedPostType}>Add Details &#x2192;</button>
                     </div>
                 </section>
             )}
 
             {view === 'FORM' && (
                 <section className={styles.section}>
-                    <div className={styles.sectionHeader}>
-                         <h2 className={styles.sectionTitle}>2. Add Details for {selectedPostType.label} Post</h2>
-                         <button onClick={() => setView('CONFIG')} className={styles.backButton}>&larr; Back to Config</button>
-                    </div>
+                    {/* FIX: Removed section title */}
                     <div className={styles.formWrapper}>
                         <ActiveForm appData={appData} onSubmit={handleGeneratePreview} isSubmitting={isSubmitting} onYoloSubmit={()=>{}} onGenerateCaption={()=>{}} />
+                    </div>
+                     <div className={`${styles.actions} ${styles.formActions}`}>
+                        <button onClick={() => setView('CONFIG')} className={styles.backButton}>&larr; Back to Config</button>
                     </div>
                 </section>
             )}
 
             {view === 'PREVIEW' && (
                 <section className={styles.section}>
-                     <div className={styles.sectionHeader}>
-                        <h2 className={styles.sectionTitle}>3. Confirm & Schedule</h2>
-                        <button onClick={() => setView('FORM')} className={styles.backButton} disabled={isSubmitting}>&larr; Back to Edit</button>
-                    </div>
+                    {/* FIX: Removed section title */}
                     <div className={styles.previewLayout}>
                         <div className={styles.previewImageWrapper}>
                              {isSubmitting && <div className={styles.imageOverlay}>{message ? message : 'Scheduling...'}</div>}
@@ -257,9 +246,12 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                                 <p><strong>Scheduling for:</strong></p>
                                 <p>{new Date(selectedDate).toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} at {selectedTime}</p>
                             </div>
-                            <button className={styles.scheduleButton} onClick={handleSchedulePost} disabled={isSubmitting}>
-                                {isSubmitting ? 'Scheduling...' : 'Schedule Post'}
-                            </button>
+                            <div className={styles.actions}>
+                                <button onClick={() => setView('FORM')} className={styles.backButton} disabled={isSubmitting}>&larr; Back to Edit</button>
+                                <button className={styles.scheduleButton} onClick={handleSchedulePost} disabled={isSubmitting}>
+                                    {isSubmitting ? 'Scheduling...' : 'Schedule Post'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </section>
