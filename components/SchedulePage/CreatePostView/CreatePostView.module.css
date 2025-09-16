@@ -6,10 +6,12 @@
  * ==========================================================
  */
 .pageContainer {
-    padding: 2rem;
+    /* FIX: Removed padding to prevent "double margins" with the parent page. */
     width: 100%;
-    max-width: 1200px; /* Or your preferred max-width */
-    margin: 0 auto;
+    /* FIX: Added a single background color and radius to the main container for consistency. */
+    background-color: var(--surface-dark);
+    border-radius: 8px;
+    padding: 2rem; /* Re-adding consistent padding as per CreatePage's inner components */
 }
 
 .viewHeader {
@@ -31,6 +33,10 @@
     margin-bottom: 2.5rem;
 }
 
+.section:last-of-type {
+    margin-bottom: 0;
+}
+
 .sectionHeader {
     display: flex;
     justify-content: space-between;
@@ -50,9 +56,10 @@
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
-    background-color: var(--surface-dark);
     padding: 1.5rem;
     border-radius: 8px;
+    /* FIX: Use a slightly different background for nested elements to match CreatePage forms */
+    background-color: var(--background-dark);
 }
 
 .inputGroup {
@@ -70,7 +77,8 @@
 .inputGroup select {
     padding: 0.75rem;
     border-radius: 6px;
-    background-color: var(--background-dark);
+    /* FIX: Use a darker background for inputs */
+    background-color: var(--surface-dark);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     font-size: 1rem;
@@ -121,9 +129,7 @@
 
 /* Form View Styles */
 .formWrapper {
-    background-color: var(--surface-dark);
-    padding: 2rem;
-    border-radius: 8px;
+    /* FIX: Removed background color to inherit from pageContainer */
 }
 
 /* Preview View Styles */
@@ -165,10 +171,11 @@
     gap: 1.5rem;
 }
 .confirmDetails {
-    background-color: var(--surface-dark);
     padding: 1.5rem;
     border-radius: 8px;
     border: 1px solid var(--border-color);
+    /* FIX: Use a slightly different background for nested elements */
+    background-color: var(--background-dark);
 }
 .confirmDetails p {
     margin: 0.5rem 0;
