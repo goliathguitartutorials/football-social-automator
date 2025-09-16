@@ -10,6 +10,7 @@
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 5px;
     flex-grow: 1;
+    align-content: flex-start; /* FIX: Prevents rows from spreading on tall screens */
 }
 
 .dayName,
