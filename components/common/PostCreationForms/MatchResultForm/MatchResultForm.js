@@ -138,8 +138,8 @@ export const formatScorersForWebhook = (scorers, isGlannauHome) => {
     return payload;
 };
 
-export default function MatchResultForm({ appData, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
-    const { backgrounds, badges, matches, players } = appData;
+export default function MatchResultForm({ appData = {}, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
+    const { backgrounds = [], badges = [], matches = [], players = [] } = appData;
     const [formData, setFormData] = useState(initialData || { scorers: [{ id: 1, name: '', minute: '', isPenalty: false }] });
     const [badgeMessage, setBadgeMessage] = useState('');
     const [backgroundSource, setBackgroundSource] = useState('gallery');
