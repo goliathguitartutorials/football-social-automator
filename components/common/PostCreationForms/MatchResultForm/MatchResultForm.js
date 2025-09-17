@@ -17,9 +17,10 @@ const PlayerAutocomplete = ({ value, onSelect, players }) => {
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef(null);
 
+    const safePlayers = Array.isArray(players) ? players : [];
     const filteredPlayers = searchTerm
-        ? players.filter(p => p.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
-        : players;
+        ? safePlayers.filter(p => p.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
+        : safePlayers;
 
     useEffect(() => { setSearchTerm(value); }, [value]);
 
@@ -140,12 +141,16 @@ export const formatScorersForWebhook = (scorers, isGlannauHome) => {
 
 export default function MatchResultForm({ appData = {}, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
     const { backgrounds = [], badges = [], matches = [], players = [] } = appData;
-    const [formData, setFormData] = useState(initialData || { scorers: [{ id: 1, name: '', minute: '', isPenalty: false }] });
+    const [formData, setFormData] = useState({});
     const [badgeMessage, setBadgeMessage] = useState('');
     const [backgroundSource, setBackgroundSource] = useState('gallery');
 
     useEffect(() => {
-        setFormData(initialData || { scorers: [{ id: 1, name: '', minute: '', isPenalty: false }] });
+        setFormData({
+            scorers: [{ id: 1, name: '', minute: '', isPenalty: false }],
+            saveCustomBackground: true,
+            ...initialData
+        });
     }, [initialData]);
     
     const handleChange = (e) => {
@@ -250,7 +255,7 @@ export default function MatchResultForm({ appData = {}, initialData, onSubmit, o
                     <h3 className={styles.sectionTitle}>Goal Scorers (Y Glannau only)</h3>
                 </div>
                 <div className={styles.scorersContainer}>
-                    {formData.scorers.map((scorer) => (
+                    {formData.scorers && formData.scorers.map((scorer) => (
                         <ScorerInput
                             key={scorer.id}
                             scorer={scorer}
