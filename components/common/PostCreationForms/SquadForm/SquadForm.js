@@ -67,8 +67,8 @@ const PlayerAutocomplete = ({ index, value, onSelect, players, selectedPlayers }
 };
 
 
-export default function SquadForm({ appData, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
-    const { players, backgrounds, badges, matches } = appData;
+export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
+    const { players = [], backgrounds = [], badges = [], matches = [] } = appData;
 
     const [formData, setFormData] = useState(initialData || { selectedPlayers: Array(16).fill('') });
     const [badgeMessage, setBadgeMessage] = useState('');
