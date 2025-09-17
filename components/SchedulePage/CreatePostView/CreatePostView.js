@@ -1,10 +1,5 @@
-/*
- * ==========================================================
- * COMPONENT: CreatePostView
- * PAGE: /schedule
- * FILE: /components/SchedulePage/CreatePostView/CreatePostView.js
- * ==========================================================
- */
+// /components/SchedulePage/CreatePostView/CreatePostView.js
+
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -134,9 +129,12 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         setIsSubmitting(true);
         setMessage('');
         setFormData(formPayload);
-        const imageGenPayload = buildImageGenPayload(formPayload, selectedPostType, players, badges);
+        const imageGenPayload = {
+            action: 'generate_preview', // Add the action for the manager route
+            ...buildImageGenPayload(formPayload, selectedPostType, players, badges)
+        };
         try {
-            const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(imageGenPayload) });
+            const response = await fetch('/api/schedule-manager', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(imageGenPayload) });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Failed to generate preview.');
             const imageUrl = result[0]?.data?.data?.content;
@@ -164,7 +162,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             ...buildImageGenPayload(formData, selectedPostType, players, badges)
         };
         try {
-            const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(schedulePayload) });
+            const response = await fetch('/api/schedule-manager', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(schedulePayload) });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Failed to schedule post.');
             setMessage('Post scheduled successfully!');
