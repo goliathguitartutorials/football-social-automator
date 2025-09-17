@@ -9,14 +9,16 @@
 import { useState } from 'react';
 import styles from './SchedulePage.module.css';
 import PreviewModal from './PreviewModal/PreviewModal';
-import CreatePostView from './CreatePostView/CreatePostView'; // UPDATED: Import new view
+import CreatePostView from './CreatePostView/CreatePostView';
 import MobileScheduleView from './MobileScheduleView/MobileScheduleView';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { CalendarIcon, DayIcon, ListIcon } from './SchedulePageIcons';
 import MonthView from './MonthView/MonthView';
 import WeekView from './WeekView/WeekView';
+import { useAppContext } from '@/app/context/AppContext'; // 1. IMPORT THE CONTEXT HOOK
 
 export default function SchedulePage({ appData, onDataRefresh }) {
+    const { authKey } = useAppContext(); // 2. GET THE AUTHKEY FROM THE CONTEXT
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedPost, setSelectedPost] = useState(null);
     const [newPostDate, setNewPostDate] = useState(null);
@@ -24,7 +26,6 @@ export default function SchedulePage({ appData, onDataRefresh }) {
     const [viewType, setViewType] = useState('month'); // month, week
     const [dayViewDate, setDayViewDate] = useState(new Date());
     
-    // NEW: State to manage switching to the creation view
     const [isCreatingPost, setIsCreatingPost] = useState(false);
 
     const { width } = useWindowSize();
@@ -33,7 +34,6 @@ export default function SchedulePage({ appData, onDataRefresh }) {
     const openPreviewModal = (post) => setSelectedPost(post);
     const closePreviewModal = () => setSelectedPost(null);
 
-    // UPDATED: Handlers to enter and exit the new creation view
     const enterCreateMode = (date) => {
         setNewPostDate(date);
         setIsCreatingPost(true);
@@ -45,8 +45,8 @@ export default function SchedulePage({ appData, onDataRefresh }) {
     };
 
     const handlePostScheduled = () => {
-        onDataRefresh(); // Refresh the data to show the new post
-        exitCreateMode();   // Return to the calendar view
+        onDataRefresh();
+        exitCreateMode();
     };
 
     const handleDayClick = (date) => {
@@ -147,7 +147,6 @@ export default function SchedulePage({ appData, onDataRefresh }) {
         { id: 'day', label: 'Day', icon: <DayIcon />, onClick: () => handleDayClick(new Date()) },
     ];
 
-    // UPDATED: Main render logic now switches between creation view and calendar view
     return (
         <div className={styles.container}>
             {isCreatingPost ? (
@@ -192,8 +191,12 @@ export default function SchedulePage({ appData, onDataRefresh }) {
                 </>
             )}
 
-            {selectedPost && <PreviewModal post={selectedPost} onClose={closePreviewModal} onDataRefresh={onDataRefresh} />}
-            {/* The CreatePostModal component is no longer rendered here */}
+            {selectedPost && <PreviewModal 
+                post={selectedPost} 
+                onClose={closePreviewModal} 
+                onManagePost={onDataRefresh} 
+                authKey={authKey} /* 3. PASS THE KEY TO THE MODAL */ 
+            />}
         </div>
     );
 }
