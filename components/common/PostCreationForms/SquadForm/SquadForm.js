@@ -17,6 +17,12 @@ const PlayerAutocomplete = ({ index, value, onSelect, players, selectedPlayers }
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef(null);
 
+    // LOGGING: Check if players array is valid before filtering
+    if (!Array.isArray(players)) {
+        console.error('DEBUG: PlayerAutocomplete received invalid players prop:', players);
+        return <div>Error: Player data is unavailable.</div>;
+    }
+
     const availablePlayers = players.filter(p => !selectedPlayers.includes(p.fullName) || p.fullName === value);
     const filteredPlayers = searchTerm
         ? availablePlayers.filter(p => p.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -68,8 +74,13 @@ const PlayerAutocomplete = ({ index, value, onSelect, players, selectedPlayers }
 
 
 export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
-    console.log('DEBUG: Data received by SquadForm:', appData);
+    // LOGGING: Step 1 - What props are we *actually* receiving?
+    console.log('DEBUG LOG 1: Raw props received by SquadForm:', { appData, initialData });
+
     const { players = [], backgrounds = [], badges = [], matches = [] } = appData;
+    
+    // LOGGING: Step 2 - Did the destructuring work correctly?
+    console.log('DEBUG LOG 2: Destructured data arrays:', { players, backgrounds, badges, matches });
 
     const [formData, setFormData] = useState(initialData || { selectedPlayers: Array(16).fill('') });
     const [badgeMessage, setBadgeMessage] = useState('');
@@ -150,6 +161,15 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
         onGenerateCaption(gameInfo);
     };
 
+    // LOGGING: Step 3 - Check arrays right before they are used in the return statement.
+    console.log('DEBUG LOG 3: Data just before render:', {
+        isMatchesArray: Array.isArray(matches),
+        isBadgesArray: Array.isArray(badges),
+        isPlayersArray: Array.isArray(players),
+        isBackgroundsArray: Array.isArray(backgrounds),
+        isFormDataSelectedPlayersArray: Array.isArray(formData.selectedPlayers)
+    });
+
     return (
         <form className={styles.formContainer} onSubmit={(e) => { e.preventDefault(); onSubmit(formData); }}>
             <div className={styles.section}>
@@ -157,7 +177,7 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
                     <label htmlFor="matchSelector">Select a Match (Optional)</label>
                     <select id="matchSelector" onChange={(e) => handleMatchSelect(e.target.value)} defaultValue="">
                         <option value="">-- Select an upcoming match --</option>
-                        {matches.map((match) => (<option key={match.eventId} value={match.eventId}>{match.title}</option>))}
+                        {Array.isArray(matches) && matches.map((match) => (<option key={match.eventId} value={match.eventId}>{match.title}</option>))}
                     </select>
                 </div>
             </div>
@@ -169,14 +189,14 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
                         <label htmlFor="homeTeamBadge">Home Team Badge</label>
                         <select id="homeTeamBadge" value={formData.homeTeamBadge || ''} onChange={handleChange} required>
                             <option value="">Select a badge...</option>
-                            {badges.map((badge) => (<option key={badge.Link} value={badge.Link}>{badge.Name.replace(/.png/i, '').substring(14)}</option>))}
+                            {Array.isArray(badges) && badges.map((badge) => (<option key={badge.Link} value={badge.Link}>{badge.Name.replace(/.png/i, '').substring(14)}</option>))}
                         </select>
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="awayTeamBadge">Away Team Badge</label>
                         <select id="awayTeamBadge" value={formData.awayTeamBadge || ''} onChange={handleChange} required>
                             <option value="">Select a badge...</option>
-                            {badges.map((badge) => (<option key={badge.Link} value={badge.Link}>{badge.Name.replace(/.png/i, '').substring(14)}</option>))}
+                            {Array.isArray(badges) && badges.map((badge) => (<option key={badge.Link} value={badge.Link}>{badge.Name.replace(/.png/i, '').substring(14)}</option>))}
                         </select>
                     </div>
                 </div>
@@ -185,7 +205,7 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
             <div className={styles.section}>
                 <h3 className={styles.sectionTitle}>Select Players (1-16)</h3>
                 <div className={styles.playerGrid}>
-                    {formData.selectedPlayers.map((player, index) => (
+                    {Array.isArray(formData.selectedPlayers) && formData.selectedPlayers.map((player, index) => (
                         <PlayerAutocomplete
                             key={index}
                             index={index}
@@ -212,7 +232,7 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
                 </div>
                 {backgroundSource === 'gallery' && (
                     <div className={styles.backgroundGrid}>
-                        {backgrounds.map((bg) => (<div key={bg.Link} className={`${styles.backgroundItem} ${formData.selectedBackground === bg.Link ? styles.selected : ''}`} onClick={() => handleSelectGalleryBg(bg.Link)}><img src={bg.Link} alt={bg.Name} /></div>))}
+                        {Array.isArray(backgrounds) && backgrounds.map((bg) => (<div key={bg.Link} className={`${styles.backgroundItem} ${formData.selectedBackground === bg.Link ? styles.selected : ''}`} onClick={() => handleSelectGalleryBg(bg.Link)}><img src={bg.Link} alt={bg.Name} /></div>))}
                     </div>
                 )}
                 {backgroundSource === 'custom' && (
