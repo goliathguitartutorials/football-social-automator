@@ -27,6 +27,7 @@ export default function PostPreviewAndEditView({ post, mode = 'edit', onClose, o
 
     const [editedCaption, setEditedCaption] = useState(post.post_caption || '');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState({ type: '', text: '' });
     const [view, setView] = useState('details');
 
@@ -66,6 +67,33 @@ export default function PostPreviewAndEditView({ post, mode = 'edit', onClose, o
             setIsProcessing(false);
         }
     };
+    
+    const handleGenerateCaption = async () => {
+        setIsGeneratingCaption(true);
+        setFeedbackMessage({ type: '', text: '' });
+        
+        // NOTE: For best results, the original creation context should be stored with the post.
+        // For now, we send what we have, primarily the post type.
+        const payload = { 
+            page: post.post_type, 
+            gameInfo: post.creation_context || { caption: editedCaption } 
+        };
+
+        try {
+            const response = await fetch('/api/generate-caption', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, 
+                body: JSON.stringify(payload) 
+            });
+            if (!response.ok) throw new Error('Failed to generate caption.');
+            const result = await response.json();
+            setEditedCaption(result.caption || 'Sorry, could not generate a caption.');
+        } catch (err) {
+            setFeedbackMessage({ type: 'error', text: err.message });
+        } finally {
+            setIsGeneratingCaption(false);
+        }
+    };
 
     const handleUpdateCaption = () => handleApiAction({ action: 'update_caption', post_id: post.id, new_caption: editedCaption }, 'Caption updated!');
     const handleDelete = () => handleApiAction({ action: 'delete_post', post_id: post.id }, 'Post deleted.');
@@ -74,7 +102,6 @@ export default function PostPreviewAndEditView({ post, mode = 'edit', onClose, o
     const handlePrimaryAction = () => {
         if (mode === 'create') {
             setIsProcessing(true);
-            // Pass the refined data back to the parent component to handle the API call
             onSchedule({
                 caption: editedCaption,
                 date: scheduleDate,
@@ -102,18 +129,21 @@ export default function PostPreviewAndEditView({ post, mode = 'edit', onClose, o
         return (
             <div className={styles.previewLayout}>
                 <div className={styles.previewImageWrapper}>
-                    {isProcessing && <div className={styles.imageOverlay}>Processing...</div>}
+                    {(isProcessing || isGeneratingCaption) && <div className={styles.imageOverlay}>{isGeneratingCaption ? 'Generating...' : 'Processing...'}</div>}
                     <img src={post.image_url} alt="Post preview" className={styles.previewImage} />
                 </div>
                 <div className={styles.previewControls}>
                     <div className={styles.previewSection}>
                         <div className={styles.previewSectionHeader}>
                             <label htmlFor="previewCaption">Post Caption</label>
-                            <button className={styles.aiButton} disabled={true}><GenerateIcon /> Generate with AI</button>
+                            <button onClick={handleGenerateCaption} className={styles.aiButton} disabled={isProcessing || isGeneratingCaption}>
+                                <GenerateIcon />
+                                {isGeneratingCaption ? 'Generating...' : 'Generate with AI'}
+                            </button>
                         </div>
-                        <textarea id="previewCaption" className={styles.previewCaptionTextarea} value={editedCaption} onChange={(e) => setEditedCaption(e.target.value)} rows={8} disabled={isProcessing} />
+                        <textarea id="previewCaption" className={styles.previewCaptionTextarea} value={editedCaption} onChange={(e) => setEditedCaption(e.target.value)} rows={8} disabled={isProcessing || isGeneratingCaption} />
                         {mode === 'edit' && (
-                             <button onClick={handleUpdateCaption} className={styles.actionButton} disabled={isProcessing || editedCaption === post.post_caption}>
+                             <button onClick={handleUpdateCaption} className={styles.actionButton} disabled={isProcessing || isGeneratingCaption || editedCaption === post.post_caption}>
                                 {isProcessing ? 'Saving...' : 'Update Caption'}
                             </button>
                         )}
@@ -122,12 +152,12 @@ export default function PostPreviewAndEditView({ post, mode = 'edit', onClose, o
                     <div className={styles.previewSection}>
                         <label>Schedule for...</label>
                         <div className={styles.scheduleInputs}>
-                            <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} disabled={isProcessing} />
-                            <select value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} disabled={isProcessing}>
+                            <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} disabled={isProcessing || isGeneratingCaption} />
+                            <select value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} disabled={isProcessing || isGeneratingCaption}>
                                 {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
                             </select>
                         </div>
-                        <button onClick={handlePrimaryAction} className={`${styles.actionButton} ${styles.rescheduleButton}`} disabled={isProcessing}>
+                        <button onClick={handlePrimaryAction} className={`${styles.actionButton} ${styles.rescheduleButton}`} disabled={isProcessing || isGeneratingCaption}>
                             <CalendarIcon />
                             {mode === 'create' ? (isProcessing ? 'Scheduling...' : 'Schedule Post') : (isProcessing ? 'Rescheduling...' : 'Reschedule')}
                         </button>
@@ -136,7 +166,7 @@ export default function PostPreviewAndEditView({ post, mode = 'edit', onClose, o
                     {mode === 'edit' && (
                         <div className={styles.previewSection}>
                             <label>Danger Zone</label>
-                            <button onClick={() => setView('confirm_delete')} className={`${styles.actionButton} ${styles.deleteButton}`} disabled={isProcessing}>
+                            <button onClick={() => setView('confirm_delete')} className={`${styles.actionButton} ${styles.deleteButton}`} disabled={isProcessing || isGeneratingCaption}>
                                 <DeleteIcon /> Delete Post
                             </button>
                         </div>
@@ -149,7 +179,7 @@ export default function PostPreviewAndEditView({ post, mode = 'edit', onClose, o
     return (
         <div className={styles.previewContainer}>
             <div className={styles.topBar}>
-                <button onClick={onClose} className={styles.backButton} disabled={isProcessing}>
+                <button onClick={onClose} className={styles.backButton} disabled={isProcessing || isGeneratingCaption}>
                     <BackIcon />
                     <span>{mode === 'create' ? 'Back to Form' : 'Back to Calendar'}</span>
                 </button>
