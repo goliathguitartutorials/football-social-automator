@@ -1,0 +1,275 @@
+/*
+ * ==========================================================
+ * COMPONENT: PostPreviewAndEditView
+ * PAGE: Schedule Page
+ * FILE: /components/SchedulePage/PostPreviewAndEditView/PostPreviewAndEditView.module.css
+ * ==========================================================
+*/
+.previewContainer {
+    padding: 2rem;
+    background-color: var(--surface-dark, #1a1d2e);
+    border-radius: 8px;
+    color: var(--text-primary, #fff);
+    width: 100%;
+    max-width: 1200px; /* or your desired max-width */
+    margin: 0 auto;
+}
+
+.topBar {
+    display: flex;
+    align-items: center;
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.topBar h2 {
+    text-align: center;
+    flex-grow: 1;
+    margin: 0;
+    padding: 0;
+}
+
+.backButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.backButton:hover:not(:disabled) {
+    background-color: var(--background-dark);
+    color: var(--text-primary);
+}
+
+.previewLayout {
+    display: flex;
+    gap: 2rem;
+    margin: 2rem 0;
+    align-items: flex-start;
+}
+
+.previewImageWrapper {
+    flex: 1 1 55%; /* Give image a bit more space */
+    min-width: 280px;
+    position: relative;
+}
+
+.imageOverlay {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-radius: 0.5rem;
+    z-index: 10;
+}
+
+.previewImage {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color, #4a5568);
+}
+
+.previewControls {
+    flex: 1 1 45%;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.previewSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background-color: var(--background-dark);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.previewSectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.previewSection label {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.previewCaptionTextarea {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background-color: #374151;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 1rem;
+    resize: vertical;
+}
+
+.aiButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: #4a5568;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.aiButton:hover:not(:disabled) {
+    background-color: #6b7280;
+}
+
+.actionButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.8rem 1.2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.actionButton:disabled, .aiButton:disabled, .backButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.actionButton {
+    background-color: var(--accent-color);
+    color: white;
+}
+.actionButton:hover:not(:disabled) {
+    background-color: var(--accent-color-hover);
+}
+
+.rescheduleButton {
+    background-color: #38a169; /* Green */
+}
+.rescheduleButton:hover:not(:disabled) {
+    background-color: #2f855a;
+}
+
+.deleteButton {
+    background-color: #c53030; /* Red */
+}
+.deleteButton:hover:not(:disabled) {
+    background-color: #9b2c2c;
+}
+
+.message {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+    text-align: center;
+    padding: 0.75rem;
+    border-radius: 6px;
+}
+.message.success {
+    background-color: rgba(56, 161, 105, 0.2);
+    color: #68d391;
+}
+.message.error {
+    background-color: rgba(197, 48, 48, 0.2);
+    color: #fc8181;
+}
+
+.scheduleInputs {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.scheduleInputs input,
+.scheduleInputs select {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: #374151;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.confirmationView {
+    text-align: center;
+    padding: 2rem;
+}
+.confirmationView h3 {
+    margin-bottom: 1rem;
+}
+.confirmationView p {
+    margin-bottom: 2rem;
+    max-width: 40ch;
+    margin-left: auto;
+    margin-right: auto;
+    color: var(--text-secondary);
+}
+
+.confirmationActions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.cancelButton {
+    padding: 0.8rem 1.5rem;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: #4a5568;
+    color: var(--text-primary);
+    border: none;
+}
+.cancelButton:hover {
+    background-color: #6b7280;
+}
+
+
+/* RESPONSIVE STYLES */
+@media (max-width: 768px) {
+    .previewContainer {
+        padding: 1rem;
+    }
+    .previewLayout {
+        flex-direction: column;
+    }
+    .previewImageWrapper, .previewControls {
+        width: 100%;
+    }
+    .topBar h2 {
+        font-size: 1.2rem;
+    }
+    .backButton span {
+        display: none;
+    }
+}
