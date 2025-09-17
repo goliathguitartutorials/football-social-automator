@@ -1,16 +1,17 @@
-// FILE: /app/api/schedule-manager/route.js
+// /app/api/schedule-manager/route.js
+
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
     // 1. Get the webhook URL and secret key from environment variables
     const webhookUrl = process.env.N8N_SCHEDULE_MANAGER_WEBHOOK_URL;
-    const internalApiSecret = process.env.INTERNAL_API_SECRET_KEY;
+    const appSecurityKey = process.env.APP_SECURITY_KEY;
 
     // 2. Security Check: Validate the Authorization header from the front-end
     const authHeader = request.headers.get('Authorization');
     const clientKey = authHeader?.split(' ')[1]; // Expecting "Bearer YOUR_KEY"
 
-    if (!clientKey || clientKey !== internalApiSecret) {
+    if (!clientKey || clientKey !== appSecurityKey) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
