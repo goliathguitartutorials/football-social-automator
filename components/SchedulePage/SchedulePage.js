@@ -3,13 +3,13 @@
  * COMPONENT: SchedulePage
  * PAGE: Schedule Page
  * FILE: /components/SchedulePage/SchedulePage.js
- ==========================================================
+ * ==========================================================
 */
 'use client';
 import { useState } from 'react';
 import styles from './SchedulePage.module.css';
-import PreviewModal from './PreviewModal/PreviewModal';
 import CreatePostView from './CreatePostView/CreatePostView';
+import PostPreviewAndEditView from './PostPreviewAndEditView/PostPreviewAndEditView'; // New component import
 import MobileScheduleView from './MobileScheduleView/MobileScheduleView';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { CalendarIcon, DayIcon, ListIcon } from './SchedulePageIcons';
@@ -18,29 +18,38 @@ import WeekView from './WeekView/WeekView';
 import { useAppContext } from '@/app/context/AppContext';
 
 export default function SchedulePage({ appData, onDataRefresh }) {
-    const { authKey, refreshAppData } = useAppContext();
+    const { refreshAppData } = useAppContext();
 
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedPost, setSelectedPost] = useState(null);
     const [newPostDate, setNewPostDate] = useState(null);
-    const [viewMode, setViewMode] = useState('calendar');
-    const [viewType, setViewType] = useState('month');
+    const [viewMode, setViewMode] = useState('calendar'); // 'calendar', 'list', 'day' for sub-views
+    const [viewType, setViewType] = useState('month'); // 'month', 'week'
     const [dayViewDate, setDayViewDate] = useState(new Date());
-    const [isCreatingPost, setIsCreatingPost] = useState(false);
+    const [pageView, setPageView] = useState('calendar'); // Main view: 'calendar', 'create', 'preview'
 
     const { width } = useWindowSize();
     const isMobile = width && width <= 768;
 
-    const openPreviewModal = (post) => setSelectedPost(post);
-    const closePreviewModal = () => setSelectedPost(null);
+    // --- New Handlers for Page View Navigation ---
+
+    const handleSelectPost = (post) => {
+        setSelectedPost(post);
+        setPageView('preview');
+    };
+
+    const handleExitPreview = () => {
+        setSelectedPost(null);
+        setPageView('calendar');
+    };
 
     const enterCreateMode = (date) => {
         setNewPostDate(date);
-        setIsCreatingPost(true);
+        setPageView('create');
     };
 
     const exitCreateMode = () => {
-        setIsCreatingPost(false);
+        setPageView('calendar');
         setNewPostDate(null);
     };
 
@@ -48,6 +57,13 @@ export default function SchedulePage({ appData, onDataRefresh }) {
         refreshAppData();
         exitCreateMode();
     };
+
+    const handlePostUpdated = () => {
+        refreshAppData();
+        handleExitPreview();
+    };
+
+    // --- Existing Calendar Logic (largely unchanged) ---
 
     const handleDayClick = (date) => {
         setDayViewDate(date);
@@ -104,7 +120,7 @@ export default function SchedulePage({ appData, onDataRefresh }) {
 
     const renderActiveView = () => {
         if (viewMode === 'list') {
-            return <MobileScheduleView posts={scheduledPosts} onPostClick={openPreviewModal} onNewPostClick={enterCreateMode} showDateHeaders={true} />;
+            return <MobileScheduleView posts={scheduledPosts} onPostClick={handleSelectPost} onNewPostClick={enterCreateMode} showDateHeaders={true} />;
         }
         if (viewMode === 'day') {
             const dayPosts = scheduledPosts.filter(post => {
@@ -113,14 +129,14 @@ export default function SchedulePage({ appData, onDataRefresh }) {
             });
             const dateKey = dayViewDate.toISOString().split('T')[0];
             const postsForDay = { [dateKey]: dayPosts };
-            return <MobileScheduleView postsByDate={postsForDay} onPostClick={openPreviewModal} onNewPostClick={enterCreateMode} showDateHeaders={false} />;
+            return <MobileScheduleView postsByDate={postsForDay} onPostClick={handleSelectPost} onNewPostClick={enterCreateMode} showDateHeaders={false} />;
         }
         if (viewMode === 'calendar') {
             if (viewType === 'month') {
-                return <MonthView currentDate={currentDate} posts={currentPosts} onDayClick={handleDayClick} onPostClick={openPreviewModal} onMoreClick={handleDayClick} onNewPostClick={enterCreateMode} isMobile={isMobile} />;
+                return <MonthView currentDate={currentDate} posts={currentPosts} onDayClick={handleDayClick} onPostClick={handleSelectPost} onMoreClick={handleDayClick} onNewPostClick={enterCreateMode} isMobile={isMobile} />;
             }
             if (viewType === 'week' && !isMobile) {
-                return <WeekView currentDate={currentDate} posts={currentPosts} onPostClick={openPreviewModal} onNewPostClick={enterCreateMode} />;
+                return <WeekView currentDate={currentDate} posts={currentPosts} onPostClick={handleSelectPost} onNewPostClick={enterCreateMode} />;
             }
         }
         return null;
@@ -147,17 +163,27 @@ export default function SchedulePage({ appData, onDataRefresh }) {
         { id: 'day', label: 'Day', icon: <DayIcon />, onClick: () => handleDayClick(new Date()) },
     ];
 
+    // --- New Main Render Logic ---
+
     return (
         <div className={styles.container}>
-            {isCreatingPost ? (
-                <>
-                    <CreatePostView
-                        scheduleDate={newPostDate}
-                        onPostScheduled={handlePostScheduled}
-                        onCancel={exitCreateMode}
-                    />
-                </>
-            ) : (
+            {pageView === 'create' && (
+                <CreatePostView
+                    scheduleDate={newPostDate}
+                    onPostScheduled={handlePostScheduled}
+                    onCancel={exitCreateMode}
+                />
+            )}
+
+            {pageView === 'preview' && selectedPost && (
+                <PostPreviewAndEditView
+                    post={selectedPost}
+                    onClose={handleExitPreview}
+                    onPostUpdated={handlePostUpdated}
+                />
+            )}
+
+            {pageView === 'calendar' && (
                 <>
                     <header className={styles.header}>
                         <nav className={styles.subNav}>
@@ -188,13 +214,6 @@ export default function SchedulePage({ appData, onDataRefresh }) {
                     </div>
                 </>
             )}
-
-            {selectedPost && <PreviewModal 
-                post={selectedPost} 
-                onClose={closePreviewModal} 
-                onManagePost={refreshAppData}
-                authKey={authKey}
-            />}
         </div>
     );
 }
