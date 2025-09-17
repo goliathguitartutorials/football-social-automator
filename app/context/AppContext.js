@@ -7,7 +7,7 @@
  */
 'use client';
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 
 const AppContext = createContext();
 
@@ -16,19 +16,7 @@ export function AppProvider({ children }) {
     const [authKey, setAuthKey] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [authStatus, setAuthStatus] = useState('idle'); // idle, success, error
-
-    // NEW: Effect to rehydrate state from sessionStorage on initial load
-    useEffect(() => {
-        const savedKey = sessionStorage.getItem('authKey');
-        const savedData = sessionStorage.getItem('appData');
-        if (savedKey && savedData) {
-            setAuthKey(savedKey);
-            const parsedData = JSON.parse(savedData);
-            processData(parsedData); // Use processData to ensure format is correct
-            setAuthStatus('success');
-        }
-    }, []);
+    const [authStatus, setAuthStatus] = useState('idle');
 
     const authorizeAndFetchData = async (key) => {
         if (!key) {
@@ -41,7 +29,6 @@ export function AppProvider({ children }) {
         setError(null);
         setAuthStatus('idle');
         sessionStorage.removeItem('appData');
-        sessionStorage.removeItem('authKey');
 
         try {
             const response = await fetch('/api/get-app-data', {
@@ -63,8 +50,6 @@ export function AppProvider({ children }) {
             
             processData(dataArray);
             
-            setAuthKey(key); // Set the key in state
-            sessionStorage.setItem('authKey', key); // Save key to session
             sessionStorage.setItem('appData', JSON.stringify(dataArray));
             setAuthStatus('success');
             
@@ -103,14 +88,11 @@ export function AppProvider({ children }) {
         }
     };
     
-    const refreshAppData = async () => {
-        const currentKey = authKey || sessionStorage.getItem('authKey');
-        if (currentKey) {
-            // Re-fetch data using the stored key
-            await authorizeAndFetchData(currentKey);
+    const refreshAppData = () => {
+        if (authKey) {
+            authorizeAndFetchData(authKey);
         } else {
             setError("Cannot refresh data: No authorization key is present.");
-            setAuthStatus('idle'); // Force re-login if key is missing
         }
     };
 
