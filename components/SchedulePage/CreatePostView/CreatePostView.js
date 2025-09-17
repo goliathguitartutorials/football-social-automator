@@ -3,13 +3,14 @@
  * COMPONENT: CreatePostView
  * PAGE: Schedule Page
  * FILE: /components/SchedulePage/CreatePostView/CreatePostView.js
- ==========================================================
+ * ==========================================================
 */
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import styles from './CreatePostView.module.css';
 import { useAppContext } from '@/app/context/AppContext';
+import PostPreviewAndEditView from '../PostPreviewAndEditView/PostPreviewAndEditView'; // Import the new component
 
 // Reusable Forms
 import UpNextForm from '@/components/common/PostCreationForms/UpNextForm/UpNextForm';
@@ -39,9 +40,7 @@ const generateTimeSlots = () => {
     const slots = [];
     for (let h = 0; h < 24; h++) {
         for (let m = 0; m < 60; m += 15) {
-            const hour = h.toString().padStart(2, '0');
-            const minute = m.toString().padStart(2, '0');
-            slots.push(`${hour}:${minute}`);
+            slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
         }
     }
     return slots;
@@ -61,7 +60,7 @@ const getNextIntervalTime = () => {
     return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 };
 
-const buildImageGenPayload = (formData, postType, players, badges) => {
+const buildImageGenPayload = (formData, postType) => {
     const basePayload = {
         home_team_badge: formData.homeTeamBadge,
         away_team_badge: formData.awayTeamBadge,
@@ -72,25 +71,14 @@ const buildImageGenPayload = (formData, postType, players, badges) => {
     switch (postType.id) {
         case 'upNext': return { ...basePayload, action: postType.action, match_date: formData.match_date, kick_off_time: formData.kickOffTime, venue: formData.venue, team: formData.teamType };
         case 'matchDay': return { ...basePayload, action: postType.action, match_date: formData.match_date, kick_off_time: formData.kickOffTime, venue: formData.venue };
-        case 'squad':
-            const playersWithSponsors = formData.selectedPlayers.map(name => {
-                if (!name) return null;
-                const playerObj = players.find(p => p.fullName === name);
-                return { fullName: name, sponsor: playerObj ? playerObj.Sponsor : 'N/A' };
-            }).filter(Boolean);
-            return { ...basePayload, action: postType.action, players: playersWithSponsors };
-        case 'result':
-            const homeBadge = badges.find(b => b.Link === formData.homeTeamBadge);
-            const isHome = homeBadge && homeBadge.Name.toLowerCase().includes('glannau');
-            const scorers = formatScorersForWebhook(formData.scorers, isHome);
-            return { ...basePayload, action: postType.action, home_team_score: formData.homeTeamScore, away_team_score: formData.awayTeamScore, ...scorers };
+        case 'squad': return { ...basePayload, action: postType.action, players: formData.selectedPlayersWithSponsors };
+        case 'result': return { ...basePayload, action: postType.action, home_team_score: formData.homeTeamScore, away_team_score: formData.awayTeamScore, ...formData.scorersForWebhook };
         default: return { ...basePayload, action: postType.action };
     }
 };
 
 export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel }) {
     const { appData, authKey } = useAppContext();
-    const { players = [], matches = [], badges = [], backgrounds = [] } = appData || {};
     const [view, setView] = useState('CONFIG');
     const [selectedDate, setSelectedDate] = useState('');
     const [selectedTime, setSelectedTime] = useState('');
@@ -134,7 +122,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         setIsSubmitting(true);
         setMessage('');
         setFormData(formPayload);
-        const imageGenPayload = buildImageGenPayload(formPayload, selectedPostType, players, badges);
+        const imageGenPayload = buildImageGenPayload(formPayload, selectedPostType);
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(imageGenPayload) });
             const result = await response.json();
@@ -150,28 +138,24 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         }
     };
 
-    const handleSchedulePost = async () => {
+    const handleSchedulePost = async ({ caption, date, time }) => {
+        // This function now receives the final data from PostPreviewAndEditView
         setIsSubmitting(true);
         setMessage('');
 
-        // Construct the UTC timestamp directly from state to avoid timezone issues.
-        const schedule_time_utc = `${selectedDate}T${selectedTime}:00.000Z`;
-
-        // Generate a unique, timestamp-based post ID.
+        const schedule_time_utc = new Date(`${date}T${time}:00.000Z`).toISOString();
         const postId = `post_${new Date().getTime()}`;
 
-        // Create the correct, simplified payload for scheduling.
         const schedulePayload = {
             action: 'schedule_post',
             post_id: postId,
             schedule_time_utc: schedule_time_utc,
             post_type: selectedPostType.id,
             image_url: previewUrl,
-            caption: formData.caption
+            caption: caption // Use the potentially updated caption
         };
 
         try {
-            // Using the new manager endpoint for scheduling
             const response = await fetch('/api/schedule-manager', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(schedulePayload) });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Failed to schedule post.');
@@ -179,14 +163,30 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             setTimeout(onPostScheduled, 1500);
         } catch (err) {
             setMessage(`Error: ${err.message}`);
-            setIsSubmitting(false); // Ensure button is re-enabled on error
+            setIsSubmitting(false);
         }
     };
-
 
     const ActiveForm = selectedPostType?.component;
     const activeBanner = selectedPostType ? bannerImages[selectedPostType.id] : null;
 
+    if (view === 'PREVIEW') {
+        const previewPostData = {
+            image_url: previewUrl,
+            post_caption: formData.caption,
+            scheduled_time_utc: `${selectedDate}T${selectedTime}:00.000Z`,
+        };
+
+        return (
+            <PostPreviewAndEditView
+                post={previewPostData}
+                mode="create"
+                onClose={() => setView('FORM')}
+                onSchedule={handleSchedulePost}
+            />
+        );
+    }
+    
     return (
         <div className={styles.pageContainer}>
             <div className={styles.viewHeader}>
@@ -202,8 +202,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                         key={selectedPostType.id}
                         src={activeBanner.src}
                         alt={`${selectedPostType.label} Banner`}
-                        fill
-                        priority
+                        fill priority
                         placeholder="blur"
                         blurDataURL={activeBanner.src}
                         className={`${styles.bannerImage} ${styles[activeBanner.position]}`}
@@ -247,49 +246,22 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                     <div className={styles.formWrapper}>
                         <ActiveForm
                             appData={appData}
-                            players={players}
-                            matches={matches}
-                            badges={badges}
-                            backgrounds={backgrounds}
                             initialData={formData}
                             onSubmit={handleGeneratePreview}
-                            onYoloSubmit={()=>{}}
                             onGenerateCaption={handleGenerateCaption}
                             isSubmitting={isSubmitting}
                             isGeneratingCaption={isGeneratingCaption}
                         />
                     </div>
-                     <div className={`${styles.actions} ${styles.formActions}`}>
+                    <div className={`${styles.actions} ${styles.formActions}`}>
                         <button onClick={() => setView('CONFIG')} className={styles.backButton}>
                             <ArrowLeftIcon /> Back to Config
                         </button>
                     </div>
                 </section>
             )}
-
-            {view === 'PREVIEW' && (
-                <section className={styles.section}>
-                    <div className={styles.previewLayout}>
-                        <div className={styles.previewImageWrapper}>
-                             {isSubmitting && <div className={styles.imageOverlay}>{message ? message : 'Scheduling...'}</div>}
-                            <img src={previewUrl} alt="Generated Preview" className={styles.previewImage} />
-                        </div>
-                        <div className={styles.previewControls}>
-                            <div className={styles.confirmDetails}>
-                                <p><strong>Scheduling for:</strong></p>
-                                <p>{new Date(selectedDate).toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} at {selectedTime}</p>
-                            </div>
-                            <div className={styles.actions}>
-                                <button onClick={() => setView('FORM')} className={styles.backButton} disabled={isSubmitting}><ArrowLeftIcon /> Back to Edit</button>
-                                <button className={styles.scheduleButton} onClick={handleSchedulePost} disabled={isSubmitting}>
-                                    {isSubmitting ? 'Scheduling...' : 'Schedule Post'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            )}
-             {message && <p className={styles.message}>{message}</p>}
+            
+            {message && <p className={styles.message}>{message}</p>}
         </div>
     );
 }
