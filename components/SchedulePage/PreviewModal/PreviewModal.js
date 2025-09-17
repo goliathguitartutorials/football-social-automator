@@ -1,14 +1,28 @@
 /*
  * ==========================================================
  * COMPONENT: PreviewModal
- * PAGE: /schedule
+ * PAGE: Schedule Page
  * FILE: /components/SchedulePage/PreviewModal/PreviewModal.js
- * ==========================================================
- */
+ ==========================================================
+*/
 import { useState } from 'react';
 import styles from './PreviewModal.module.css';
 import { EditIcon, DeleteIcon } from '../../AssetDetailsModal/AssetDetailsModalIcons';
 import { CalendarIcon as RescheduleIcon } from '../SchedulePageIcons';
+
+// Helper to generate 15-minute time slots for the dropdown
+const generateTimeSlots = () => {
+    const slots = [];
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 15) {
+            const hour = h.toString().padStart(2, '0');
+            const minute = m.toString().padStart(2, '0');
+            slots.push(`${hour}:${minute}`);
+        }
+    }
+    return slots;
+};
+const timeSlots = generateTimeSlots();
 
 export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
     if (!post) return null;
@@ -19,14 +33,12 @@ export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
     const [errorMessage, setErrorMessage] = useState('');
     const [confirmationMessage, setConfirmationMessage] = useState('');
 
-    const formatDateTimeLocal = (isoString) => {
-        const date = new Date(isoString);
-        const timezoneOffset = date.getTimezoneOffset() * 60000;
-        const localDate = new Date(date.getTime() - timezoneOffset);
-        return localDate.toISOString().slice(0, 16);
-    };
-
-    const [rescheduleTime, setRescheduleTime] = useState(formatDateTimeLocal(post.scheduled_time_utc));
+    // State for the new date and time pickers
+    const initialDate = new Date(post.scheduled_time_utc);
+    const [rescheduleDate, setRescheduleDate] = useState(initialDate.toISOString().split('T')[0]);
+    const roundedMinutes = Math.floor(initialDate.getUTCMinutes() / 15) * 15;
+    const initialTime = `${initialDate.getUTCHours().toString().padStart(2, '0')}:${roundedMinutes.toString().padStart(2, '0')}`;
+    const [rescheduleTimeSlot, setRescheduleTimeSlot] = useState(initialTime);
 
     const handleApiAction = async (payload) => {
         setIsProcessing(true);
@@ -49,10 +61,8 @@ export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
                 throw new Error(result.error || 'Failed to process the request.');
             }
             
-            // On success, show confirmation message from the webhook
             setConfirmationMessage(result.message);
 
-            // Wait 1.5 seconds, then refresh data and close modal
             setTimeout(() => {
                 if(onManagePost) onManagePost();
                 onClose();
@@ -60,10 +70,8 @@ export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
 
         } catch (err) {
             setErrorMessage(err.message);
-            setIsProcessing(false); // Stop processing on error
+            setIsProcessing(false);
         }
-        // Note: isProcessing is not set to false on success, 
-        // because the component will be unmounted.
     };
     
     const handleUpdateCaption = () => {
@@ -82,7 +90,8 @@ export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
     };
 
     const handleReschedule = () => {
-        const newUtcDate = new Date(rescheduleTime).toISOString();
+        // Combine date and time slot into a standardized UTC string
+        const newUtcDate = `${rescheduleDate}T${rescheduleTimeSlot}:00.000Z`;
         handleApiAction({
             action: 'reschedule_post',
             post_id: post.id,
@@ -91,7 +100,6 @@ export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
     };
 
     const renderContent = () => {
-        // Display confirmation message if it exists
         if (confirmationMessage) {
             return (
                 <div className={styles.confirmationView}>
@@ -135,7 +143,23 @@ export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
             return (
                 <div>
                     <h3>Reschedule Post</h3>
-                    <input type="datetime-local" className={styles.rescheduleInput} value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)} disabled={isProcessing}/>
+                    <div className={styles.rescheduleInputs}>
+                        <input 
+                            type="date" 
+                            className={styles.rescheduleInput} 
+                            value={rescheduleDate} 
+                            onChange={(e) => setRescheduleDate(e.target.value)} 
+                            disabled={isProcessing}
+                        />
+                        <select 
+                            className={styles.rescheduleInput} 
+                            value={rescheduleTimeSlot} 
+                            onChange={(e) => setRescheduleTimeSlot(e.target.value)} 
+                            disabled={isProcessing}
+                        >
+                            {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
+                        </select>
+                    </div>
                     <div className={styles.viewActions}>
                         <button onClick={() => setCurrentView('details')} className={styles.cancelButton} disabled={isProcessing}>Cancel</button>
                         <button onClick={handleReschedule} className={styles.confirmButton} disabled={isProcessing}>
