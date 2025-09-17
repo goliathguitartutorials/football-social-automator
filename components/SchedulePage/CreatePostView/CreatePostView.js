@@ -90,6 +90,7 @@ const buildImageGenPayload = (formData, postType, players, badges) => {
 
 export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel }) {
     const { appData, authKey } = useAppContext();
+    const { players = [], matches = [], badges = [], backgrounds = [] } = appData || {};
     const [view, setView] = useState('CONFIG');
     const [selectedDate, setSelectedDate] = useState('');
     const [selectedTime, setSelectedTime] = useState('');
@@ -133,7 +134,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         setIsSubmitting(true);
         setMessage('');
         setFormData(formPayload);
-        const imageGenPayload = buildImageGenPayload(formPayload, selectedPostType, appData.players, appData.badges);
+        const imageGenPayload = buildImageGenPayload(formPayload, selectedPostType, players, badges);
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(imageGenPayload) });
             const result = await response.json();
@@ -160,7 +161,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             schedule_time_utc: finalScheduleDate.toISOString(),
             post_type: selectedPostType.id,
             image_gen_action: selectedPostType.action,
-            ...buildImageGenPayload(formData, selectedPostType, appData.players, appData.badges)
+            ...buildImageGenPayload(formData, selectedPostType, players, badges)
         };
         try {
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(schedulePayload) });
@@ -238,6 +239,10 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                     <div className={styles.formWrapper}>
                         <ActiveForm 
                             appData={appData} 
+                            players={players}
+                            matches={matches}
+                            badges={badges}
+                            backgrounds={backgrounds}
                             initialData={formData} 
                             onSubmit={handleGeneratePreview} 
                             onYoloSubmit={()=>{}} 
