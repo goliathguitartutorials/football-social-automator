@@ -1,10 +1,10 @@
 /*
  * ==========================================================
  * COMPONENT: SchedulePage
- * PAGE: /schedule
+ * PAGE: Schedule Page
  * FILE: /components/SchedulePage/SchedulePage.js
- * ==========================================================
- */
+ ==========================================================
+*/
 'use client';
 import { useState } from 'react';
 import styles from './SchedulePage.module.css';
@@ -15,12 +15,11 @@ import { useWindowSize } from '@/hooks/useWindowSize';
 import { CalendarIcon, DayIcon, ListIcon } from './SchedulePageIcons';
 import MonthView from './MonthView/MonthView';
 import WeekView from './WeekView/WeekView';
-import { useAppContext } from '@/app/context/AppContext'; // 1. IMPORT THE APP CONTEXT
+import { useAppContext } from '@/app/context/AppContext';
 
 export default function SchedulePage({ appData, onDataRefresh }) {
-    // 2. GET THE NECESSARY ITEMS FROM THE CONTEXT
-    const { authKey, refreshAppData } = useAppContext(); 
-    
+    const { authKey, refreshAppData } = useAppContext();
+
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedPost, setSelectedPost] = useState(null);
     const [newPostDate, setNewPostDate] = useState(null);
@@ -39,15 +38,14 @@ export default function SchedulePage({ appData, onDataRefresh }) {
         setNewPostDate(date);
         setIsCreatingPost(true);
     };
-    
+
     const exitCreateMode = () => {
         setIsCreatingPost(false);
         setNewPostDate(null);
     };
 
-    // 3. THIS HANDLER NOW USES THE CORRECT REFRESH FUNCTION FROM THE CONTEXT
     const handlePostScheduled = () => {
-        refreshAppData(); 
+        refreshAppData();
         exitCreateMode();
     };
 
@@ -154,7 +152,6 @@ export default function SchedulePage({ appData, onDataRefresh }) {
             {isCreatingPost ? (
                 <>
                     <CreatePostView
-                        appData={appData}
                         scheduleDate={newPostDate}
                         onPostScheduled={handlePostScheduled}
                         onCancel={exitCreateMode}
@@ -195,7 +192,7 @@ export default function SchedulePage({ appData, onDataRefresh }) {
             {selectedPost && <PreviewModal 
                 post={selectedPost} 
                 onClose={closePreviewModal} 
-                onManagePost={refreshAppData} // 4. PASS THE CORRECT REFRESH FUNCTION TO THE MODAL
+                onManagePost={refreshAppData}
                 authKey={authKey}
             />}
         </div>
