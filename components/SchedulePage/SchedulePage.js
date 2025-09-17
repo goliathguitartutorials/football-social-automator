@@ -151,12 +151,15 @@ export default function SchedulePage({ appData, onDataRefresh }) {
     return (
         <div className={styles.container}>
             {isCreatingPost ? (
-                <CreatePostView
-                    appData={appData}
-                    scheduleDate={newPostDate}
-                    onPostScheduled={handlePostScheduled}
-                    onCancel={exitCreateMode}
-                />
+                <>
+                    {console.log('DEBUG: Data being passed from SchedulePage:', appData)}
+                    <CreatePostView
+                        appData={appData}
+                        scheduleDate={newPostDate}
+                        onPostScheduled={handlePostScheduled}
+                        onCancel={exitCreateMode}
+                    />
+                </>
             ) : (
                 <>
                     <header className={styles.header}>
