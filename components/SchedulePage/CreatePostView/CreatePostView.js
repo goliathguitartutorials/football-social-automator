@@ -1,5 +1,10 @@
-// /components/SchedulePage/CreatePostView/CreatePostView.js
-
+/*
+ * ==========================================================
+ * COMPONENT: CreatePostView
+ * PAGE: Schedule Page
+ * FILE: /components/SchedulePage/CreatePostView/CreatePostView.js
+ ==========================================================
+*/
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -131,7 +136,6 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         setFormData(formPayload);
         const imageGenPayload = buildImageGenPayload(formPayload, selectedPostType, players, badges);
         try {
-            // Reverted to the original endpoint for generating previews
             const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(imageGenPayload) });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Failed to generate preview.');
@@ -145,20 +149,23 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             setIsSubmitting(false);
         }
     };
-    
+
     const handleSchedulePost = async () => {
         setIsSubmitting(true);
         setMessage('');
-        const [hours, minutes] = selectedTime.split(':');
-        const finalScheduleDate = new Date(selectedDate);
-        finalScheduleDate.setUTCHours(hours, minutes, 0, 0);
+
+        // Construct the UTC timestamp directly from state to avoid timezone issues.
+        const schedule_time_utc = `${selectedDate}T${selectedTime}:00.000Z`;
+
+        // Create the correct, simplified payload for scheduling.
         const schedulePayload = {
             action: 'schedule_post',
-            schedule_time_utc: finalScheduleDate.toISOString(),
+            schedule_time_utc: schedule_time_utc,
             post_type: selectedPostType.id,
-            image_gen_action: selectedPostType.action,
-            ...buildImageGenPayload(formData, selectedPostType, players, badges)
+            image_url: previewUrl,      // The URL of the generated image
+            caption: formData.caption   // The final caption for the post
         };
+
         try {
             // Using the new manager endpoint for scheduling
             const response = await fetch('/api/schedule-manager', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(schedulePayload) });
@@ -168,10 +175,11 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             setTimeout(onPostScheduled, 1500);
         } catch (err) {
             setMessage(`Error: ${err.message}`);
-        } finally {
-            setIsSubmitting(false);
+            setIsSubmitting(false); // Ensure button is re-enabled on error
         }
+        // No finally block for setIsSubmitting, as we want it to stay disabled on success until the view changes.
     };
+
 
     const ActiveForm = selectedPostType?.component;
     const activeBanner = selectedPostType ? bannerImages[selectedPostType.id] : null;
@@ -199,7 +207,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                     />
                 </div>
             )}
-            
+
             {view === 'CONFIG' && (
                 <section className={styles.section}>
                     <h3 className={styles.subHeader}>Select Post Type</h3>
@@ -234,15 +242,15 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             {view === 'FORM' && (
                 <section className={styles.section}>
                     <div className={styles.formWrapper}>
-                        <ActiveForm 
-                            appData={appData} 
+                        <ActiveForm
+                            appData={appData}
                             players={players}
                             matches={matches}
                             badges={badges}
                             backgrounds={backgrounds}
-                            initialData={formData} 
-                            onSubmit={handleGeneratePreview} 
-                            onYoloSubmit={()=>{}} 
+                            initialData={formData}
+                            onSubmit={handleGeneratePreview}
+                            onYoloSubmit={()=>{}}
                             onGenerateCaption={handleGenerateCaption}
                             isSubmitting={isSubmitting}
                             isGeneratingCaption={isGeneratingCaption}
