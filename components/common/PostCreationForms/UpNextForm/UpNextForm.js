@@ -30,8 +30,8 @@ const formatDateForWebhook = (dateString) => {
     return `${dayOfWeek} ${dayOfMonth}${suffix} ${month}`;
 };
 
-export default function UpNextForm({ appData, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
-    const { backgrounds, badges, matches } = appData;
+export default function UpNextForm({ appData = {}, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
+    const { backgrounds = [], badges = [], matches = [] } = appData;
     const [formData, setFormData] = useState(initialData || {});
     const [badgeMessage, setBadgeMessage] = useState('');
     const [backgroundSource, setBackgroundSource] = useState('gallery');
