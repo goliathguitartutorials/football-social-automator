@@ -32,8 +32,8 @@ const formatDateForWebhook = (dateString) => {
     return `${dayOfWeek} ${dayOfMonth}${suffix} ${month}`;
 };
 
-export default function MatchDayForm({ appData, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
-    const { backgrounds, badges, matches } = appData;
+export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
+    const { backgrounds = [], badges = [], matches = [] } = appData;
 
     const [formData, setFormData] = useState(initialData || {});
     const [badgeMessage, setBadgeMessage] = useState('');
