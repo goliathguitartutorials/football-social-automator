@@ -157,13 +157,17 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         // Construct the UTC timestamp directly from state to avoid timezone issues.
         const schedule_time_utc = `${selectedDate}T${selectedTime}:00.000Z`;
 
+        // Generate a unique, timestamp-based post ID.
+        const postId = `post_${new Date().getTime()}`;
+
         // Create the correct, simplified payload for scheduling.
         const schedulePayload = {
             action: 'schedule_post',
+            post_id: postId,
             schedule_time_utc: schedule_time_utc,
             post_type: selectedPostType.id,
-            image_url: previewUrl,      // The URL of the generated image
-            caption: formData.caption   // The final caption for the post
+            image_url: previewUrl,
+            caption: formData.caption
         };
 
         try {
@@ -177,7 +181,6 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             setMessage(`Error: ${err.message}`);
             setIsSubmitting(false); // Ensure button is re-enabled on error
         }
-        // No finally block for setIsSubmitting, as we want it to stay disabled on success until the view changes.
     };
 
 
