@@ -152,6 +152,7 @@ export default function SchedulePage({ appData, onDataRefresh }) {
         <div className={styles.container}>
             {isCreatingPost ? (
                 <CreatePostView
+                    appData={appData}
                     scheduleDate={newPostDate}
                     onPostScheduled={handlePostScheduled}
                     onCancel={exitCreateMode}
