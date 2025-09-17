@@ -3,9 +3,8 @@
  * COMPONENT: PreviewModal
  * PAGE: /schedule
  * FILE: /components/SchedulePage/PreviewModal/PreviewModal.js
- ==========================================================
- */// /components/SchedulePage/PreviewModal/PreviewModal.js
-
+ * ==========================================================
+ */
 import { useState } from 'react';
 import styles from './PreviewModal.module.css';
 import { EditIcon, DeleteIcon } from '../../AssetDetailsModal/AssetDetailsModalIcons';
@@ -14,15 +13,14 @@ import { CalendarIcon as RescheduleIcon } from '../SchedulePageIcons';
 export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
     if (!post) return null;
 
-    const [currentView, setCurrentView] = useState('details'); // details, edit_caption, confirm_delete, reschedule
+    const [currentView, setCurrentView] = useState('details');
     const [editedCaption, setEditedCaption] = useState(post.post_caption);
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
-    
-    // Helper to format date for datetime-local input
+    const [confirmationMessage, setConfirmationMessage] = useState('');
+
     const formatDateTimeLocal = (isoString) => {
         const date = new Date(isoString);
-        // Adjust for timezone offset to display local time correctly in the input
         const timezoneOffset = date.getTimezoneOffset() * 60000;
         const localDate = new Date(date.getTime() - timezoneOffset);
         return localDate.toISOString().slice(0, 16);
@@ -33,6 +31,8 @@ export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
     const handleApiAction = async (payload) => {
         setIsProcessing(true);
         setErrorMessage('');
+        setConfirmationMessage('');
+
         try {
             const response = await fetch('/api/schedule-manager', {
                 method: 'POST',
@@ -42,18 +42,28 @@ export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
                 },
                 body: JSON.stringify(payload),
             });
+
             const result = await response.json();
-            if (!response.ok) {
+
+            if (!response.ok || !result.success) {
                 throw new Error(result.error || 'Failed to process the request.');
             }
-            // If successful, trigger a refresh on the main page and close the modal
-            if(onManagePost) onManagePost();
-            onClose();
+            
+            // On success, show confirmation message from the webhook
+            setConfirmationMessage(result.message);
+
+            // Wait 1.5 seconds, then refresh data and close modal
+            setTimeout(() => {
+                if(onManagePost) onManagePost();
+                onClose();
+            }, 1500);
+
         } catch (err) {
             setErrorMessage(err.message);
-        } finally {
-            setIsProcessing(false);
+            setIsProcessing(false); // Stop processing on error
         }
+        // Note: isProcessing is not set to false on success, 
+        // because the component will be unmounted.
     };
     
     const handleUpdateCaption = () => {
@@ -81,6 +91,16 @@ export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
     };
 
     const renderContent = () => {
+        // Display confirmation message if it exists
+        if (confirmationMessage) {
+            return (
+                <div className={styles.confirmationView}>
+                    <h3>Success!</h3>
+                    <p>{confirmationMessage}</p>
+                </div>
+            );
+        }
+
         if (currentView === 'confirm_delete') {
             return (
                 <div className={styles.confirmationView}>
@@ -140,9 +160,9 @@ export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
     };
 
     return (
-        <div className={styles.modalBackdrop} onClick={onClose}>
+        <div className={styles.modalBackdrop} onClick={isProcessing ? undefined : onClose}>
             <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                <button className={styles.closeButton} onClick={onClose}>&times;</button>
+                <button className={styles.closeButton} onClick={isProcessing ? undefined : onClose} disabled={isProcessing}>&times;</button>
                 {errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}
                 {renderContent()}
             </div>
