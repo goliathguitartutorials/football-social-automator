@@ -4,95 +4,148 @@
  * PAGE: /schedule
  * FILE: /components/SchedulePage/PreviewModal/PreviewModal.js
  ==========================================================
- */
+ */// /components/SchedulePage/PreviewModal/PreviewModal.js
+
 import { useState } from 'react';
 import styles from './PreviewModal.module.css';
 import { EditIcon, DeleteIcon } from '../../AssetDetailsModal/AssetDetailsModalIcons';
-import { CalendarIcon as RescheduleIcon } from '../SchedulePageIcons'; // MODIFIED PATH
+import { CalendarIcon as RescheduleIcon } from '../SchedulePageIcons';
 
-export default function PreviewModal({ post, onClose, onManagePost }) {
-  if (!post) return null;
+export default function PreviewModal({ post, onClose, onManagePost, authKey }) {
+    if (!post) return null;
 
-  const [currentView, setCurrentView] = useState('details'); // details, edit_caption, confirm_delete, reschedule
-  const [editedCaption, setEditedCaption] = useState(post.post_caption);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [rescheduleTime, setRescheduleTime] = useState(post.scheduled_time_utc);
+    const [currentView, setCurrentView] = useState('details'); // details, edit_caption, confirm_delete, reschedule
+    const [editedCaption, setEditedCaption] = useState(post.post_caption);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    
+    // Helper to format date for datetime-local input
+    const formatDateTimeLocal = (isoString) => {
+        const date = new Date(isoString);
+        // Adjust for timezone offset to display local time correctly in the input
+        const timezoneOffset = date.getTimezoneOffset() * 60000;
+        const localDate = new Date(date.getTime() - timezoneOffset);
+        return localDate.toISOString().slice(0, 16);
+    };
 
-  const handleUpdateCaption = async () => {
-    // Add logic to call onManagePost to update the caption
-    setCurrentView('details');
-  };
+    const [rescheduleTime, setRescheduleTime] = useState(formatDateTimeLocal(post.scheduled_time_utc));
 
-  const handleDelete = async () => {
-    // Add logic to call onManagePost to delete the post
-  };
+    const handleApiAction = async (payload) => {
+        setIsProcessing(true);
+        setErrorMessage('');
+        try {
+            const response = await fetch('/api/schedule-manager', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authKey}`,
+                },
+                body: JSON.stringify(payload),
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to process the request.');
+            }
+            // If successful, trigger a refresh on the main page and close the modal
+            if(onManagePost) onManagePost();
+            onClose();
+        } catch (err) {
+            setErrorMessage(err.message);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+    
+    const handleUpdateCaption = () => {
+        handleApiAction({
+            action: 'update_caption',
+            post_id: post.id,
+            new_caption: editedCaption,
+        });
+    };
 
-  const handleReschedule = async () => {
-    // Add logic to call onManagePost to reschedule the post
-    setCurrentView('details');
-  };
+    const handleDelete = () => {
+        handleApiAction({
+            action: 'delete_post',
+            post_id: post.id,
+        });
+    };
 
-  const renderContent = () => {
-    if (currentView === 'confirm_delete') {
-      return (
-        <div className={styles.confirmationView}>
-          <h3>Confirm Deletion</h3>
-          <p>Are you sure you want to delete this scheduled post?</p>
-          <div className={styles.viewActions}>
-            <button onClick={() => setCurrentView('details')} className={styles.cancelButton}>Cancel</button>
-            <button onClick={handleDelete} className={`${styles.confirmButton} ${styles.deleteButton}`}>Yes, Delete</button>
-          </div>
-        </div>
-      );
-    }
+    const handleReschedule = () => {
+        const newUtcDate = new Date(rescheduleTime).toISOString();
+        handleApiAction({
+            action: 'reschedule_post',
+            post_id: post.id,
+            new_schedule_time_utc: newUtcDate,
+        });
+    };
 
-    if (currentView === 'edit_caption') {
-      return (
-        <div>
-          <h3>Edit Caption</h3>
-          <textarea className={styles.captionInput} value={editedCaption} onChange={(e) => setEditedCaption(e.target.value)} />
-          <div className={styles.viewActions}>
-            <button onClick={() => setCurrentView('details')} className={styles.cancelButton}>Cancel</button>
-            <button onClick={handleUpdateCaption} className={styles.confirmButton}>Save</button>
-          </div>
-        </div>
-      );
-    }
+    const renderContent = () => {
+        if (currentView === 'confirm_delete') {
+            return (
+                <div className={styles.confirmationView}>
+                    <h3>Confirm Deletion</h3>
+                    <p>Are you sure you want to delete this scheduled post?</p>
+                    <div className={styles.viewActions}>
+                        <button onClick={() => setCurrentView('details')} className={styles.cancelButton} disabled={isProcessing}>Cancel</button>
+                        <button onClick={handleDelete} className={`${styles.confirmButton} ${styles.deleteButton}`} disabled={isProcessing}>
+                            {isProcessing ? 'Deleting...' : 'Yes, Delete'}
+                        </button>
+                    </div>
+                </div>
+            );
+        }
 
-    if (currentView === 'reschedule') {
-      return (
-        <div>
-          <h3>Reschedule Post</h3>
-          <input type="datetime-local" className={styles.rescheduleInput} value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)} />
-          <div className={styles.viewActions}>
-            <button onClick={() => setCurrentView('details')} className={styles.cancelButton}>Cancel</button>
-            <button onClick={handleReschedule} className={styles.confirmButton}>Reschedule</button>
-          </div>
-        </div>
-      );
-    }
+        if (currentView === 'edit_caption') {
+            return (
+                <div>
+                    <h3>Edit Caption</h3>
+                    <textarea className={styles.captionInput} value={editedCaption} onChange={(e) => setEditedCaption(e.target.value)} disabled={isProcessing} />
+                    <div className={styles.viewActions}>
+                        <button onClick={() => setCurrentView('details')} className={styles.cancelButton} disabled={isProcessing}>Cancel</button>
+                        <button onClick={handleUpdateCaption} className={styles.confirmButton} disabled={isProcessing}>
+                            {isProcessing ? 'Saving...' : 'Save'}
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        if (currentView === 'reschedule') {
+            return (
+                <div>
+                    <h3>Reschedule Post</h3>
+                    <input type="datetime-local" className={styles.rescheduleInput} value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)} disabled={isProcessing}/>
+                    <div className={styles.viewActions}>
+                        <button onClick={() => setCurrentView('details')} className={styles.cancelButton} disabled={isProcessing}>Cancel</button>
+                        <button onClick={handleReschedule} className={styles.confirmButton} disabled={isProcessing}>
+                             {isProcessing ? 'Rescheduling...' : 'Reschedule'}
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div>
+                <img src={post.image_url} alt="Scheduled Post" className={styles.modalImage} />
+                <p className={styles.modalCaption}>{post.post_caption}</p>
+                <div className={styles.mainActions}>
+                    <button onClick={() => setCurrentView('edit_caption')} className={styles.actionButton}><EditIcon /><span>Edit</span></button>
+                    <button onClick={() => setCurrentView('reschedule')} className={styles.actionButton}><RescheduleIcon /><span>Reschedule</span></button>
+                    <button onClick={() => setCurrentView('confirm_delete')} className={`${styles.actionButton} ${styles.deleteButtonAction}`}><DeleteIcon /><span>Delete</span></button>
+                </div>
+            </div>
+        );
+    };
 
     return (
-      <div>
-        <img src={post.image_url} alt="Scheduled Post" className={styles.modalImage} />
-        <p className={styles.modalCaption}>{post.post_caption}</p>
-        <div className={styles.mainActions}>
-          <button onClick={() => setCurrentView('edit_caption')} className={styles.actionButton}><EditIcon /><span>Edit</span></button>
-          <button onClick={() => setCurrentView('reschedule')} className={styles.actionButton}><RescheduleIcon /><span>Reschedule</span></button>
-          <button onClick={() => setCurrentView('confirm_delete')} className={`${styles.actionButton} ${styles.deleteButtonAction}`}><DeleteIcon /><span>Delete</span></button>
+        <div className={styles.modalBackdrop} onClick={onClose}>
+            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                <button className={styles.closeButton} onClick={onClose}>&times;</button>
+                {errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}
+                {renderContent()}
+            </div>
         </div>
-      </div>
     );
-  };
-
-  return (
-    <div className={styles.modalBackdrop} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.closeButton} onClick={onClose}>&times;</button>
-        {errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}
-        {renderContent()}
-      </div>
-    </div>
-  );
 }
