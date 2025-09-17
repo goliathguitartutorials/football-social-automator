@@ -76,7 +76,7 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
     const [backgroundSource, setBackgroundSource] = useState('gallery');
 
     useEffect(() => {
-        setFormData(initialData || { selectedPlayers: Array(16).fill('') });
+        setFormData(initialData || { selectedPlayers: Array(16).fill(''), saveCustomBackground: true });
     }, [initialData]);
 
     const handleChange = (e) => {
