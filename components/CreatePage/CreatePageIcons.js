@@ -39,7 +39,6 @@ export const MatchDayIcon = () => (
     </Icon>
 );
 
-// A simpler "users" icon to represent a team/squad
 export const SquadIcon = () => (
     <Icon>
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -49,7 +48,6 @@ export const SquadIcon = () => (
     </Icon>
 );
 
-// A simpler "medal" icon to represent a result
 export const ResultIcon = () => (
     <Icon>
         <circle cx="12" cy="8" r="7"></circle>
@@ -57,14 +55,6 @@ export const ResultIcon = () => (
     </Icon>
 );
 
-export const BespokeIcon = () => (
-    <Icon>
-        {/* A star icon for "Bespoke" to imply custom/special */}
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-    </Icon>
-);
-
-// NEW: Icon for the Custom Image upload workflow
 export const CustomImageIcon = () => (
     <Icon>
         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
