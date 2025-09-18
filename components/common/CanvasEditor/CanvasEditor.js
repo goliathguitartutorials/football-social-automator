@@ -44,6 +44,27 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
     const imageRef = useRef(null);
     const transformerRef = useRef(null);
     const stageRef = useRef(null);
+
+    // **FIXED**: The useMemo hook is now declared BEFORE the useEffect that uses it.
+    const displayDimensions = useMemo(() => {
+        if (aspectRatio !== 'custom' && CANVAS_CONFIG[aspectRatio]) {
+            return CANVAS_CONFIG[aspectRatio];
+        }
+        
+        if (!inputWidth || !inputHeight) {
+            return { width: MAX_ONSCREEN_DIM, height: MAX_ONSCREEN_DIM };
+        }
+        
+        const ratio = inputWidth / inputHeight;
+        let scaledWidth = MAX_ONSCREEN_DIM;
+        let scaledHeight = scaledWidth / ratio;
+
+        if (scaledHeight > MAX_ONSCREEN_DIM) {
+            scaledHeight = MAX_ONSCREEN_DIM;
+            scaledWidth = scaledHeight * ratio;
+        }
+        return { width: scaledWidth, height: scaledHeight };
+    }, [aspectRatio, inputWidth, inputHeight]);
     
     // This effect safely attaches the transformer.
     useEffect(() => {
@@ -64,13 +85,12 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
         }
     }, [imagePreview]);
 
-    // **MODIFIED**: This effect now depends on the calculated display dimensions
-    // to correctly fit the image inside the new, dynamic canvas frame.
+    // Effect #2 - This handles image positioning and scaling.
     useEffect(() => {
         if (!image || !imageRef.current || !stageRef.current) return;
 
         const stage = stageRef.current;
-        const canvas = displayDimensions; // Use the new dynamic dimensions
+        const canvas = displayDimensions;
 
         const scale = Math.min(canvas.width / image.width, canvas.height / image.height, 1);
 
@@ -85,30 +105,6 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
 
         setIsSelected(true);
     }, [image, aspectRatio, displayDimensions]);
-
-    // **NEW**: This logic calculates the on-screen overlay size in real-time.
-    // It's memoized for performance, only re-running when inputs change.
-    const displayDimensions = useMemo(() => {
-        // If a preset is selected, use its predefined on-screen size.
-        if (aspectRatio !== 'custom' && CANVAS_CONFIG[aspectRatio]) {
-            return CANVAS_CONFIG[aspectRatio];
-        }
-        
-        // For custom sizes, calculate a scaled-down version that fits the editor.
-        if (!inputWidth || !inputHeight) {
-            return { width: MAX_ONSCREEN_DIM, height: MAX_ONSCREEN_DIM };
-        }
-        
-        const ratio = inputWidth / inputHeight;
-        let scaledWidth = MAX_ONSCREEN_DIM;
-        let scaledHeight = scaledWidth / ratio;
-
-        if (scaledHeight > MAX_ONSCREEN_DIM) {
-            scaledHeight = MAX_ONSCREEN_DIM;
-            scaledWidth = scaledHeight * ratio;
-        }
-        return { width: scaledWidth, height: scaledHeight };
-    }, [aspectRatio, inputWidth, inputHeight]);
 
     const handleStageMouseDown = (e) => {
         if (e.target === e.target.getStage()) setIsSelected(false);
@@ -139,8 +135,6 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
         setAspectRatio('custom');
     };
 
-    // **MODIFIED**: The export logic now correctly uses the calculated displayDimensions
-    // to determine the precise crop area and scaling factor for a perfect export.
     const handleConfirm = () => {
         setIsSelected(false);
         setTimeout(() => {
