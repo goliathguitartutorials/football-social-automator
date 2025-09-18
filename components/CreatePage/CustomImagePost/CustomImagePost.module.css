@@ -1,0 +1,28 @@
+/*
+ * ==========================================================
+ * COMPONENT: CustomImagePost
+ * PAGE: /
+ * FILE: /components/CreatePage/CustomImagePost/CustomImagePost.module.css
+ * ==========================================================
+ */
+
+.container {
+    /* This is the main frame for the form content */
+    background-color: var(--surface-dark);
+    border-radius: 8px;
+    padding: 2rem;
+    width: 100%;
+}
+
+/* Responsive padding for smaller screens */
+@media (max-width: 768px) {
+    .container {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 1rem;
+    }
+}
