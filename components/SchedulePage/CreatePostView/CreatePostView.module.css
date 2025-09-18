@@ -5,20 +5,18 @@
  * FILE: /components/SchedulePage/CreatePostView/CreatePostView.module.css
  * ==========================================================
  */
-.viewContainer {
+.wrapper {
     width: 100%;
-    background-color: var(--surface-dark);
-    border-radius: 8px;
-    padding: 1.5rem;
 }
 
 .topHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    background-color: var(--surface-dark);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
 }
 
 .viewTitle {
@@ -28,12 +26,17 @@
 }
 
 .contentHeader {
+    /* This container for tabs and banner is now frameless */
     margin-bottom: 2rem;
 }
 
 .contentArea {
-    /* This ensures the selected component is displayed below the header */
+    /* This is the new frame for the form content */
+    background-color: var(--surface-dark);
+    border-radius: 8px;
+    padding: 2rem;
 }
+
 
 /* ==========================================================
  * SUB-NAVIGATION TABS
@@ -147,6 +150,8 @@
 
 .message {
     margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
     font-weight: 500;
     text-align: center;
     font-size: 1.1rem;
@@ -157,7 +162,7 @@
  * ==========================================================
  */
 @media (min-width: 768px) {
-    .viewContainer { padding: 2rem; }
+    .topHeader { padding: 1.5rem 2rem; }
     .viewTitle { font-size: 1.8rem; }
     .subNav {
         justify-content: flex-start;
