@@ -6,10 +6,12 @@
  * ==========================================================
  */
 .wrapper {
+    /* This main wrapper has no background, allowing the page background to show through */
     width: 100%;
 }
 
 .topHeader {
+    /* This is the first frame, for the title and back button */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -26,12 +28,12 @@
 }
 
 .contentHeader {
-    /* This container for tabs and banner is now frameless */
+    /* This container for tabs and banner is frameless */
     margin-bottom: 2rem;
 }
 
 .contentArea {
-    /* This is the new frame for the form content */
+    /* This is the second frame, for the form content itself */
     background-color: var(--surface-dark);
     border-radius: 8px;
     padding: 2rem;
