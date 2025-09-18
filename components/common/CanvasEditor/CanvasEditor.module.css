@@ -67,49 +67,86 @@
 
 .canvasWrapper {
     position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #111827; /* Darker background for contrast */
+    background-color: #111827;
     border-radius: 8px;
     overflow: hidden;
     height: 500px;
+    width: 500px; /* FIXED: Set a fixed width */
+    margin: 0 auto; /* FIXED: Center the entire block */
 }
 
 .canvasOverlay {
     position: absolute;
     border: 2px solid white;
-    /* This is the CSS trick for the overlay. It creates a massive shadow
-       outside the element, effectively dimming everything else. */
     box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.6);
-    pointer-events: none; /* Allows clicks to go through to the canvas */
+    pointer-events: none;
 }
 
 .controls {
     display: flex;
     justify-content: flex-end;
-    gap: 1rem; /* Added gap for multiple buttons */
+    gap: 1rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--border-color);
 }
 
-.backButton {
+/* Base button style */
+.confirmButton, .cancelButton {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.6rem;
-    width: auto;
     padding: 0.8rem 1.5rem;
     font-size: 1rem;
     font-weight: bold;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    background-color: #4b5563;
-    color: var(--text-primary);
     transition: background-color 0.2s;
 }
 
-.backButton:hover:not(:disabled) {
+.cancelButton {
+    background-color: #4b5563;
+    color: var(--text-primary);
+}
+.cancelButton:hover {
     background-color: #6b7280;
+}
+
+.confirmButton {
+    background-color: var(--accent-color);
+    color: white;
+}
+.confirmButton:hover {
+    background-color: var(--accent-color-hover);
+}
+
+.zoomControls {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 10;
+}
+
+.zoomControls button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background-color: rgba(20, 20, 20, 0.7);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: background-color 0.2s;
+}
+
+.zoomControls button:hover {
+    background-color: rgba(40, 40, 40, 0.9);
 }
