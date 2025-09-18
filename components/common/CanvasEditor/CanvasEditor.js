@@ -40,14 +40,6 @@ const EXPORT_CONFIG = {
 };
 const ZOOM_STEP = 1.1;
 
-function getDistance(p1, p2) {
-    return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-}
-
-function getCenter(p1, p2) {
-    return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-}
-
 export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialState = null }) {
     const [image, setImage] = useState(null);
     const [isSelected, setIsSelected] = useState(false);
@@ -60,8 +52,6 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
     const transformerRef = useRef(null);
     const stageRef = useRef(null);
     const isStateApplied = useRef(false);
-    const lastDist = useRef(0);
-    const isTransforming = useRef(false);
 
     const [containerRef, stageSize] = useStageSize();
 
@@ -118,42 +108,6 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
 
     const handleStageInteraction = (e) => {
         if (e.target === e.target.getStage()) setIsSelected(false);
-    };
-
-    // **FIXED**: Greatly improved and stabilized touch gesture logic.
-    const handleTouchMove = (e) => {
-        e.evt.preventDefault();
-        const touch1 = e.evt.touches[0];
-        const touch2 = e.evt.touches[1];
-        const imageNode = imageRef.current;
-
-        if (touch1 && touch2 && imageNode) {
-            if (!isTransforming.current) {
-                isTransforming.current = true;
-                lastDist.current = getDistance(touch1, touch2);
-                return;
-            }
-
-            const newDist = getDistance(touch1, touch2);
-            const scale = (imageNode.scaleX() * newDist) / lastDist.current;
-            imageNode.scaleX(scale);
-            imageNode.scaleY(scale);
-            lastDist.current = newDist;
-
-            const dx = touch2.clientX - touch1.clientX;
-            const dy = touch2.clientY - touch1.clientY;
-            const angle = Math.atan2(dy, dx);
-            imageNode.rotation(imageNode.rotation() + (angle - (imageNode.attrs.lastAngle || 0)) * 180 / Math.PI);
-            imageNode.attrs.lastAngle = angle;
-            
-            // Manually redraw the layer for performance
-            imageNode.getLayer().batchDraw();
-        }
-    };
-
-    const handleTouchEnd = () => {
-        isTransforming.current = false;
-        if(imageRef.current) delete imageRef.current.attrs.lastAngle;
     };
 
     const handleManualZoom = (direction) => {
@@ -220,8 +174,7 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
                                     node.scaleX(node.scaleX());
                                     node.scaleY(node.scaleY());
                                 }}
-                                onTouchMove={handleTouchMove}
-                                onTouchEnd={handleTouchEnd}
+                                // **REMOVED**: All custom onTouchMove and onTouchEnd handlers are gone.
                             />
                         )}
                         {isSelected && (
