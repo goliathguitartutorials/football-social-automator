@@ -1,7 +1,7 @@
 /*
  * ==========================================================
  * COMPONENT: Create Page
- * PAGE: /create
+ * PAGE: /
  * FILE: /components/CreatePage/CreatePage.js
  * ==========================================================
  */
@@ -10,13 +10,12 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import styles from './CreatePage.module.css';
-import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, BespokeIcon } from './CreatePageIcons';
+import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, CustomImageIcon } from './CreatePageIcons';
 
 import MatchDayAnnouncement from './MatchDayAnnouncement/MatchDayAnnouncement';
 import SquadAnnouncement from './SquadAnnouncement/SquadAnnouncement';
 import MatchResult from './MatchResult/MatchResult';
-// MODIFIED: Import path updated for BespokePost
-import BespokePost from './BespokePost/BespokePost';
+import CustomImagePost from './CustomImagePost/CustomImagePost'; // MODIFIED: Import new component
 import UpNextAnnouncement from './UpNextAnnouncement/UpNextAnnouncement';
 
 const postTypes = [
@@ -24,7 +23,8 @@ const postTypes = [
     { id: 'matchDay', label: 'Match Day', icon: <MatchDayIcon /> },
     { id: 'squad', label: 'Squad', icon: <SquadIcon /> },
     { id: 'result', label: 'Result', icon: <ResultIcon /> },
-    { id: 'bespoke', label: 'Custom', icon: <BespokeIcon /> },
+    // MODIFIED: Replaced 'bespoke' with 'customImage'
+    { id: 'customImage', label: 'Custom Image', icon: <CustomImageIcon /> },
 ];
 
 const bannerImages = {
@@ -32,7 +32,8 @@ const bannerImages = {
     matchDay: { src: '/matchday.png', position: 'top' },
     squad: { src: '/squad.png', position: 'top' },
     result: { src: '/result.png', position: 'top' },
-    bespoke: { src: '/custom.png', position: 'middleHighMore' },
+    // MODIFIED: Replaced 'bespoke' with 'customImage'
+    customImage: { src: '/custom.png', position: 'middleHighMore' },
 };
 
 const PostTypeContent = ({ activePostType }) => {
@@ -45,8 +46,9 @@ const PostTypeContent = ({ activePostType }) => {
             return <SquadAnnouncement />;
         case 'result':
             return <MatchResult />;
-        case 'bespoke':
-            return <BespokePost />;
+        // MODIFIED: Replaced 'bespoke' case with 'customImage' case
+        case 'customImage':
+            return <CustomImagePost />;
         default:
             return <UpNextAnnouncement />;
     }
