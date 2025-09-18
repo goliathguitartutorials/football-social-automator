@@ -92,7 +92,13 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
     useEffect(() => {
         if (scheduleDate) {
             setView('CONFIG');
-            setSelectedDate(scheduleDate.toISOString().split('T')[0]);
+            
+            // FIX 1: Correctly format the local date without converting to UTC
+            const year = scheduleDate.getFullYear();
+            const month = (scheduleDate.getMonth() + 1).toString().padStart(2, '0');
+            const day = scheduleDate.getDate().toString().padStart(2, '0');
+            setSelectedDate(`${year}-${month}-${day}`);
+
             setSelectedTime(getNextIntervalTime());
             setSelectedPostType(postTypes[0]);
             setFormData({ teamType: 'First Team', saveCustomBackground: true });
@@ -142,8 +148,11 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         // This function now receives the final data from PostPreviewAndEditView
         setIsSubmitting(true);
         setMessage('');
+        
+        // FIX 2: Create a date from local parts, then convert to a proper UTC ISO string
+        const localDateTime = new Date(`${date}T${time}:00`);
+        const schedule_time_utc = localDateTime.toISOString();
 
-        const schedule_time_utc = new Date(`${date}T${time}:00.000Z`).toISOString();
         const postId = `post_${new Date().getTime()}`;
 
         const schedulePayload = {
@@ -171,10 +180,11 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
     const activeBanner = selectedPostType ? bannerImages[selectedPostType.id] : null;
 
     if (view === 'PREVIEW') {
+        const localDateTime = new Date(`${selectedDate}T${selectedTime}:00`);
         const previewPostData = {
             image_url: previewUrl,
             post_caption: formData.caption,
-            scheduled_time_utc: `${selectedDate}T${selectedTime}:00.000Z`,
+            scheduled_time_utc: localDateTime.toISOString(), // Correctly set initial time for preview
         };
 
         return (
@@ -235,7 +245,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                     </div>
                     <div className={styles.actions}>
                          <button className={styles.nextButton} onClick={() => setView('FORM')} disabled={!selectedPostType}>
-                            Add Details <ArrowRightIcon />
+                             Add Details <ArrowRightIcon />
                          </button>
                     </div>
                 </section>
