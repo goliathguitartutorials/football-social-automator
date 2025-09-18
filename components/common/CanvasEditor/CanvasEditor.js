@@ -6,13 +6,14 @@
  * ==========================================================
  */
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Stage, Layer, Image, Transformer } from 'react-konva';
 import styles from './CanvasEditor.module.css';
 
 // A larger editor area for more "breathing room"
 const EDITOR_WIDTH = 700;
 const EDITOR_HEIGHT = 700;
+const MAX_ONSCREEN_DIM = 650; // Max size for the overlay to ensure padding
 
 // All required ON-SCREEN canvas sizes for the editor UI
 const CANVAS_CONFIG = {
@@ -37,14 +38,13 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
     const [isSelected, setIsSelected] = useState(false);
     const [aspectRatio, setAspectRatio] = useState('1:1');
 
-    // **NEW**: State to manage the width and height inputs
     const [inputWidth, setInputWidth] = useState(EXPORT_CONFIG['1:1'].width);
     const [inputHeight, setInputHeight] = useState(EXPORT_CONFIG['1:1'].height);
 
     const imageRef = useRef(null);
     const transformerRef = useRef(null);
     const stageRef = useRef(null);
-
+    
     // This effect safely attaches the transformer.
     useEffect(() => {
         if (isSelected && imageRef.current && transformerRef.current) {
@@ -53,26 +53,25 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
         }
     }, [isSelected, image]);
 
-    // **MODIFIED**: Effect #1 - This now ONLY loads the image from the preview URL.
+    // Effect #1 - This now ONLY loads the image from the preview URL.
     useEffect(() => {
         if (imagePreview) {
             const imageObj = new window.Image();
             imageObj.src = imagePreview;
             imageObj.onload = () => {
-                setImage(imageObj); // Set the image state, which triggers the next effect
+                setImage(imageObj);
             };
         }
     }, [imagePreview]);
 
-    // **MODIFIED**: Effect #2 - This now handles ALL scaling and positioning.
-    // It runs after the image is loaded OR when the aspect ratio changes, fixing the initial sizing bug.
+    // **MODIFIED**: This effect now depends on the calculated display dimensions
+    // to correctly fit the image inside the new, dynamic canvas frame.
     useEffect(() => {
         if (!image || !imageRef.current || !stageRef.current) return;
 
         const stage = stageRef.current;
-        const canvas = CANVAS_CONFIG[aspectRatio] || { width: 450, height: 450 }; // Fallback for custom
+        const canvas = displayDimensions; // Use the new dynamic dimensions
 
-        // Calculate initial scale to perfectly fit image within canvas
         const scale = Math.min(canvas.width / image.width, canvas.height / image.height, 1);
 
         imageRef.current.setAttrs({
@@ -84,9 +83,32 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
             height: image.height,
         });
 
-        setIsSelected(true); // Select image by default
-    }, [image, aspectRatio]);
+        setIsSelected(true);
+    }, [image, aspectRatio, displayDimensions]);
 
+    // **NEW**: This logic calculates the on-screen overlay size in real-time.
+    // It's memoized for performance, only re-running when inputs change.
+    const displayDimensions = useMemo(() => {
+        // If a preset is selected, use its predefined on-screen size.
+        if (aspectRatio !== 'custom' && CANVAS_CONFIG[aspectRatio]) {
+            return CANVAS_CONFIG[aspectRatio];
+        }
+        
+        // For custom sizes, calculate a scaled-down version that fits the editor.
+        if (!inputWidth || !inputHeight) {
+            return { width: MAX_ONSCREEN_DIM, height: MAX_ONSCREEN_DIM };
+        }
+        
+        const ratio = inputWidth / inputHeight;
+        let scaledWidth = MAX_ONSCREEN_DIM;
+        let scaledHeight = scaledWidth / ratio;
+
+        if (scaledHeight > MAX_ONSCREEN_DIM) {
+            scaledHeight = MAX_ONSCREEN_DIM;
+            scaledWidth = scaledHeight * ratio;
+        }
+        return { width: scaledWidth, height: scaledHeight };
+    }, [aspectRatio, inputWidth, inputHeight]);
 
     const handleStageMouseDown = (e) => {
         if (e.target === e.target.getStage()) setIsSelected(false);
@@ -102,58 +124,36 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
         }
     };
     
-    // **NEW**: Handler for when a preset button is clicked
     const handlePresetClick = (key) => {
         setAspectRatio(key);
         setInputWidth(EXPORT_CONFIG[key].width);
         setInputHeight(EXPORT_CONFIG[key].height);
     };
 
-    // **NEW**: Handlers for the manual input fields
     const handleWidthChange = (e) => {
         setInputWidth(Number(e.target.value));
-        setAspectRatio('custom'); // De-select presets
+        setAspectRatio('custom');
     };
     const handleHeightChange = (e) => {
         setInputHeight(Number(e.target.value));
-        setAspectRatio('custom'); // De-select presets
+        setAspectRatio('custom');
     };
 
-    // MODIFIED: This function now handles both preset and custom exports.
+    // **MODIFIED**: The export logic now correctly uses the calculated displayDimensions
+    // to determine the precise crop area and scaling factor for a perfect export.
     const handleConfirm = () => {
         setIsSelected(false);
         setTimeout(() => {
             const stage = stageRef.current;
             if (!stage) return;
-
-            // Use the on-screen display canvas for positioning and scaling calculations
-            const displayCanvas = CANVAS_CONFIG[aspectRatio] || CANVAS_CONFIG['1:1'];
             
-            let scaleFactor = 1;
-
-            // If a preset is active, calculate the high-res scale factor
-            if (aspectRatio !== 'custom' && EXPORT_CONFIG[aspectRatio]) {
-                 scaleFactor = EXPORT_CONFIG[aspectRatio].width / displayCanvas.width;
-            } else {
-                // For custom sizes, we need to find a suitable on-screen box to export from.
-                // We'll scale the user's custom dimensions down to fit our editor.
-                const ratio = inputWidth / inputHeight;
-                let displayWidth = displayCanvas.width;
-                let displayHeight = displayWidth / ratio;
-
-                if (displayHeight > displayCanvas.height) {
-                    displayHeight = displayCanvas.height;
-                    displayWidth = displayHeight * ratio;
-                }
-                // The scale factor is the ratio of their desired size to our calculated display size
-                scaleFactor = inputWidth / displayWidth;
-            }
+            const scaleFactor = inputWidth / displayDimensions.width;
 
             const cropArea = {
-                x: (stage.width() - displayCanvas.width) / 2,
-                y: (stage.height() - displayCanvas.height) / 2,
-                width: displayCanvas.width,
-                height: displayCanvas.height,
+                x: (EDITOR_WIDTH - displayDimensions.width) / 2,
+                y: (EDITOR_HEIGHT - displayDimensions.height) / 2,
+                width: displayDimensions.width,
+                height: displayDimensions.height,
             };
 
             stage.toBlob({
@@ -164,12 +164,10 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
             .then(blob => onConfirm(blob));
         }, 100);
     };
-
-    // Use the on-screen config for the overlay, even for custom sizes
-    const canvas = CANVAS_CONFIG[aspectRatio] || CANVAS_CONFIG['1:1'];
+    
     const overlayPosition = {
-        top: (EDITOR_HEIGHT - canvas.height) / 2,
-        left: (EDITOR_WIDTH - canvas.width) / 2,
+        top: (EDITOR_HEIGHT - displayDimensions.height) / 2,
+        left: (EDITOR_WIDTH - displayDimensions.width) / 2,
     };
 
     return (
@@ -204,8 +202,8 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
                     style={{
                         top: `${overlayPosition.top}px`,
                         left: `${overlayPosition.left}px`,
-                        width: `${canvas.width}px`,
-                        height: `${canvas.height}px`,
+                        width: `${displayDimensions.width}px`,
+                        height: `${displayDimensions.height}px`,
                     }}
                 />
                 <div className={styles.zoomControls}>
@@ -226,7 +224,6 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
                         </button>
                     ))}
                 </div>
-                {/* **NEW**: Manual input fields for custom canvas size */}
                 <div className={styles.customSizeInputs}>
                      <input 
                         type="number"
