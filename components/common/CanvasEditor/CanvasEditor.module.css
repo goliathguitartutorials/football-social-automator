@@ -180,10 +180,7 @@
         aspect-ratio: 1 / 1;
     }
 
-    /* **NEW**: Hides the desktop-style handles on mobile */
-    .canvasWrapper :global(.konvajs-content) .anchor {
-        display: none !important;
-    }
+    /* **REMOVED**: The rule that was hiding the transformer anchors on mobile is now gone. */
 
     .controlsFooter {
         flex-direction: column;
