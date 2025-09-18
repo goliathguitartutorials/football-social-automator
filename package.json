@@ -12,7 +12,9 @@
     "next": "14.2.4",
     "react": "^18",
     "react-dom": "^18",
-    "react-image-crop": "^11.0.5"
+    "react-image-crop": "^11.0.5",
+    "konva": "^9.3.13",
+    "react-konva": "^18.2.10"
   },
   "devDependencies": {
     "eslint": "^8",
