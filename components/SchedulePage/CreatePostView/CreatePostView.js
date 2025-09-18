@@ -36,7 +36,7 @@ const bannerImages = {
     matchDay: { src: '/matchday.png', position: 'top' },
     squad: { src: '/squad.png', position: 'top' },
     result: { src: '/result.png', position: 'top' },
-    customImage: { src: '/custom.png', position: 'middleHighMore' }, // ADDED: Banner for Custom Image
+    customImage: { src: '/custom.png', position: 'middleHighMore' },
 };
 
 const generateTimeSlots = () => {
@@ -150,10 +150,14 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         setIsSubmitting(true);
         setMessage('');
 
+        // FIX: Generate the post ID here, just like in the other schedule handler
+        const postId = `post_${new Date().getTime()}`;
+        
         const localDateTime = new Date(`${selectedDate}T${selectedTime}:00`);
         const schedule_time_utc = localDateTime.toISOString();
 
         const apiFormData = new FormData();
+        apiFormData.append('post_id', postId); // ADDED: Include the new post ID
         apiFormData.append('image', imageFile);
         apiFormData.append('caption', caption);
         apiFormData.append('schedule_time_utc', schedule_time_utc);
