@@ -17,8 +17,9 @@ const CANVAS_CONFIG = {
     '1:1': { width: 400, height: 400 },
     '4:5': { width: 400, height: 500 },
 };
+const ZOOM_STEP = 1.1;
 
-export default function CanvasEditor({ imagePreview, onBack }) {
+export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
     const [image, setImage] = useState(null);
     const [isSelected, setIsSelected] = useState(false);
     const [aspectRatio, setAspectRatio] = useState('1:1');
@@ -27,13 +28,14 @@ export default function CanvasEditor({ imagePreview, onBack }) {
     const transformerRef = useRef(null);
     const stageRef = useRef(null);
 
-    // Effect to attach/detach the resize transformer to the image
+    // Effect to attach/detach the resize transformer
     useEffect(() => {
-        if (isSelected) {
-            transformerRef.current.nodes([imageRef.current]);
-            transformerRef.current.getLayer().batchDraw();
-        } else {
-            transformerRef.current.nodes([]);
+        if (transformerRef.current) {
+            if (isSelected) {
+                transformerRef.current.nodes([imageRef.current]);
+            } else {
+                transformerRef.current.nodes([]);
+            }
             transformerRef.current.getLayer().batchDraw();
         }
     }, [isSelected]);
@@ -45,22 +47,72 @@ export default function CanvasEditor({ imagePreview, onBack }) {
             imageObj.src = imagePreview;
             imageObj.onload = () => {
                 setImage(imageObj);
-                // Center the image
+                const stage = stageRef.current;
                 const canvas = CANVAS_CONFIG[aspectRatio];
-                imageRef.current.x((canvas.width - imageObj.width / 2) / 2);
-                imageRef.current.y((canvas.height - imageObj.height / 2) / 2);
+
+                // Calculate initial scale to fit the image within the canvas
+                const scale = Math.min(canvas.width / imageObj.width, canvas.height / imageObj.height, 1);
+
+                imageRef.current.setAttrs({
+                    x: (stage.width() - imageObj.width * scale) / 2,
+                    y: (stage.height() - imageObj.height * scale) / 2,
+                    scaleX: scale,
+                    scaleY: scale,
+                    width: imageObj.width,
+                    height: imageObj.height,
+                });
+                setIsSelected(true); // Select image by default
+                stage.batchDraw();
             };
         }
     }, [imagePreview, aspectRatio]);
-    
-    // Check if the click was on the stage (background) to deselect the image
+
+    // Handle deselecting when clicking the stage background
     const handleStageMouseDown = (e) => {
         if (e.target === e.target.getStage()) {
             setIsSelected(false);
         }
     };
 
-    // Calculate the dimensions and position for the visual overlay
+    // Handle manual zoom with +/- buttons
+    const handleManualZoom = (direction) => {
+        const imageNode = imageRef.current;
+        const oldScale = imageNode.scaleX();
+        const newScale = direction === 'in' ? oldScale * ZOOM_STEP : oldScale / ZOOM_STEP;
+
+        imageNode.scaleX(newScale);
+        imageNode.scaleY(newScale);
+        imageNode.getLayer().batchDraw();
+    };
+
+    // Handle the final confirmation and image export
+    const handleConfirm = () => {
+        setIsSelected(false); // Hide transformer before exporting
+
+        // Short delay to allow the UI to update
+        setTimeout(() => {
+            const canvas = CANVAS_CONFIG[aspectRatio];
+            const stage = stageRef.current;
+            const cropArea = {
+                x: (stage.width() - canvas.width) / 2,
+                y: (stage.height() - canvas.height) / 2,
+                width: canvas.width,
+                height: canvas.height,
+            };
+
+            stage.toBlob({
+                ...cropArea,
+                callback: (blob) => {
+                    // This callback passes the final image back to the main form
+                    if (onConfirm) {
+                        onConfirm(blob);
+                    }
+                },
+            });
+        }, 100);
+    };
+
+    // Calculate dimensions for the visual overlay
     const canvas = CANVAS_CONFIG[aspectRatio];
     const overlayPosition = {
         top: (EDITOR_HEIGHT - canvas.height) / 2,
@@ -71,7 +123,7 @@ export default function CanvasEditor({ imagePreview, onBack }) {
         <div className={styles.editorContainer}>
             <div className={styles.header}>
                 <h2>Adjust Canvas</h2>
-                <p>Click the image to resize and drag to position it.</p>
+                <p>Click the image to resize with handles, or use the buttons to zoom.</p>
             </div>
 
             <div className={styles.aspectRatioControls}>
@@ -109,16 +161,12 @@ export default function CanvasEditor({ imagePreview, onBack }) {
                         <Transformer
                             ref={transformerRef}
                             boundBoxFunc={(oldBox, newBox) => {
-                                // Limit resize dimensions
-                                if (newBox.width < 50 || newBox.height < 50) {
-                                    return oldBox;
-                                }
+                                if (newBox.width < 50 || newBox.height < 50) return oldBox;
                                 return newBox;
                             }}
                         />
                     </Layer>
                 </Stage>
-                {/* This overlay creates the dimmed effect outside the canvas */}
                 <div
                     className={styles.canvasOverlay}
                     style={{
@@ -128,14 +176,18 @@ export default function CanvasEditor({ imagePreview, onBack }) {
                         height: `${canvas.height}px`,
                     }}
                 />
+                <div className={styles.zoomControls}>
+                    <button onClick={() => handleManualZoom('in')}>+</button>
+                    <button onClick={() => handleManualZoom('out')}>-</button>
+                </div>
             </div>
 
             <div className={styles.controls}>
-                <button type="button" className={styles.backButton}>
+                <button type="button" className={styles.confirmButton} onClick={handleConfirm}>
                     Confirm & Save
                 </button>
-                <button type="button" className={styles.backButton} onClick={onBack}>
-                    Back
+                <button type="button" className={styles.cancelButton} onClick={onBack}>
+                    Cancel
                 </button>
             </div>
         </div>
