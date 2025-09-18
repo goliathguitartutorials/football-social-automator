@@ -10,7 +10,19 @@ import { useState, useRef } from 'react';
 import styles from './CustomImageForm.module.css';
 import { UploadIcon, EditIcon, ScheduleIcon, PostNowIcon } from './CustomImageFormIcons';
 
-// MODIFIED: Component now accepts props for date and time
+// NEW: A placeholder for the canvas editor component we will build next.
+const CanvasEditor = ({ imagePreview, onBack }) => (
+    <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: 'var(--background-dark)', borderRadius: '8px' }}>
+        <h2>Canvas Editor (Placeholder)</h2>
+        <p>The image editor will be implemented here.</p>
+        <img src={imagePreview} alt="Editing preview" style={{ maxWidth: '100%', maxHeight: '300px', margin: '1rem 0' }} />
+        <button type="button" className={styles.actionButton_Secondary} onClick={onBack} style={{ width: 'auto' }}>
+            Back to Form
+        </button>
+    </div>
+);
+
+
 export default function CustomImageForm({
     context = 'schedule',
     onSubmit,
@@ -25,6 +37,9 @@ export default function CustomImageForm({
     const [imagePreview, setImagePreview] = useState('');
     const [caption, setCaption] = useState('');
     const fileInputRef = useRef(null);
+
+    // NEW: State to manage which view is active ('upload' or 'editor')
+    const [viewMode, setViewMode] = useState('upload');
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -56,8 +71,13 @@ export default function CustomImageForm({
         });
     };
 
+    // If the view is the editor, render the CanvasEditor placeholder.
+    if (viewMode === 'editor') {
+        return <CanvasEditor imagePreview={imagePreview} onBack={() => setViewMode('upload')} />;
+    }
+
+    // Otherwise, render the main upload form.
     return (
-        // The form now wraps the entire persistent two-column layout
         <form className={styles.formContainer} onSubmit={(e) => e.preventDefault()}>
             <div className={styles.unifiedLayout}>
                 {/* Left Column: Image Zone */}
@@ -98,7 +118,8 @@ export default function CustomImageForm({
                     {/* Image Actions Section (only appears after upload) */}
                     {imagePreview && (
                         <div className={`${styles.controlSection} ${styles.imageActions}`}>
-                             <button type="button" className={styles.actionButton_FullWidth} onClick={() => alert('Editor view to be implemented!')}>
+                             {/* MODIFIED: This button now switches the view to the editor */}
+                            <button type="button" className={styles.actionButton_FullWidth} onClick={() => setViewMode('editor')}>
                                 <EditIcon /> Adjust Canvas
                             </button>
                             <button type="button" className={styles.actionButton_Secondary} onClick={triggerFileInput}>
@@ -111,7 +132,7 @@ export default function CustomImageForm({
                     <div className={styles.controlSection}>
                         <label className={styles.sectionLabel}>Schedule for...</label>
                         <div className={styles.dateTimeInputs}>
-                             <div className={styles.inputGroup}>
+                            <div className={styles.inputGroup}>
                                 <label htmlFor="schedule-date-form">Date</label>
                                 <input id="schedule-date-form" type="date" value={selectedDate} onChange={onDateChange} />
                             </div>
