@@ -252,9 +252,13 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                     ))}
                 </div>
             </section>
+            
+            {/* FIX: Reverted to the original, more robust rendering structure */}
+            {/* It separates the logic for Custom Image from the multi-step forms */}
 
-            {selectedPostType.id === 'customImage' ? (
-                <section className={styles.section}>
+            {/* RENDERER FOR CUSTOM IMAGE (UNIFIED VIEW) */}
+            {selectedPostType.id === 'customImage' && (
+                 <section className={styles.section}>
                     <div className={styles.formWrapper}>
                         <CustomImageForm
                             context="schedule"
@@ -268,50 +272,50 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                         />
                     </div>
                 </section>
-            ) : (
-                <>
-                    {view === 'CONFIG' && (
-                        <section className={styles.section}>
-                            <h3 className={styles.subHeader}>Date & Time</h3>
-                            <div className={styles.configForm}>
-                                <div className={styles.inputGroup}>
-                                    <label htmlFor="schedule-date">Date</label>
-                                    <input id="schedule-date" type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-                                </div>
-                                <div className={styles.inputGroup}>
-                                    <label htmlFor="schedule-time">Time</label>
-                                    <select id="schedule-time" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
-                                        {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-                            <div className={styles.actions}>
-                                 <button className={styles.nextButton} onClick={() => setView('FORM')} disabled={!selectedPostType}>
-                                     Add Details <ArrowRightIcon />
-                                 </button>
-                            </div>
-                        </section>
-                    )}
-                    {view === 'FORM' && (
-                        <section className={styles.section}>
-                            <div className={styles.formWrapper}>
-                                <ActiveForm
-                                    appData={appData}
-                                    initialData={formData}
-                                    onSubmit={handleGeneratePreview}
-                                    onGenerateCaption={handleGenerateCaption}
-                                    isSubmitting={isSubmitting}
-                                    isGeneratingCaption={isGeneratingCaption}
-                                />
-                            </div>
-                            <div className={`${styles.actions} ${styles.formActions}`}>
-                                <button onClick={() => setView('CONFIG')} className={styles.backButton}>
-                                    <ArrowLeftIcon /> Back to Config
-                                </button>
-                            </div>
-                        </section>
-                    )}
-                </>
+            )}
+
+            {/* RENDERER FOR TEMPLATE-BASED FORMS (MULTI-STEP VIEW) */}
+            {selectedPostType.id !== 'customImage' && view === 'CONFIG' && (
+                <section className={styles.section}>
+                    <h3 className={styles.subHeader}>Date & Time</h3>
+                    <div className={styles.configForm}>
+                        <div className={styles.inputGroup}>
+                            <label htmlFor="schedule-date">Date</label>
+                            <input id="schedule-date" type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+                        </div>
+                        <div className={styles.inputGroup}>
+                            <label htmlFor="schedule-time">Time</label>
+                            <select id="schedule-time" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
+                                {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div className={styles.actions}>
+                         <button className={styles.nextButton} onClick={() => setView('FORM')} disabled={!selectedPostType}>
+                             Add Details <ArrowRightIcon />
+                         </button>
+                    </div>
+                </section>
+            )}
+            
+            {selectedPostType.id !== 'customImage' && view === 'FORM' && (
+                <section className={styles.section}>
+                    <div className={styles.formWrapper}>
+                        <ActiveForm
+                            appData={appData}
+                            initialData={formData}
+                            onSubmit={handleGeneratePreview}
+                            onGenerateCaption={handleGenerateCaption}
+                            isSubmitting={isSubmitting}
+                            isGeneratingCaption={isGeneratingCaption}
+                        />
+                    </div>
+                    <div className={`${styles.actions} ${styles.formActions}`}>
+                        <button onClick={() => setView('CONFIG')} className={styles.backButton}>
+                            <ArrowLeftIcon /> Back to Config
+                        </button>
+                    </div>
+                </section>
             )}
             
             {message && <p className={styles.message}>{message}</p>}
