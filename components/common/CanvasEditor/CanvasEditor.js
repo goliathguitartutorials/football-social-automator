@@ -10,8 +10,32 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Stage, Layer, Image, Transformer } from 'react-konva';
 import styles from './CanvasEditor.module.css';
 
-const EDITOR_WIDTH = 700;
-const EDITOR_HEIGHT = 700;
+// **NEW**: Custom hook to make the Konva Stage responsive.
+const useStageSize = () => {
+    const containerRef = useRef(null);
+    const [stageSize, setStageSize] = useState({ width: 700, height: 700 });
+
+    useEffect(() => {
+        const updateSize = () => {
+            if (containerRef.current) {
+                const { width, height } = containerRef.current.getBoundingClientRect();
+                setStageSize({ width, height });
+            }
+        };
+
+        updateSize(); // Initial size
+        const resizeObserver = new ResizeObserver(updateSize);
+        if (containerRef.current) {
+            resizeObserver.observe(containerRef.current);
+        }
+
+        return () => resizeObserver.disconnect();
+    }, []);
+
+    return [containerRef, stageSize];
+};
+
+
 const MAX_ONSCREEN_DIM = 650;
 
 const CANVAS_CONFIG = {
@@ -34,7 +58,6 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
     const [image, setImage] = useState(null);
     const [isSelected, setIsSelected] = useState(false);
     
-    // **MODIFIED**: State now initializes from `initialState` if it exists.
     const [aspectRatio, setAspectRatio] = useState(initialState?.aspectRatio || '1:1');
     const [inputWidth, setInputWidth] = useState(initialState?.inputWidth || EXPORT_CONFIG['1:1'].width);
     const [inputHeight, setInputHeight] = useState(initialState?.inputHeight || EXPORT_CONFIG['1:1'].height);
@@ -42,10 +65,13 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
     const imageRef = useRef(null);
     const transformerRef = useRef(null);
     const stageRef = useRef(null);
-    const isStateApplied = useRef(false); // Prevents re-applying initial state
+    const isStateApplied = useRef(false);
+    
+    // **NEW**: Use the custom hook to get responsive stage dimensions.
+    const [containerRef, stageSize] = useStageSize();
 
     const displayDimensions = useMemo(() => {
-        // ... (this logic is unchanged)
+        // ... (this logic is unchanged) ...
         if (aspectRatio !== 'custom' && CANVAS_CONFIG[aspectRatio]) {
             return CANVAS_CONFIG[aspectRatio];
         }
@@ -77,30 +103,30 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
         }
     }, [imagePreview]);
 
-    // **MODIFIED**: This effect now applies the `initialState` if provided.
     useEffect(() => {
         if (!image || !imageRef.current || !stageRef.current) return;
 
-        // If we have a saved state and haven't applied it yet, apply it now.
         if (initialState && !isStateApplied.current) {
             imageRef.current.setAttrs({
                 x: initialState.x,
                 y: initialState.y,
                 scaleX: initialState.scaleX,
                 scaleY: initialState.scaleY,
+                rotation: initialState.rotation || 0, // Apply rotation
                 width: image.width,
                 height: image.height,
             });
-            isStateApplied.current = true; // Mark as applied
+            isStateApplied.current = true;
         } 
-        // Otherwise, if it's the first time, run the default centering logic.
         else if (!isStateApplied.current) {
             const stage = stageRef.current;
             const canvas = displayDimensions;
             const scale = Math.min(canvas.width / image.width, canvas.height / image.height, 1);
             imageRef.current.setAttrs({
-                x: (stage.width() - image.width * scale) / 2,
-                y: (stage.height() - image.height * scale) / 2,
+                x: stage.width() / 2,
+                y: stage.height() / 2,
+                offsetX: image.width / 2, // Center the origin for rotation
+                offsetY: image.height / 2,
                 scaleX: scale,
                 scaleY: scale,
                 width: image.width,
@@ -109,10 +135,10 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
         }
 
         setIsSelected(true);
-    }, [image, displayDimensions, initialState]);
+    }, [image, displayDimensions, initialState, stageSize]); // Re-run if stageSize changes
 
     const handleStageMouseDown = (e) => {
-        if (e.target === e.target.getStage()) setIsSelected(false);
+        if (e.target === e.target.getStage() || e.target.name() === 'canvas-background') setIsSelected(false);
     };
 
     const handleManualZoom = (direction) => {
@@ -140,7 +166,7 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
         setAspectRatio('custom');
     };
 
-    // **MODIFIED**: onConfirm now returns an object with the blob AND the editor's state.
+    // **MODIFIED**: Now captures rotation in the saved state.
     const handleConfirm = () => {
         setIsSelected(false);
         setTimeout(() => {
@@ -148,44 +174,45 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
             const imageNode = imageRef.current;
             if (!stage || !imageNode) return;
 
-            // Capture the current state of the image and canvas
             const currentState = {
                 x: imageNode.x(),
                 y: imageNode.y(),
                 scaleX: imageNode.scaleX(),
                 scaleY: imageNode.scaleY(),
+                rotation: imageNode.rotation(), // Capture rotation
                 aspectRatio,
                 inputWidth,
                 inputHeight,
             };
             
+            // Adjust crop area calculation for responsive stage
             const scaleFactor = inputWidth / displayDimensions.width;
             const cropArea = {
-                x: (EDITOR_WIDTH - displayDimensions.width) / 2,
-                y: (EDITOR_HEIGHT - displayDimensions.height) / 2,
+                x: (stage.width() - displayDimensions.width) / 2,
+                y: (stage.height() - displayDimensions.height) / 2,
                 width: displayDimensions.width,
                 height: displayDimensions.height,
             };
 
             stage.toBlob({ ...cropArea, pixelRatio: scaleFactor, mimeType: 'image/png' })
-                .then(blob => onConfirm({ blob, state: currentState })); // Return both
+                .then(blob => onConfirm({ blob, state: currentState }));
         }, 100);
     };
     
     const overlayPosition = {
-        top: (EDITOR_HEIGHT - displayDimensions.height) / 2,
-        left: (EDITOR_WIDTH - displayDimensions.width) / 2,
+        top: (stageSize.height - displayDimensions.height) / 2,
+        left: (stageSize.width - displayDimensions.width) / 2,
     };
 
     return (
         <div className={styles.editorContainer}>
-            {/* ... JSX for the editor is unchanged ... */}
-            <div className={styles.canvasWrapper}>
+            <div ref={containerRef} className={styles.canvasWrapper}>
                 <Stage
                     ref={stageRef}
-                    width={EDITOR_WIDTH}
-                    height={EDITOR_HEIGHT}
+                    width={stageSize.width}
+                    height={stageSize.height}
                     onMouseDown={handleStageMouseDown}
+                    onTouchStart={handleStageMouseDown} // Added for touch
                 >
                     <Layer>
                         {image && (
@@ -195,14 +222,25 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
                                 draggable
                                 onClick={() => setIsSelected(true)}
                                 onTap={() => setIsSelected(true)}
-                                onTransformEnd={() => {
+                                onTransform={(e) => {
                                     const node = imageRef.current;
                                     node.scaleX(node.scaleX());
                                     node.scaleY(node.scaleY());
+                                    node.rotation(node.rotation());
                                 }}
                             />
                         )}
-                        {isSelected && <Transformer ref={transformerRef} />}
+                        {isSelected && (
+                             <Transformer 
+                                ref={transformerRef} 
+                                // **NEW**: Mobile-friendly transformer config
+                                rotateEnabled={true}
+                                borderEnabled={false}
+                                anchorSize={0}
+                                anchorFill="transparent"
+                                anchorStroke="transparent"
+                             />
+                        )}
                     </Layer>
                 </Stage>
                 <div
@@ -221,6 +259,7 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
             </div>
 
             <div className={styles.controlsFooter}>
+                 {/* ... JSX for controls is unchanged ... */}
                 <div className={styles.aspectRatioControls}>
                     {Object.entries(CANVAS_CONFIG).map(([key, { name }]) => (
                         <button
