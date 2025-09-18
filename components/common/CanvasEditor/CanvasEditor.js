@@ -10,18 +10,22 @@ import { useState, useEffect, useRef } from 'react';
 import { Stage, Layer, Image, Transformer } from 'react-konva';
 import styles from './CanvasEditor.module.css';
 
-// Define the editor and canvas dimensions
-const EDITOR_WIDTH = 500;
-const EDITOR_HEIGHT = 500;
+// A larger editor area for more "breathing room"
+const EDITOR_WIDTH = 700;
+const EDITOR_HEIGHT = 700;
+
+// All required canvas sizes from the feature plan
 const CANVAS_CONFIG = {
-    '1:1': { width: 400, height: 400 },
+    '1:1': { width: 450, height: 450 },
     '4:5': { width: 400, height: 500 },
+    '9:16': { width: 337, height: 600 },
+    '16:9': { width: 600, height: 338 },
 };
 const ZOOM_STEP = 1.1;
 
 export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
     const [image, setImage] = useState(null);
-    const [isSelected, setIsSelected] = useState(false);
+    const [isSelected, setIsSelected] = useState(true); // Select by default
     const [aspectRatio, setAspectRatio] = useState('1:1');
 
     const imageRef = useRef(null);
@@ -40,7 +44,7 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
         }
     }, [isSelected]);
 
-    // Effect to load the image and center it initially
+    // Effect to load and correctly scale/center the image
     useEffect(() => {
         if (imagePreview) {
             const imageObj = new window.Image();
@@ -50,7 +54,7 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
                 const stage = stageRef.current;
                 const canvas = CANVAS_CONFIG[aspectRatio];
 
-                // Calculate initial scale to fit the image within the canvas
+                // FIXED: Calculate initial scale to fit image within canvas
                 const scale = Math.min(canvas.width / imageObj.width, canvas.height / imageObj.height, 1);
 
                 imageRef.current.setAttrs({
@@ -61,35 +65,26 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
                     width: imageObj.width,
                     height: imageObj.height,
                 });
-                setIsSelected(true); // Select image by default
+                setIsSelected(true); // Keep it selected
                 stage.batchDraw();
             };
         }
     }, [imagePreview, aspectRatio]);
 
-    // Handle deselecting when clicking the stage background
     const handleStageMouseDown = (e) => {
-        if (e.target === e.target.getStage()) {
-            setIsSelected(false);
-        }
+        if (e.target === e.target.getStage()) setIsSelected(false);
     };
 
-    // Handle manual zoom with +/- buttons
     const handleManualZoom = (direction) => {
         const imageNode = imageRef.current;
         const oldScale = imageNode.scaleX();
         const newScale = direction === 'in' ? oldScale * ZOOM_STEP : oldScale / ZOOM_STEP;
-
         imageNode.scaleX(newScale);
         imageNode.scaleY(newScale);
-        imageNode.getLayer().batchDraw();
     };
 
-    // Handle the final confirmation and image export
     const handleConfirm = () => {
-        setIsSelected(false); // Hide transformer before exporting
-
-        // Short delay to allow the UI to update
+        setIsSelected(false);
         setTimeout(() => {
             const canvas = CANVAS_CONFIG[aspectRatio];
             const stage = stageRef.current;
@@ -99,20 +94,11 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
                 width: canvas.width,
                 height: canvas.height,
             };
-
-            stage.toBlob({
-                ...cropArea,
-                callback: (blob) => {
-                    // This callback passes the final image back to the main form
-                    if (onConfirm) {
-                        onConfirm(blob);
-                    }
-                },
-            });
+            stage.toBlob({ ...cropArea, mimeType: 'image/png' })
+                 .then(blob => onConfirm(blob));
         }, 100);
     };
 
-    // Calculate dimensions for the visual overlay
     const canvas = CANVAS_CONFIG[aspectRatio];
     const overlayPosition = {
         top: (EDITOR_HEIGHT - canvas.height) / 2,
@@ -121,26 +107,6 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
 
     return (
         <div className={styles.editorContainer}>
-            <div className={styles.header}>
-                <h2>Adjust Canvas</h2>
-                <p>Click the image to resize with handles, or use the buttons to zoom.</p>
-            </div>
-
-            <div className={styles.aspectRatioControls}>
-                <button
-                    className={`${styles.aspectRatioButton} ${aspectRatio === '1:1' ? styles.active : ''}`}
-                    onClick={() => setAspectRatio('1:1')}
-                >
-                    Square (1:1)
-                </button>
-                <button
-                    className={`${styles.aspectRatioButton} ${aspectRatio === '4:5' ? styles.active : ''}`}
-                    onClick={() => setAspectRatio('4:5')}
-                >
-                    Portrait (4:5)
-                </button>
-            </div>
-            
             <div className={styles.canvasWrapper}>
                 <Stage
                     ref={stageRef}
@@ -158,13 +124,7 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
                                 onTap={() => setIsSelected(true)}
                             />
                         )}
-                        <Transformer
-                            ref={transformerRef}
-                            boundBoxFunc={(oldBox, newBox) => {
-                                if (newBox.width < 50 || newBox.height < 50) return oldBox;
-                                return newBox;
-                            }}
-                        />
+                        <Transformer ref={transformerRef} />
                     </Layer>
                 </Stage>
                 <div
@@ -182,13 +142,25 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
                 </div>
             </div>
 
-            <div className={styles.controls}>
-                <button type="button" className={styles.confirmButton} onClick={handleConfirm}>
-                    Confirm & Save
-                </button>
-                <button type="button" className={styles.cancelButton} onClick={onBack}>
-                    Cancel
-                </button>
+            <div className={styles.controlsFooter}>
+                <div className={styles.aspectRatioControls}>
+                    {Object.keys(CANVAS_CONFIG).map(key => (
+                        <button
+                            key={key}
+                            className={`${styles.aspectRatioButton} ${aspectRatio === key ? styles.active : ''}`}
+                            onClick={() => setAspectRatio(key)}
+                        >
+                            {key === '1:1' && 'Square'}
+                            {key === '4:5' && 'Portrait'}
+                            {key === '9:16' && 'Story'}
+                            {key === '16:9' && 'Landscape'}
+                        </button>
+                    ))}
+                </div>
+                <div className={styles.actionButtons}>
+                    <button type="button" className={styles.cancelButton} onClick={onBack}>Cancel</button>
+                    <button type="button" className={styles.confirmButton} onClick={handleConfirm}>Confirm & Save</button>
+                </div>
             </div>
         </div>
     );
