@@ -10,12 +10,10 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Stage, Layer, Image, Transformer } from 'react-konva';
 import styles from './CanvasEditor.module.css';
 
-// A larger editor area for more "breathing room"
 const EDITOR_WIDTH = 700;
 const EDITOR_HEIGHT = 700;
-const MAX_ONSCREEN_DIM = 650; // Max size for the overlay to ensure padding
+const MAX_ONSCREEN_DIM = 650;
 
-// All required ON-SCREEN canvas sizes for the editor UI
 const CANVAS_CONFIG = {
     '1:1': { name: 'Square', width: 450, height: 450 },
     '4:5': { name: 'Portrait', width: 400, height: 500 },
@@ -23,7 +21,6 @@ const CANVAS_CONFIG = {
     '16:9': { name: 'Landscape', width: 600, height: 338 },
 };
 
-// Defines the FINAL EXPORT resolution for each canvas.
 const EXPORT_CONFIG = {
     '1:1': { width: 1080, height: 1080 },
     '4:5': { width: 1080, height: 1350 },
@@ -33,32 +30,31 @@ const EXPORT_CONFIG = {
 
 const ZOOM_STEP = 1.1;
 
-export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
+export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialState = null }) {
     const [image, setImage] = useState(null);
     const [isSelected, setIsSelected] = useState(false);
-    const [aspectRatio, setAspectRatio] = useState('1:1');
-
-    const [inputWidth, setInputWidth] = useState(EXPORT_CONFIG['1:1'].width);
-    const [inputHeight, setInputHeight] = useState(EXPORT_CONFIG['1:1'].height);
+    
+    // **MODIFIED**: State now initializes from `initialState` if it exists.
+    const [aspectRatio, setAspectRatio] = useState(initialState?.aspectRatio || '1:1');
+    const [inputWidth, setInputWidth] = useState(initialState?.inputWidth || EXPORT_CONFIG['1:1'].width);
+    const [inputHeight, setInputHeight] = useState(initialState?.inputHeight || EXPORT_CONFIG['1:1'].height);
 
     const imageRef = useRef(null);
     const transformerRef = useRef(null);
     const stageRef = useRef(null);
+    const isStateApplied = useRef(false); // Prevents re-applying initial state
 
-    // **FIXED**: The useMemo hook is now declared BEFORE the useEffect that uses it.
     const displayDimensions = useMemo(() => {
+        // ... (this logic is unchanged)
         if (aspectRatio !== 'custom' && CANVAS_CONFIG[aspectRatio]) {
             return CANVAS_CONFIG[aspectRatio];
         }
-        
         if (!inputWidth || !inputHeight) {
             return { width: MAX_ONSCREEN_DIM, height: MAX_ONSCREEN_DIM };
         }
-        
         const ratio = inputWidth / inputHeight;
         let scaledWidth = MAX_ONSCREEN_DIM;
         let scaledHeight = scaledWidth / ratio;
-
         if (scaledHeight > MAX_ONSCREEN_DIM) {
             scaledHeight = MAX_ONSCREEN_DIM;
             scaledWidth = scaledHeight * ratio;
@@ -66,7 +62,6 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
         return { width: scaledWidth, height: scaledHeight };
     }, [aspectRatio, inputWidth, inputHeight]);
     
-    // This effect safely attaches the transformer.
     useEffect(() => {
         if (isSelected && imageRef.current && transformerRef.current) {
             transformerRef.current.nodes([imageRef.current]);
@@ -74,37 +69,47 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
         }
     }, [isSelected, image]);
 
-    // Effect #1 - This now ONLY loads the image from the preview URL.
     useEffect(() => {
         if (imagePreview) {
             const imageObj = new window.Image();
             imageObj.src = imagePreview;
-            imageObj.onload = () => {
-                setImage(imageObj);
-            };
+            imageObj.onload = () => setImage(imageObj);
         }
     }, [imagePreview]);
 
-    // Effect #2 - This handles image positioning and scaling.
+    // **MODIFIED**: This effect now applies the `initialState` if provided.
     useEffect(() => {
         if (!image || !imageRef.current || !stageRef.current) return;
 
-        const stage = stageRef.current;
-        const canvas = displayDimensions;
-
-        const scale = Math.min(canvas.width / image.width, canvas.height / image.height, 1);
-
-        imageRef.current.setAttrs({
-            x: (stage.width() - image.width * scale) / 2,
-            y: (stage.height() - image.height * scale) / 2,
-            scaleX: scale,
-            scaleY: scale,
-            width: image.width,
-            height: image.height,
-        });
+        // If we have a saved state and haven't applied it yet, apply it now.
+        if (initialState && !isStateApplied.current) {
+            imageRef.current.setAttrs({
+                x: initialState.x,
+                y: initialState.y,
+                scaleX: initialState.scaleX,
+                scaleY: initialState.scaleY,
+                width: image.width,
+                height: image.height,
+            });
+            isStateApplied.current = true; // Mark as applied
+        } 
+        // Otherwise, if it's the first time, run the default centering logic.
+        else if (!isStateApplied.current) {
+            const stage = stageRef.current;
+            const canvas = displayDimensions;
+            const scale = Math.min(canvas.width / image.width, canvas.height / image.height, 1);
+            imageRef.current.setAttrs({
+                x: (stage.width() - image.width * scale) / 2,
+                y: (stage.height() - image.height * scale) / 2,
+                scaleX: scale,
+                scaleY: scale,
+                width: image.width,
+                height: image.height,
+            });
+        }
 
         setIsSelected(true);
-    }, [image, aspectRatio, displayDimensions]);
+    }, [image, displayDimensions, initialState]);
 
     const handleStageMouseDown = (e) => {
         if (e.target === e.target.getStage()) setIsSelected(false);
@@ -135,14 +140,26 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
         setAspectRatio('custom');
     };
 
+    // **MODIFIED**: onConfirm now returns an object with the blob AND the editor's state.
     const handleConfirm = () => {
         setIsSelected(false);
         setTimeout(() => {
             const stage = stageRef.current;
-            if (!stage) return;
+            const imageNode = imageRef.current;
+            if (!stage || !imageNode) return;
+
+            // Capture the current state of the image and canvas
+            const currentState = {
+                x: imageNode.x(),
+                y: imageNode.y(),
+                scaleX: imageNode.scaleX(),
+                scaleY: imageNode.scaleY(),
+                aspectRatio,
+                inputWidth,
+                inputHeight,
+            };
             
             const scaleFactor = inputWidth / displayDimensions.width;
-
             const cropArea = {
                 x: (EDITOR_WIDTH - displayDimensions.width) / 2,
                 y: (EDITOR_HEIGHT - displayDimensions.height) / 2,
@@ -150,12 +167,8 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
                 height: displayDimensions.height,
             };
 
-            stage.toBlob({
-                ...cropArea,
-                pixelRatio: scaleFactor,
-                mimeType: 'image/png'
-            })
-            .then(blob => onConfirm(blob));
+            stage.toBlob({ ...cropArea, pixelRatio: scaleFactor, mimeType: 'image/png' })
+                .then(blob => onConfirm({ blob, state: currentState })); // Return both
         }, 100);
     };
     
@@ -166,6 +179,7 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
 
     return (
         <div className={styles.editorContainer}>
+            {/* ... JSX for the editor is unchanged ... */}
             <div className={styles.canvasWrapper}>
                 <Stage
                     ref={stageRef}
@@ -181,7 +195,7 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
                                 draggable
                                 onClick={() => setIsSelected(true)}
                                 onTap={() => setIsSelected(true)}
-                                onTransformEnd={(e) => {
+                                onTransformEnd={() => {
                                     const node = imageRef.current;
                                     node.scaleX(node.scaleX());
                                     node.scaleY(node.scaleY());
