@@ -32,19 +32,20 @@ export default function CustomImagePost() {
     const [selectedTime, setSelectedTime] = useState('09:00');
     const [timeSlots, setTimeSlots] = useState([]);
     
-    // MODIFIED: State for UI feedback instead of alerts
     const [feedback, setFeedback] = useState({ message: '', type: '' });
+    
+    // MODIFIED: Added state for the form's key to trigger a reset
+    const [formKey, setFormKey] = useState(Date.now());
 
     useEffect(() => {
         setTimeSlots(generateTimeSlots());
     }, []);
     
-    // MODIFIED: Helper to manage feedback messages
     const showFeedback = (message, type) => {
         setFeedback({ message, type });
         setTimeout(() => {
             setFeedback({ message: '', type: '' });
-        }, 5000); // Message disappears after 5 seconds
+        }, 5000);
     };
 
     const handleSubmit = async ({ imageFile, caption, action }) => {
@@ -53,7 +54,7 @@ export default function CustomImagePost() {
             return;
         }
         setIsSubmitting(true);
-        setFeedback({ message: '', type: '' }); // Clear previous feedback
+        setFeedback({ message: '', type: '' });
 
         let endpoint = '';
         const formData = new FormData();
@@ -90,16 +91,16 @@ export default function CustomImagePost() {
             const result = await response.json();
 
             if (!response.ok) {
-                // Use error message from API response, or a default one
                 throw new Error(result.error || 'Failed to submit post');
             }
             
-            // MODIFIED: Show success message from API
             showFeedback(result.message || 'Action completed successfully!', 'success');
+            
+            // MODIFIED: Change the key to force the form component to re-mount and reset its state
+            setFormKey(Date.now());
 
         } catch (error) {
             console.error(`Error submitting to ${endpoint}:`, error);
-            // MODIFIED: Show error message
             showFeedback(`An error occurred: ${error.message}`, 'error');
         } finally {
             setIsSubmitting(false);
@@ -108,13 +109,14 @@ export default function CustomImagePost() {
 
     return (
         <div className={styles.container}>
-            {/* NEW: Render feedback message if it exists */}
             {feedback.message && (
                 <div className={`${styles.feedbackMessage} ${styles[feedback.type]}`}>
                     {feedback.message}
                 </div>
             )}
             <CustomImageForm
+                // MODIFIED: Added the key prop
+                key={formKey} 
                 context="create"
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
