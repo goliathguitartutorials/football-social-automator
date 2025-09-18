@@ -22,8 +22,7 @@ const CANVAS_CONFIG = {
     '16:9': { name: 'Landscape', width: 600, height: 338 },
 };
 
-// **NEW**: Defines the FINAL EXPORT resolution for each canvas.
-// This separates the on-screen display size from the final output quality.
+// Defines the FINAL EXPORT resolution for each canvas.
 const EXPORT_CONFIG = {
     '1:1': { width: 1080, height: 1080 },
     '4:5': { width: 1080, height: 1350 },
@@ -38,47 +37,56 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
     const [isSelected, setIsSelected] = useState(false);
     const [aspectRatio, setAspectRatio] = useState('1:1');
 
+    // **NEW**: State to manage the width and height inputs
+    const [inputWidth, setInputWidth] = useState(EXPORT_CONFIG['1:1'].width);
+    const [inputHeight, setInputHeight] = useState(EXPORT_CONFIG['1:1'].height);
+
     const imageRef = useRef(null);
     const transformerRef = useRef(null);
     const stageRef = useRef(null);
 
-    // CRITICAL FIX: This effect now safely attaches the transformer.
-    // It waits until the image is loaded AND selected before acting.
+    // This effect safely attaches the transformer.
     useEffect(() => {
         if (isSelected && imageRef.current && transformerRef.current) {
             transformerRef.current.nodes([imageRef.current]);
             transformerRef.current.getLayer().batchDraw();
         }
-    }, [isSelected, image]); // Depends on both image and selection state
+    }, [isSelected, image]);
 
-    // Effect to load and correctly scale/center the image
+    // **MODIFIED**: Effect #1 - This now ONLY loads the image from the preview URL.
     useEffect(() => {
         if (imagePreview) {
             const imageObj = new window.Image();
             imageObj.src = imagePreview;
             imageObj.onload = () => {
-                setImage(imageObj); // Set the image state
-                const stage = stageRef.current;
-                const canvas = CANVAS_CONFIG[aspectRatio];
-
-                if (!stage || !imageRef.current) return;
-
-                // FIXED: Calculate initial scale to perfectly fit image within canvas
-                const scale = Math.min(canvas.width / imageObj.width, canvas.height / imageObj.height, 1);
-
-                imageRef.current.setAttrs({
-                    x: (stage.width() - imageObj.width * scale) / 2,
-                    y: (stage.height() - imageObj.height * scale) / 2,
-                    scaleX: scale,
-                    scaleY: scale,
-                    width: imageObj.width,
-                    height: imageObj.height,
-                });
-                
-                setIsSelected(true); // Select image by default
+                setImage(imageObj); // Set the image state, which triggers the next effect
             };
         }
-    }, [imagePreview, aspectRatio]);
+    }, [imagePreview]);
+
+    // **MODIFIED**: Effect #2 - This now handles ALL scaling and positioning.
+    // It runs after the image is loaded OR when the aspect ratio changes, fixing the initial sizing bug.
+    useEffect(() => {
+        if (!image || !imageRef.current || !stageRef.current) return;
+
+        const stage = stageRef.current;
+        const canvas = CANVAS_CONFIG[aspectRatio] || { width: 450, height: 450 }; // Fallback for custom
+
+        // Calculate initial scale to perfectly fit image within canvas
+        const scale = Math.min(canvas.width / image.width, canvas.height / image.height, 1);
+
+        imageRef.current.setAttrs({
+            x: (stage.width() - image.width * scale) / 2,
+            y: (stage.height() - image.height * scale) / 2,
+            scaleX: scale,
+            scaleY: scale,
+            width: image.width,
+            height: image.height,
+        });
+
+        setIsSelected(true); // Select image by default
+    }, [image, aspectRatio]);
+
 
     const handleStageMouseDown = (e) => {
         if (e.target === e.target.getStage()) setIsSelected(false);
@@ -93,22 +101,54 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
             imageNode.scaleY(newScale);
         }
     };
+    
+    // **NEW**: Handler for when a preset button is clicked
+    const handlePresetClick = (key) => {
+        setAspectRatio(key);
+        setInputWidth(EXPORT_CONFIG[key].width);
+        setInputHeight(EXPORT_CONFIG[key].height);
+    };
 
-    // **MODIFIED**: This function now exports at the correct high resolution.
+    // **NEW**: Handlers for the manual input fields
+    const handleWidthChange = (e) => {
+        setInputWidth(Number(e.target.value));
+        setAspectRatio('custom'); // De-select presets
+    };
+    const handleHeightChange = (e) => {
+        setInputHeight(Number(e.target.value));
+        setAspectRatio('custom'); // De-select presets
+    };
+
+    // MODIFIED: This function now handles both preset and custom exports.
     const handleConfirm = () => {
-        setIsSelected(false); // Hide transformer before exporting
+        setIsSelected(false);
         setTimeout(() => {
-            // Get both the on-screen size and the target export size
-            const displayCanvas = CANVAS_CONFIG[aspectRatio];
-            const exportCanvas = EXPORT_CONFIG[aspectRatio];
             const stage = stageRef.current;
+            if (!stage) return;
 
-            if (!stage || !displayCanvas || !exportCanvas) return;
+            // Use the on-screen display canvas for positioning and scaling calculations
+            const displayCanvas = CANVAS_CONFIG[aspectRatio] || CANVAS_CONFIG['1:1'];
+            
+            let scaleFactor = 1;
 
-            // Calculate the scaling factor needed to go from display size to export size
-            const scaleFactor = exportCanvas.width / displayCanvas.width;
+            // If a preset is active, calculate the high-res scale factor
+            if (aspectRatio !== 'custom' && EXPORT_CONFIG[aspectRatio]) {
+                 scaleFactor = EXPORT_CONFIG[aspectRatio].width / displayCanvas.width;
+            } else {
+                // For custom sizes, we need to find a suitable on-screen box to export from.
+                // We'll scale the user's custom dimensions down to fit our editor.
+                const ratio = inputWidth / inputHeight;
+                let displayWidth = displayCanvas.width;
+                let displayHeight = displayWidth / ratio;
 
-            // Define the crop area based on the on-screen display canvas
+                if (displayHeight > displayCanvas.height) {
+                    displayHeight = displayCanvas.height;
+                    displayWidth = displayHeight * ratio;
+                }
+                // The scale factor is the ratio of their desired size to our calculated display size
+                scaleFactor = inputWidth / displayWidth;
+            }
+
             const cropArea = {
                 x: (stage.width() - displayCanvas.width) / 2,
                 y: (stage.height() - displayCanvas.height) / 2,
@@ -116,18 +156,17 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
                 height: displayCanvas.height,
             };
 
-            // Export the blob using the `pixelRatio` property to apply our scale factor.
-            // This renders the final image at the high resolution.
             stage.toBlob({
                 ...cropArea,
-                pixelRatio: scaleFactor, // The magic happens here!
+                pixelRatio: scaleFactor,
                 mimeType: 'image/png'
             })
             .then(blob => onConfirm(blob));
         }, 100);
     };
 
-    const canvas = CANVAS_CONFIG[aspectRatio];
+    // Use the on-screen config for the overlay, even for custom sizes
+    const canvas = CANVAS_CONFIG[aspectRatio] || CANVAS_CONFIG['1:1'];
     const overlayPosition = {
         top: (EDITOR_HEIGHT - canvas.height) / 2,
         left: (EDITOR_WIDTH - canvas.width) / 2,
@@ -150,15 +189,10 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
                                 draggable
                                 onClick={() => setIsSelected(true)}
                                 onTap={() => setIsSelected(true)}
-                                onDragEnd={(e) => {
-                                    // Manually update position on drag end if needed for state
-                                }}
                                 onTransformEnd={(e) => {
                                     const node = imageRef.current;
-                                    const scaleX = node.scaleX();
-                                    const scaleY = node.scaleY();
-                                    node.scaleX(scaleX);
-                                    node.scaleY(scaleY);
+                                    node.scaleX(node.scaleX());
+                                    node.scaleY(node.scaleY());
                                 }}
                             />
                         )}
@@ -186,11 +220,29 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
                         <button
                             key={key}
                             className={`${styles.aspectRatioButton} ${aspectRatio === key ? styles.active : ''}`}
-                            onClick={() => setAspectRatio(key)}
+                            onClick={() => handlePresetClick(key)}
                         >
                             {name}
                         </button>
                     ))}
+                </div>
+                {/* **NEW**: Manual input fields for custom canvas size */}
+                <div className={styles.customSizeInputs}>
+                     <input 
+                        type="number"
+                        value={inputWidth}
+                        onChange={handleWidthChange}
+                        className={styles.sizeInput}
+                        aria-label="Canvas Width"
+                     />
+                     <span>x</span>
+                     <input 
+                        type="number"
+                        value={inputHeight}
+                        onChange={handleHeightChange}
+                        className={styles.sizeInput}
+                        aria-label="Canvas Height"
+                     />
                 </div>
                 <div className={styles.actionButtons}>
                     <button type="button" className={styles.cancelButton} onClick={onBack}>Cancel</button>
