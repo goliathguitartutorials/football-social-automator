@@ -7,16 +7,9 @@
  */
 'use client';
 import { useState, useEffect } from 'react';
-// CORRECTED: The directory name is case-sensitive.
-import CustomImageForm from '../../common/PostCreationForms/CustomImageForm/CustomImageForm'; 
-// CORRECTED: The context is inside the /app directory.
-import { useAppContext } from '../../../app/context/AppContext'; 
+import CustomImageForm from '../../common/PostCreationForms/CustomImageForm/CustomImageForm';
+import { useAppContext } from '../../../app/context/AppContext';
 import styles from './CustomImagePost.module.css';
-
-// Helper function to get the user's local timezone
-const getLocalTimeZone = () => {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-};
 
 // Helper function to generate time slots
 const generateTimeSlots = () => {
@@ -35,7 +28,6 @@ export default function CustomImagePost() {
     const { authKey } = useAppContext();
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    // State for date and time inputs
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [selectedTime, setSelectedTime] = useState('09:00');
     const [timeSlots, setTimeSlots] = useState([]);
@@ -51,21 +43,37 @@ export default function CustomImagePost() {
         }
         setIsSubmitting(true);
 
+        let endpoint = '';
         const formData = new FormData();
-        formData.append('image', imageFile);
-        formData.append('caption', caption);
-        formData.append('action', action);
+        
+        // ==========================================================
+        // MODIFIED: Conditionally set the endpoint and build the payload
+        // ==========================================================
+        if (action === 'post_now') {
+            endpoint = '/api/post-now';
+            formData.append('image', imageFile);
+            formData.append('caption', caption);
+            formData.append('action', action);
 
-        // If scheduling, combine date and time and convert to UTC ISO string
-        if (action === 'schedule') {
+        } else if (action === 'schedule') {
+            endpoint = '/api/schedule-custom-post';
             const localDateTime = new Date(`${selectedDate}T${selectedTime}`);
+            
+            // NOTE: The schedule-custom-post API expects a 'post_id'.
+            // We'll generate a unique ID on the client-side for new posts.
+            formData.append('post_id', self.crypto.randomUUID());
+            formData.append('image', imageFile);
+            formData.append('caption', caption);
             formData.append('schedule_time_utc', localDateTime.toISOString());
-            formData.append('timezone', getLocalTimeZone());
+            formData.append('action', action);
+        } else {
+            alert('Invalid action specified.');
+            setIsSubmitting(false);
+            return;
         }
 
         try {
-            // NOTE: This assumes you have an API route at /api/upload-asset that can handle this FormData.
-            const response = await fetch('/api/upload-asset', {
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${authKey}`
@@ -80,9 +88,9 @@ export default function CustomImagePost() {
 
             const result = await response.json();
             alert(result.message || 'Action completed successfully!');
-            // Optionally reset form state here
+
         } catch (error) {
-            console.error('Error submitting custom post:', error);
+            console.error(`Error submitting to ${endpoint}:`, error);
             alert(`An error occurred: ${error.message}`);
         } finally {
             setIsSubmitting(false);
