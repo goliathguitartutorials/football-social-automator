@@ -31,24 +31,33 @@ export default function CustomImagePost() {
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [selectedTime, setSelectedTime] = useState('09:00');
     const [timeSlots, setTimeSlots] = useState([]);
+    
+    // MODIFIED: State for UI feedback instead of alerts
+    const [feedback, setFeedback] = useState({ message: '', type: '' });
 
     useEffect(() => {
         setTimeSlots(generateTimeSlots());
     }, []);
+    
+    // MODIFIED: Helper to manage feedback messages
+    const showFeedback = (message, type) => {
+        setFeedback({ message, type });
+        setTimeout(() => {
+            setFeedback({ message: '', type: '' });
+        }, 5000); // Message disappears after 5 seconds
+    };
 
     const handleSubmit = async ({ imageFile, caption, action }) => {
         if (!authKey) {
-            alert('Authorization key is not set. Please set it in the Settings page.');
+            showFeedback('Authorization key is not set. Please set it in Settings.', 'error');
             return;
         }
         setIsSubmitting(true);
+        setFeedback({ message: '', type: '' }); // Clear previous feedback
 
         let endpoint = '';
         const formData = new FormData();
         
-        // ==========================================================
-        // MODIFIED: Conditionally set the endpoint and build the payload
-        // ==========================================================
         if (action === 'post_now') {
             endpoint = '/api/post-now';
             formData.append('image', imageFile);
@@ -58,16 +67,13 @@ export default function CustomImagePost() {
         } else if (action === 'schedule') {
             endpoint = '/api/schedule-custom-post';
             const localDateTime = new Date(`${selectedDate}T${selectedTime}`);
-            
-            // NOTE: The schedule-custom-post API expects a 'post_id'.
-            // We'll generate a unique ID on the client-side for new posts.
             formData.append('post_id', self.crypto.randomUUID());
             formData.append('image', imageFile);
             formData.append('caption', caption);
             formData.append('schedule_time_utc', localDateTime.toISOString());
             formData.append('action', action);
         } else {
-            alert('Invalid action specified.');
+            showFeedback('Invalid action specified.', 'error');
             setIsSubmitting(false);
             return;
         }
@@ -81,17 +87,20 @@ export default function CustomImagePost() {
                 body: formData,
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to submit post');
-            }
-
             const result = await response.json();
-            alert(result.message || 'Action completed successfully!');
+
+            if (!response.ok) {
+                // Use error message from API response, or a default one
+                throw new Error(result.error || 'Failed to submit post');
+            }
+            
+            // MODIFIED: Show success message from API
+            showFeedback(result.message || 'Action completed successfully!', 'success');
 
         } catch (error) {
             console.error(`Error submitting to ${endpoint}:`, error);
-            alert(`An error occurred: ${error.message}`);
+            // MODIFIED: Show error message
+            showFeedback(`An error occurred: ${error.message}`, 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -99,6 +108,12 @@ export default function CustomImagePost() {
 
     return (
         <div className={styles.container}>
+            {/* NEW: Render feedback message if it exists */}
+            {feedback.message && (
+                <div className={`${styles.feedbackMessage} ${styles[feedback.type]}`}>
+                    {feedback.message}
+                </div>
+            )}
             <CustomImageForm
                 context="create"
                 onSubmit={handleSubmit}
