@@ -7,16 +7,14 @@
  */
 'use client';
 import { useState, useRef } from 'react';
-import dynamic from 'next/dynamic'; // FIXED: Import 'dynamic' from Next.js
+import dynamic from 'next/dynamic';
 import styles from './CustomImageForm.module.css';
 import { UploadIcon, EditIcon, ScheduleIcon, PostNowIcon } from './CustomImageFormIcons';
 
-// FIXED: Use a dynamic import to ensure the CanvasEditor only loads on the client-side
 const CanvasEditor = dynamic(() => import('../../CanvasEditor/CanvasEditor'), {
     ssr: false,
-    loading: () => <p>Loading Editor...</p> // Optional: Show a loading message
+    loading: () => <p>Loading Editor...</p>
 });
-
 
 export default function CustomImageForm({
     context = 'schedule',
@@ -32,16 +30,13 @@ export default function CustomImageForm({
     const [imagePreview, setImagePreview] = useState('');
     const [caption, setCaption] = useState('');
     const fileInputRef = useRef(null);
-
     const [viewMode, setViewMode] = useState('upload');
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
             setImageFile(file);
-            if (imagePreview) {
-                URL.revokeObjectURL(imagePreview);
-            }
+            if (imagePreview) URL.revokeObjectURL(imagePreview);
             const previewUrl = URL.createObjectURL(file);
             setImagePreview(previewUrl);
         } else if (file) {
@@ -58,33 +53,37 @@ export default function CustomImageForm({
             alert("Please upload an image before submitting.");
             return;
         }
-        onSubmit({
-            imageFile,
-            caption,
-            action: action
-        });
+        onSubmit({ imageFile, caption, action });
     };
 
-    // If the view is the editor, render the real CanvasEditor component.
+    // FIXED: Handler for when the user confirms the crop
+    const handleCropConfirm = (croppedImageBlob) => {
+        const croppedFile = new File([croppedImageBlob], "cropped-image.png", { type: "image/png" });
+        
+        // Update the state with the new cropped image
+        setImageFile(croppedFile);
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
+        setImagePreview(URL.createObjectURL(croppedFile));
+
+        // Switch back to the upload form view
+        setViewMode('upload');
+    };
+
     if (viewMode === 'editor') {
-        return <CanvasEditor imagePreview={imagePreview} onBack={() => setViewMode('upload')} />;
+        return <CanvasEditor 
+                    imagePreview={imagePreview} 
+                    onBack={() => setViewMode('upload')} 
+                    onConfirm={handleCropConfirm} 
+                />;
     }
 
-    // Otherwise, render the main upload form.
     return (
         <form className={styles.formContainer} onSubmit={(e) => e.preventDefault()}>
             <div className={styles.unifiedLayout}>
-                {/* Left Column: Image Zone */}
                 <div className={styles.imageColumn}>
                     {!imagePreview ? (
-                        <div className={styles.uploadArea} onClick={triggerFileInput} role="button" tabIndex={0} onKeyPress={triggerFileInput}>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleImageUpload}
-                                accept="image/png, image/jpeg"
-                                style={{ display: 'none' }}
-                            />
+                        <div className={styles.uploadArea} onClick={triggerFileInput} role="button" tabIndex={0}>
+                            <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/png, image/jpeg" style={{ display: 'none' }} />
                             <div className={styles.uploadIcon}><UploadIcon /></div>
                             <p className={styles.uploadText}>Click to upload an image</p>
                             <p className={styles.uploadSubtext}>PNG or JPG</p>
@@ -94,22 +93,12 @@ export default function CustomImageForm({
                     )}
                 </div>
 
-                {/* Right Column: Control Panel */}
                 <div className={styles.controlsColumn}>
-                    {/* Caption Section */}
                     <div className={styles.controlSection}>
                         <label htmlFor="caption" className={styles.sectionLabel}>Post Caption</label>
-                        <textarea
-                            id="caption"
-                            className={styles.captionTextarea}
-                            value={caption}
-                            onChange={(e) => setCaption(e.target.value)}
-                            placeholder="Write your caption here..."
-                            rows={8}
-                        />
+                        <textarea id="caption" className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here..." rows={8} />
                     </div>
 
-                    {/* Image Actions Section (only appears after upload) */}
                     {imagePreview && (
                         <div className={`${styles.controlSection} ${styles.imageActions}`}>
                             <button type="button" className={styles.actionButton_FullWidth} onClick={() => setViewMode('editor')}>
@@ -121,7 +110,6 @@ export default function CustomImageForm({
                         </div>
                     )}
                     
-                    {/* Date & Time Section */}
                     <div className={styles.controlSection}>
                         <label className={styles.sectionLabel}>Schedule for...</label>
                         <div className={styles.dateTimeInputs}>
@@ -138,7 +126,6 @@ export default function CustomImageForm({
                         </div>
                     </div>
 
-                    {/* Final Actions Section */}
                     <div className={`${styles.controlSection} ${styles.finalActions}`}>
                         {context === 'create' && (
                             <button type="button" onClick={() => handleFormSubmit('post_now')} disabled={isSubmitting || !imageFile} className={styles.actionButton_PostNow}>
