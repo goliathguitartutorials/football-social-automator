@@ -36,7 +36,10 @@ export default function CustomImageForm({
         const file = e.target.files[0];
         if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
             setImageFile(file);
+
+            // Clean up the old preview URL to prevent memory leaks
             if (imagePreview) URL.revokeObjectURL(imagePreview);
+            
             const previewUrl = URL.createObjectURL(file);
             setImagePreview(previewUrl);
         } else if (file) {
@@ -56,7 +59,7 @@ export default function CustomImageForm({
         onSubmit({ imageFile, caption, action });
     };
 
-    // FIXED: Handler for when the user confirms the crop
+    // Handler for when the user confirms the crop from the editor
     const handleCropConfirm = (croppedImageBlob) => {
         const croppedFile = new File([croppedImageBlob], "cropped-image.png", { type: "image/png" });
         
@@ -128,7 +131,7 @@ export default function CustomImageForm({
 
                     <div className={`${styles.controlSection} ${styles.finalActions}`}>
                         {context === 'create' && (
-                            <button type="button" onClick={() => handleFormSubmit('post_now')} disabled={isSubmitting || !imageFile} className={styles.actionButton_PostNow}>
+                            <button type-="button" onClick={() => handleFormSubmit('post_now')} disabled={isSubmitting || !imageFile} className={styles.actionButton_PostNow}>
                                 <PostNowIcon />
                                 {isSubmitting ? 'Posting...' : 'Post Now'}
                             </button>
