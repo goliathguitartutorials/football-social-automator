@@ -22,9 +22,13 @@
     background-color: #111827;
     border-radius: 8px;
     overflow: hidden;
-    width: 700px;
-    height: 700px;
+    width: 700px; /* Default desktop width */
+    height: 700px; /* Default desktop height */
     margin: 0 auto;
+    /* Added for responsive stage sizing */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .canvasOverlay {
@@ -32,7 +36,6 @@
     border: 2px solid white;
     box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.7);
     pointer-events: none;
-    /* Added transition for smooth resizing */
     transition: width 0.1s ease-in-out, height 0.1s ease-in-out, top 0.1s ease-in-out, left 0.1s ease-in-out;
 }
 
@@ -42,7 +45,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    flex-wrap: wrap;
     gap: 1rem;
 }
 
@@ -74,7 +77,6 @@
     font-weight: bold;
 }
 
-/* **NEW**: Styles for the custom dimension input container */
 .customSizeInputs {
     display: flex;
     align-items: center;
@@ -82,7 +84,6 @@
     color: var(--text-secondary);
 }
 
-/* **NEW**: Styles for the width/height text fields */
 .sizeInput {
     background-color: var(--surface-dark);
     border: 1px solid var(--border-color);
@@ -92,10 +93,9 @@
     width: 70px;
     text-align: center;
     font-size: 0.9rem;
-    -moz-appearance: textfield; /* Removes spinner for Firefox */
+    -moz-appearance: textfield;
 }
 
-/* Removes spinner for Chrome, Safari, Edge, Opera */
 .sizeInput::-webkit-outer-spin-button,
 .sizeInput::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -105,7 +105,7 @@
 .actionButtons {
     display: flex;
     gap: 1rem;
-    margin-left: auto; /* Pushes action buttons to the far right */
+    margin-left: auto;
 }
 
 .confirmButton, .cancelButton {
@@ -162,4 +162,58 @@
 
 .zoomControls button:hover {
     background-color: rgba(40, 40, 40, 0.9);
+}
+
+
+/* ==========================================================
+ * MOBILE-SPECIFIC STYLES 
+ * ==========================================================
+ */
+@media (max-width: 768px) {
+    .editorContainer {
+        padding: 1rem;
+    }
+
+    .canvasWrapper {
+        width: 100%;
+        height: auto;
+        min-height: 350px; /* Ensure a minimum height */
+        aspect-ratio: 1 / 1; /* Make the canvas area a square by default */
+    }
+
+    .controlsFooter {
+        flex-direction: column;
+        align-items: stretch; /* Make control groups full-width */
+        gap: 2rem;
+    }
+
+    .aspectRatioControls {
+        justify-content: center;
+    }
+    
+    .customSizeInputs {
+        justify-content: center;
+    }
+
+    .sizeInput {
+        width: 100px; /* Give more space for fingers */
+        padding: 0.75rem;
+    }
+
+    .actionButtons {
+        margin-left: 0;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .confirmButton, .cancelButton {
+        flex-grow: 1; /* Make buttons share space */
+        padding: 1rem;
+    }
+
+    .zoomControls {
+        right: 50%;
+        transform: translateX(50%);
+        flex-direction: row;
+    }
 }
