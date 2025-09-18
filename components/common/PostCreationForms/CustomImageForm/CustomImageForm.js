@@ -6,7 +6,7 @@
  * ==========================================================
  */
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import styles from './CustomImageForm.module.css';
 import { UploadIcon, EditIcon, ScheduleIcon, PostNowIcon } from './CustomImageFormIcons';
@@ -30,30 +30,34 @@ export default function CustomImageForm({
     const [imageForPreview, setImageForPreview] = useState('');
     const [originalImageForEditor, setOriginalImageForEditor] = useState('');
     
+    // **NEW**: State to store the last-used editor settings (position, zoom, etc.)
+    const [editorState, setEditorState] = useState(null);
+
     const [caption, setCaption] = useState('');
     const fileInputRef = useRef(null);
     const [viewMode, setViewMode] = useState('upload');
 
-    // Effect to clean up object URLs on component unmount to prevent memory leaks
-    useEffect(() => {
-        return () => {
-            if (originalImageForEditor) URL.revokeObjectURL(originalImageForEditor);
-            if (imageForPreview && imageForPreview !== originalImageForEditor) {
-                URL.revokeObjectURL(imageForPreview);
-            }
-        };
-    }, [originalImageForEditor, imageForPreview]);
+    // **FIXED**: Simplified and corrected URL cleanup logic.
+    const cleanupURLs = () => {
+        if (originalImageForEditor) URL.revokeObjectURL(originalImageForEditor);
+        if (imageForPreview && imageForPreview !== originalImageForEditor) {
+            URL.revokeObjectURL(imageForPreview);
+        }
+    };
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
-            // Clean up any old preview URLs when a completely new image is chosen.
-            // The useEffect cleanup handles revoking the previous URLs.
+            cleanupURLs(); // Clean up any and all previous URLs.
+            
             const previewUrl = URL.createObjectURL(file);
             
             setImageForSubmission(file);
             setOriginalImageForEditor(previewUrl);
             setImageForPreview(previewUrl);
+
+            // Reset any saved editor state from a previous image.
+            setEditorState(null);
 
         } else if (file) {
             alert("Please upload a valid image file (PNG or JPG).");
@@ -71,16 +75,21 @@ export default function CustomImageForm({
         }
         onSubmit({ imageFile: imageForSubmission, caption, action });
     };
-    
-    // **FIXED**: This function now correctly preserves the original image's URL.
-    const handleCropConfirm = (croppedImageBlob) => {
-        const croppedFile = new File([croppedImageBlob], "cropped-image.png", { type: "image/png" });
+
+    // **MODIFIED**: Now receives an object with both the blob and the editor's state.
+    const handleCropConfirm = ({ blob, state }) => {
+        const croppedFile = new File([blob], "cropped-image.png", { type: "image/png" });
         
+        // Clean up the previous preview URL if it was a cropped one.
+        if (imageForPreview && imageForPreview !== originalImageForEditor) {
+            URL.revokeObjectURL(imageForPreview);
+        }
+
         setImageForSubmission(croppedFile);
-        
-        // The useEffect hook will handle cleaning up the old `imageForPreview` URL
-        // when the state updates in the next line. This prevents the bug.
         setImageForPreview(URL.createObjectURL(croppedFile));
+        
+        // **NEW**: Save the received editor state.
+        setEditorState(state);
 
         setViewMode('upload');
     };
@@ -89,7 +98,9 @@ export default function CustomImageForm({
         return <CanvasEditor 
                     imagePreview={originalImageForEditor} 
                     onBack={() => setViewMode('upload')} 
-                    onConfirm={handleCropConfirm} 
+                    onConfirm={handleCropConfirm}
+                    // **NEW**: Pass the saved state back into the editor.
+                    initialState={editorState} 
                 />;
     }
 
@@ -110,6 +121,7 @@ export default function CustomImageForm({
                 </div>
 
                 <div className={styles.controlsColumn}>
+                    {/* ... form controls remain the same ... */}
                     <div className={styles.controlSection}>
                         <label htmlFor="caption" className={styles.sectionLabel}>Post Caption</label>
                         <textarea id="caption" className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here..." rows={8} />
