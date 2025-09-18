@@ -10,7 +10,6 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Stage, Layer, Image, Transformer } from 'react-konva';
 import styles from './CanvasEditor.module.css';
 
-// Custom hook to make the Konva Stage responsive.
 const useStageSize = () => {
     const containerRef = useRef(null);
     const [stageSize, setStageSize] = useState({ width: 700, height: 700 });
@@ -19,7 +18,6 @@ const useStageSize = () => {
         const updateSize = () => {
             if (containerRef.current) {
                 const { width } = containerRef.current.getBoundingClientRect();
-                // Ensure height is at least as much as width, capped for desktop
                 const height = Math.min(width, 700);
                 setStageSize({ width, height });
             }
@@ -46,6 +44,11 @@ const EXPORT_CONFIG = {
 };
 const ZOOM_STEP = 1.1;
 
+// **NEW**: Helper function to calculate distance between two points
+function getDistance(p1, p2) {
+    return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+}
+
 export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialState = null }) {
     const [image, setImage] = useState(null);
     const [isSelected, setIsSelected] = useState(false);
@@ -58,11 +61,14 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
     const transformerRef = useRef(null);
     const stageRef = useRef(null);
     const isStateApplied = useRef(false);
+    const lastDist = useRef(0); // For touch zoom
+    const lastCenter = useRef(null); // For touch positioning
+    const isTransforming = useRef(false); // Flag to manage touch state
+
     const [containerRef, stageSize] = useStageSize();
 
-    // **FIXED**: On-screen canvas dimensions are now fully responsive.
     const displayDimensions = useMemo(() => {
-        const maxDim = stageSize.width * 0.9; // Use 90% of available space
+        const maxDim = stageSize.width * 0.9;
         if (!inputWidth || !inputHeight) return { width: maxDim, height: maxDim };
         
         const ratio = inputWidth / inputHeight;
@@ -96,28 +102,20 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
 
         if (initialState && !isStateApplied.current) {
             imageRef.current.setAttrs({
-                x: initialState.x,
-                y: initialState.y,
-                scaleX: initialState.scaleX,
-                scaleY: initialState.scaleY,
+                x: initialState.x, y: initialState.y,
+                scaleX: initialState.scaleX, scaleY: initialState.scaleY,
                 rotation: initialState.rotation || 0,
-                width: image.width,
-                height: image.height,
-                offsetX: image.width / 2,
-                offsetY: image.height / 2,
+                width: image.width, height: image.height,
+                offsetX: image.width / 2, offsetY: image.height / 2,
             });
             isStateApplied.current = true;
         } else if (!isStateApplied.current) {
             const scale = Math.min(displayDimensions.width / image.width, displayDimensions.height / image.height, 1);
             imageRef.current.setAttrs({
-                x: stageSize.width / 2,
-                y: stageSize.height / 2,
-                scaleX: scale,
-                scaleY: scale,
-                width: image.width,
-                height: image.height,
-                offsetX: image.width / 2,
-                offsetY: image.height / 2,
+                x: stageSize.width / 2, y: stageSize.height / 2,
+                scaleX: scale, scaleY: scale,
+                width: image.width, height: image.height,
+                offsetX: image.width / 2, offsetY: image.height / 2,
             });
         }
         setIsSelected(true);
@@ -126,6 +124,51 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
     const handleStageInteraction = (e) => {
         if (e.target === e.target.getStage()) setIsSelected(false);
     };
+
+    // **NEW**: Touch gesture handlers for pinch-zoom and rotation
+    const handleTouchStart = (e) => {
+        const touch1 = e.evt.touches[0];
+        const touch2 = e.evt.touches[1];
+        const imageNode = imageRef.current;
+        if (touch1 && touch2 && imageNode) {
+            isTransforming.current = true;
+            lastDist.current = getDistance(touch1, touch2);
+            lastCenter.current = { x: (touch1.clientX + touch2.clientX) / 2, y: (touch1.clientY + touch2.clientY) / 2 };
+        }
+    };
+    
+    const handleTouchMove = (e) => {
+        const touch1 = e.evt.touches[0];
+        const touch2 = e.evt.touches[1];
+        const imageNode = imageRef.current;
+        
+        if (touch1 && touch2 && imageNode && isTransforming.current) {
+            e.evt.preventDefault(); // Prevent page scrolling
+            
+            // Zoom
+            const newDist = getDistance(touch1, touch2);
+            const scale = (imageNode.scaleX() * newDist) / lastDist.current;
+            imageNode.scaleX(scale);
+            imageNode.scaleY(scale);
+            lastDist.current = newDist;
+
+            // Rotation
+            const dx = touch2.clientX - touch1.clientX;
+            const dy = touch2.clientY - touch1.clientY;
+            const newRotation = Math.atan2(dy, dx);
+            const oldRotation = imageNode.rotation();
+            const startRotation = Math.atan2(lastCenter.current.y - touch1.clientY, lastCenter.current.x - touch1.clientX);
+            imageNode.rotation(oldRotation + (newRotation - startRotation));
+            
+            // We draw the layer manually for better performance
+            transformerRef.current.getLayer().batchDraw();
+        }
+    };
+
+    const handleTouchEnd = () => {
+        isTransforming.current = false;
+    };
+
 
     const handleManualZoom = (direction) => {
         const imageNode = imageRef.current;
@@ -143,39 +186,29 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
         setInputHeight(EXPORT_CONFIG[key].height);
     };
 
-    const handleWidthChange = (e) => {
-        setInputWidth(Number(e.target.value));
-        setAspectRatio('custom');
-    };
-    const handleHeightChange = (e) => {
-        setInputHeight(Number(e.target.value));
-        setAspectRatio('custom');
-    };
+    const handleWidthChange = (e) => setInputWidth(Number(e.target.value)) & setAspectRatio('custom');
+    const handleHeightChange = (e) => setInputHeight(Number(e.target.value)) & setAspectRatio('custom');
 
     const handleConfirm = () => {
         setIsSelected(false);
         setTimeout(() => {
+            // ... (confirm logic is unchanged)
             const stage = stageRef.current;
             const imageNode = imageRef.current;
             if (!stage || !imageNode) return;
 
             const currentState = {
-                x: imageNode.x(),
-                y: imageNode.y(),
-                scaleX: imageNode.scaleX(),
-                scaleY: imageNode.scaleY(),
+                x: imageNode.x(), y: imageNode.y(),
+                scaleX: imageNode.scaleX(), scaleY: imageNode.scaleY(),
                 rotation: imageNode.rotation(),
-                aspectRatio,
-                inputWidth,
-                inputHeight,
+                aspectRatio, inputWidth, inputHeight,
             };
             
             const scaleFactor = inputWidth / displayDimensions.width;
             const cropArea = {
                 x: (stageSize.width - displayDimensions.width) / 2,
                 y: (stageSize.height - displayDimensions.height) / 2,
-                width: displayDimensions.width,
-                height: displayDimensions.height,
+                width: displayDimensions.width, height: displayDimensions.height,
             };
 
             stage.toBlob({ ...cropArea, pixelRatio: scaleFactor, mimeType: 'image/png' })
@@ -192,39 +225,30 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
         <div className={styles.editorContainer}>
             <div ref={containerRef} className={styles.canvasWrapper}>
                 <Stage
-                    ref={stageRef}
-                    width={stageSize.width}
-                    height={stageSize.height}
-                    onMouseDown={handleStageInteraction}
-                    onTouchStart={handleStageInteraction}
+                    ref={stageRef} width={stageSize.width} height={stageSize.height}
+                    onMouseDown={handleStageInteraction} onTouchStart={handleStageInteraction}
                 >
                     <Layer>
                         {image && (
                             <Image
-                                ref={imageRef}
-                                image={image}
-                                draggable
-                                onClick={() => setIsSelected(true)}
-                                onTap={() => setIsSelected(true)}
+                                ref={imageRef} image={image} draggable
+                                onClick={() => setIsSelected(true)} onTap={() => setIsSelected(true)}
                                 onTransformEnd={() => {
                                     const node = imageRef.current;
                                     node.scaleX(node.scaleX());
                                     node.scaleY(node.scaleY());
                                 }}
+                                // **NEW**: Added touch event handlers
+                                onTouchStart={handleTouchStart}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
                             />
                         )}
                         {isSelected && (
                              <Transformer 
-                                ref={transformerRef} 
-                                // **FIXED**: Transformer functionality and appearance restored.
-                                rotateEnabled={true}
-                                keepRatio={true}
-                                anchorStroke="var(--accent-color)"
-                                anchorFill="white"
-                                anchorSize={12}
-                                borderStroke="var(--accent-color)"
-                                borderStrokeWidth={2}
-                                rotateAnchorOffset={25}
+                                ref={transformerRef} rotateEnabled={true} keepRatio={true}
+                                anchorStroke="var(--accent-color)" anchorFill="white" anchorSize={12}
+                                borderStroke="var(--accent-color)" borderStrokeWidth={2} rotateAnchorOffset={25}
                              />
                         )}
                     </Layer>
@@ -232,10 +256,8 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
                 <div
                     className={styles.canvasOverlay}
                     style={{
-                        top: `${overlayPosition.top}px`,
-                        left: `${overlayPosition.left}px`,
-                        width: `${displayDimensions.width}px`,
-                        height: `${displayDimensions.height}px`,
+                        top: `${overlayPosition.top}px`, left: `${overlayPosition.left}px`,
+                        width: `${displayDimensions.width}px`, height: `${displayDimensions.height}px`,
                     }}
                 />
                 <div className={styles.zoomControls}>
@@ -247,8 +269,7 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
             <div className={styles.controlsFooter}>
                 <div className={styles.aspectRatioControls}>
                     {Object.entries(CANVAS_CONFIG).map(([key, { name }]) => (
-                        <button
-                            key={key}
+                        <button key={key}
                             className={`${styles.aspectRatioButton} ${aspectRatio === key ? styles.active : ''}`}
                             onClick={() => handlePresetClick(key)}
                         >
@@ -257,21 +278,9 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
                     ))}
                 </div>
                 <div className={styles.customSizeInputs}>
-                     <input 
-                        type="number"
-                        value={inputWidth}
-                        onChange={handleWidthChange}
-                        className={styles.sizeInput}
-                        aria-label="Canvas Width"
-                     />
+                     <input type="number" value={inputWidth} onChange={handleWidthChange} className={styles.sizeInput} aria-label="Canvas Width" />
                      <span>x</span>
-                     <input 
-                        type="number"
-                        value={inputHeight}
-                        onChange={handleHeightChange}
-                        className={styles.sizeInput}
-                        aria-label="Canvas Height"
-                     />
+                     <input type="number" value={inputHeight} onChange={handleHeightChange} className={styles.sizeInput} aria-label="Canvas Height" />
                 </div>
                 <div className={styles.actionButtons}>
                     <button type="button" className={styles.cancelButton} onClick={onBack}>Cancel</button>
