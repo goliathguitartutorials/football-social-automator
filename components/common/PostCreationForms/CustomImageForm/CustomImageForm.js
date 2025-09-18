@@ -26,33 +26,31 @@ export default function CustomImageForm({
     onTimeChange,
     timeSlots
 }) {
-    // **FIX**: State is now split to manage the original and final (cropped) images separately.
-    const [imageForSubmission, setImageForSubmission] = useState(null);    // The file to be submitted (can be original or cropped)
-    const [imageForPreview, setImageForPreview] = useState('');            // The preview URL shown on the form
-    const [originalImageForEditor, setOriginalImageForEditor] = useState(''); // The original, un-cropped image URL for the editor
+    const [imageForSubmission, setImageForSubmission] = useState(null);
+    const [imageForPreview, setImageForPreview] = useState('');
+    const [originalImageForEditor, setOriginalImageForEditor] = useState('');
     
     const [caption, setCaption] = useState('');
     const fileInputRef = useRef(null);
     const [viewMode, setViewMode] = useState('upload');
 
-    // Effect to clean up object URLs and prevent memory leaks
+    // Effect to clean up object URLs on component unmount to prevent memory leaks
     useEffect(() => {
         return () => {
-            if (imageForPreview) URL.revokeObjectURL(imageForPreview);
             if (originalImageForEditor) URL.revokeObjectURL(originalImageForEditor);
+            if (imageForPreview && imageForPreview !== originalImageForEditor) {
+                URL.revokeObjectURL(imageForPreview);
+            }
         };
-    }, []); // Runs once on component unmount
+    }, [originalImageForEditor, imageForPreview]);
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
-            // Clean up any old preview URLs to prevent memory leaks
-            if (imageForPreview) URL.revokeObjectURL(imageForPreview);
-            if (originalImageForEditor) URL.revokeObjectURL(originalImageForEditor);
-            
+            // Clean up any old preview URLs when a completely new image is chosen.
+            // The useEffect cleanup handles revoking the previous URLs.
             const previewUrl = URL.createObjectURL(file);
-
-            // Set all states to the new original image
+            
             setImageForSubmission(file);
             setOriginalImageForEditor(previewUrl);
             setImageForPreview(previewUrl);
@@ -71,30 +69,23 @@ export default function CustomImageForm({
             alert("Please upload an image before submitting.");
             return;
         }
-        // Pass the final image (imageForSubmission) to the parent
         onSubmit({ imageFile: imageForSubmission, caption, action });
     };
-
-    // **MODIFIED**: This handler now only updates the submission file and form preview.
-    // The original image for the editor is left untouched.
+    
+    // **FIXED**: This function now correctly preserves the original image's URL.
     const handleCropConfirm = (croppedImageBlob) => {
         const croppedFile = new File([croppedImageBlob], "cropped-image.png", { type: "image/png" });
         
-        // Update the state with the new cropped image for submission
         setImageForSubmission(croppedFile);
         
-        // Clean up the old form preview URL
-        if (imageForPreview) URL.revokeObjectURL(imageForPreview);
-        
-        // Create and set the new preview URL for the form
+        // The useEffect hook will handle cleaning up the old `imageForPreview` URL
+        // when the state updates in the next line. This prevents the bug.
         setImageForPreview(URL.createObjectURL(croppedFile));
 
-        // Switch back to the upload form view
         setViewMode('upload');
     };
 
     if (viewMode === 'editor') {
-        // **FIX**: The CanvasEditor is now ALWAYS passed the original, full-size image.
         return <CanvasEditor 
                     imagePreview={originalImageForEditor} 
                     onBack={() => setViewMode('upload')} 
