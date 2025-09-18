@@ -95,12 +95,10 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
     useEffect(() => {
         if (scheduleDate) {
             setView('CONFIG');
-            
             const year = scheduleDate.getFullYear();
             const month = (scheduleDate.getMonth() + 1).toString().padStart(2, '0');
             const day = scheduleDate.getDate().toString().padStart(2, '0');
             setSelectedDate(`${year}-${month}-${day}`);
-
             setSelectedTime(getNextIntervalTime());
             setSelectedPostType(postTypes[0]);
             setFormData({ teamType: 'First Team', saveCustomBackground: true });
@@ -110,11 +108,40 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
     }, [scheduleDate]);
 
     const handleGenerateCaption = async (gameInfo) => {
-        // ... (existing function is unchanged)
+        setIsGeneratingCaption(true);
+        setFormData(prev => ({ ...prev, caption: '' }));
+        const payload = { action: selectedPostType.id, gameInfo };
+        try {
+            const response = await fetch('/api/generate-caption', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
+            if (!response.ok) { throw new Error('Failed to generate caption.'); }
+            const result = await response.json();
+            const newCaption = result.caption || 'Sorry, could not generate a caption.';
+            setFormData(prev => ({ ...prev, caption: newCaption }));
+        } catch (err) {
+            setFormData(prev => ({ ...prev, caption: `Error: ${err.message}` }));
+        } finally {
+            setIsGeneratingCaption(false);
+        }
     };
 
     const handleGeneratePreview = async (formPayload) => {
-        // ... (existing function is unchanged)
+        setIsSubmitting(true);
+        setMessage('');
+        setFormData(formPayload);
+        const imageGenPayload = buildImageGenPayload(formPayload, selectedPostType);
+        try {
+            const response = await fetch('/api/trigger-workflow', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(imageGenPayload) });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to generate preview.');
+            const imageUrl = result[0]?.data?.data?.content;
+            if (!imageUrl) throw new Error("Image URL not found in API response.");
+            setPreviewUrl(imageUrl);
+            setView('PREVIEW');
+        } catch (err) {
+            setMessage(`Error: ${err.message}`);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
     
     const handleCustomImageSubmit = async ({ imageFile, caption, action }) => {
@@ -123,14 +150,12 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         const postId = `post_${new Date().getTime()}`;
         const localDateTime = new Date(`${selectedDate}T${selectedTime}:00`);
         const schedule_time_utc = localDateTime.toISOString();
-
         const apiFormData = new FormData();
         apiFormData.append('post_id', postId);
         apiFormData.append('image', imageFile);
         apiFormData.append('caption', caption);
         apiFormData.append('schedule_time_utc', schedule_time_utc);
         apiFormData.append('action', action);
-
         try {
             const response = await fetch('/api/schedule-custom-post', {
                 method: 'POST',
@@ -148,17 +173,51 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
     };
 
     const handleSchedulePost = async ({ caption, date, time }) => {
-        // ... (existing function is unchanged)
+        setIsSubmitting(true);
+        setMessage('');
+        const localDateTime = new Date(`${date}T${time}:00`);
+        const schedule_time_utc = localDateTime.toISOString();
+        const postId = `post_${new Date().getTime()}`;
+        const schedulePayload = {
+            action: 'schedule_post',
+            post_id: postId,
+            schedule_time_utc: schedule_time_utc,
+            post_type: selectedPostType.id,
+            image_url: previewUrl,
+            caption: caption
+        };
+        try {
+            const response = await fetch('/api/schedule-manager', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(schedulePayload) });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to schedule post.');
+            setMessage('Post scheduled successfully!');
+            setTimeout(onPostScheduled, 1500);
+        } catch (err) {
+            setMessage(`Error: ${err.message}`);
+            setIsSubmitting(false);
+        }
     };
 
     const ActiveForm = selectedPostType?.component;
     const activeBanner = selectedPostType ? bannerImages[selectedPostType.id] : null;
 
     if (view === 'PREVIEW') {
-        // ... (existing block is unchanged)
+        const localDateTime = new Date(`${selectedDate}T${selectedTime}:00`);
+        const previewPostData = {
+            image_url: previewUrl,
+            post_caption: formData.caption,
+            scheduled_time_utc: localDateTime.toISOString(),
+        };
+        return (
+            <PostPreviewAndEditView
+                post={previewPostData}
+                mode="create"
+                onClose={() => setView('FORM')}
+                onSchedule={handleSchedulePost}
+            />
+        );
     }
     
-    // The main render logic
     return (
         <div className={styles.pageContainer}>
             <div className={styles.viewHeader}>
@@ -182,7 +241,6 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                 </div>
             )}
 
-            {/* Always show the top section for selecting post type */}
             <section className={styles.section}>
                 <h3 className={styles.subHeader}>Select Post Type</h3>
                 <div className={styles.selectorGrid}>
@@ -195,38 +253,22 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                 </div>
             </section>
 
-            {/* Conditional Rendering for the rest of the form */}
             {selectedPostType.id === 'customImage' ? (
-                // UNIFIED VIEW for Custom Image
-                <>
-                    <section className={styles.section}>
-                        <h3 className={styles.subHeader}>Date & Time</h3>
-                        <div className={styles.configForm}>
-                            <div className={styles.inputGroup}>
-                                <label htmlFor="schedule-date">Date</label>
-                                <input id="schedule-date" type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-                            </div>
-                            <div className={styles.inputGroup}>
-                                <label htmlFor="schedule-time">Time</label>
-                                <select id="schedule-time" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
-                                    {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                    </section>
-                    <section className={styles.section}>
-                         <h3 className={styles.subHeader}>Upload & Caption</h3>
-                        <div className={styles.formWrapper}>
-                            <CustomImageForm
-                                context="schedule"
-                                onSubmit={handleCustomImageSubmit}
-                                isSubmitting={isSubmitting}
-                            />
-                        </div>
-                    </section>
-                </>
+                <section className={styles.section}>
+                    <div className={styles.formWrapper}>
+                        <CustomImageForm
+                            context="schedule"
+                            onSubmit={handleCustomImageSubmit}
+                            isSubmitting={isSubmitting}
+                            selectedDate={selectedDate}
+                            onDateChange={(e) => setSelectedDate(e.target.value)}
+                            selectedTime={selectedTime}
+                            onTimeChange={(e) => setSelectedTime(e.target.value)}
+                            timeSlots={timeSlots}
+                        />
+                    </div>
+                </section>
             ) : (
-                // ORIGINAL MULTI-STEP VIEW for other post types
                 <>
                     {view === 'CONFIG' && (
                         <section className={styles.section}>
@@ -250,7 +292,6 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                             </div>
                         </section>
                     )}
-
                     {view === 'FORM' && (
                         <section className={styles.section}>
                             <div className={styles.formWrapper}>
