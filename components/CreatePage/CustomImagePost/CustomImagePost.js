@@ -7,9 +7,11 @@
  */
 'use client';
 import { useState, useEffect } from 'react';
-import CustomImageForm from '../../common/post-creation-forms/CustomImageForm/CustomImageForm';
-import { useAppContext } from '../../../context/AppContext';
-import styles from './CustomImagePost.module.css'; // MODIFIED: Import the new CSS
+// CORRECTED: The directory name is case-sensitive.
+import CustomImageForm from '../../common/PostCreationForms/CustomImageForm/CustomImageForm'; 
+// CORRECTED: The context is inside the /app directory.
+import { useAppContext } from '../../../app/context/AppContext'; 
+import styles from './CustomImagePost.module.css';
 
 // Helper function to get the user's local timezone
 const getLocalTimeZone = () => {
@@ -62,6 +64,7 @@ export default function CustomImagePost() {
         }
 
         try {
+            // NOTE: This assumes you have an API route at /api/upload-asset that can handle this FormData.
             const response = await fetch('/api/upload-asset', {
                 method: 'POST',
                 headers: {
@@ -87,7 +90,6 @@ export default function CustomImagePost() {
     };
 
     return (
-        // MODIFIED: Added wrapper div with the container style
         <div className={styles.container}>
             <CustomImageForm
                 context="create"
