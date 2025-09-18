@@ -197,3 +197,23 @@
         flex-direction: column;
     }
 }
+
+/* ==========================================================
+ * NEW STYLES FOR CREATE PAGE LAYOUT
+ * ==========================================================
+ */
+
+.scheduleSection {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.scheduleHeader {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
