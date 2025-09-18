@@ -219,7 +219,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
     }
     
     return (
-        <div className={styles.viewContainer}>
+        <div className={styles.wrapper}>
             <div className={styles.topHeader}>
                 <h1 className={styles.viewTitle}>Schedule New Post</h1>
                 <button onClick={onCancel} className={styles.cancelButton}>
@@ -288,9 +288,8 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                         />
                     </div>
                 )}
+                 {message && <p className={styles.message}>{message}</p>}
             </div>
-            
-            {message && <p className={styles.message}>{message}</p>}
         </div>
     );
 }
