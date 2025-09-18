@@ -45,6 +45,7 @@
 .aspectRatioControls {
     display: flex;
     gap: 0.75rem;
+    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
 }
 
 .aspectRatioButton {
