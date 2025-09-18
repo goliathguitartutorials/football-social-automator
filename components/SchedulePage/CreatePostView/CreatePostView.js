@@ -21,7 +21,7 @@ import CustomImageForm from '@/components/common/PostCreationForms/CustomImageFo
 
 // Icons
 import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, CustomImageIcon } from '@/components/CreatePage/CreatePageIcons';
-import { ArrowLeftIcon, ArrowRightIcon } from './CreatePostViewIcons';
+import { ArrowLeftIcon } from './CreatePostViewIcons';
 
 const postTypes = [
     { id: 'upNext', label: 'Up Next', component: UpNextForm, action: 'upNext', icon: <UpNextIcon /> },
@@ -82,7 +82,7 @@ const buildImageGenPayload = (formData, postType) => {
 
 export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel }) {
     const { appData, authKey } = useAppContext();
-    const [view, setView] = useState('CONFIG');
+    const [view, setView] = useState('FORM');
     const [selectedDate, setSelectedDate] = useState('');
     const [selectedTime, setSelectedTime] = useState('');
     const [selectedPostType, setSelectedPostType] = useState(postTypes[0]);
@@ -94,7 +94,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
 
     useEffect(() => {
         if (scheduleDate) {
-            setView('CONFIG');
+            setView('FORM');
             const year = scheduleDate.getFullYear();
             const month = (scheduleDate.getMonth() + 1).toString().padStart(2, '0');
             const day = scheduleDate.getDate().toString().padStart(2, '0');
@@ -253,51 +253,25 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                 </div>
             </section>
             
-            {/* FIX: Reverted to the original, more robust rendering structure */}
-            {/* It separates the logic for Custom Image from the multi-step forms */}
-
             {/* RENDERER FOR CUSTOM IMAGE (UNIFIED VIEW) */}
             {selectedPostType.id === 'customImage' && (
                  <section className={styles.section}>
-                    <div className={styles.formWrapper}>
-                        <CustomImageForm
-                            context="schedule"
-                            onSubmit={handleCustomImageSubmit}
-                            isSubmitting={isSubmitting}
-                            selectedDate={selectedDate}
-                            onDateChange={(e) => setSelectedDate(e.target.value)}
-                            selectedTime={selectedTime}
-                            onTimeChange={(e) => setSelectedTime(e.target.value)}
-                            timeSlots={timeSlots}
-                        />
-                    </div>
-                </section>
+                     <div className={styles.formWrapper}>
+                         <CustomImageForm
+                             context="schedule"
+                             onSubmit={handleCustomImageSubmit}
+                             isSubmitting={isSubmitting}
+                             selectedDate={selectedDate}
+                             onDateChange={(e) => setSelectedDate(e.target.value)}
+                             selectedTime={selectedTime}
+                             onTimeChange={(e) => setSelectedTime(e.target.value)}
+                             timeSlots={timeSlots}
+                         />
+                     </div>
+                 </section>
             )}
 
-            {/* RENDERER FOR TEMPLATE-BASED FORMS (MULTI-STEP VIEW) */}
-            {selectedPostType.id !== 'customImage' && view === 'CONFIG' && (
-                <section className={styles.section}>
-                    <h3 className={styles.subHeader}>Date & Time</h3>
-                    <div className={styles.configForm}>
-                        <div className={styles.inputGroup}>
-                            <label htmlFor="schedule-date">Date</label>
-                            <input id="schedule-date" type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-                        </div>
-                        <div className={styles.inputGroup}>
-                            <label htmlFor="schedule-time">Time</label>
-                            <select id="schedule-time" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
-                                {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
-                            </select>
-                        </div>
-                    </div>
-                    <div className={styles.actions}>
-                         <button className={styles.nextButton} onClick={() => setView('FORM')} disabled={!selectedPostType}>
-                             Add Details <ArrowRightIcon />
-                         </button>
-                    </div>
-                </section>
-            )}
-            
+            {/* RENDERER FOR TEMPLATE-BASED FORMS (SINGLE-STEP VIEW) */}
             {selectedPostType.id !== 'customImage' && view === 'FORM' && (
                 <section className={styles.section}>
                     <div className={styles.formWrapper}>
@@ -309,11 +283,6 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                             isSubmitting={isSubmitting}
                             isGeneratingCaption={isGeneratingCaption}
                         />
-                    </div>
-                    <div className={`${styles.actions} ${styles.formActions}`}>
-                        <button onClick={() => setView('CONFIG')} className={styles.backButton}>
-                            <ArrowLeftIcon /> Back to Config
-                        </button>
                     </div>
                 </section>
             )}
