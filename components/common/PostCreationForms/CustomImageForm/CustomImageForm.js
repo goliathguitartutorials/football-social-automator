@@ -29,15 +29,11 @@ export default function CustomImageForm({
     const [imageForSubmission, setImageForSubmission] = useState(null);
     const [imageForPreview, setImageForPreview] = useState('');
     const [originalImageForEditor, setOriginalImageForEditor] = useState('');
-    
-    // **NEW**: State to store the last-used editor settings (position, zoom, etc.)
     const [editorState, setEditorState] = useState(null);
-
     const [caption, setCaption] = useState('');
     const fileInputRef = useRef(null);
     const [viewMode, setViewMode] = useState('upload');
 
-    // **FIXED**: Simplified and corrected URL cleanup logic.
     const cleanupURLs = () => {
         if (originalImageForEditor) URL.revokeObjectURL(originalImageForEditor);
         if (imageForPreview && imageForPreview !== originalImageForEditor) {
@@ -48,17 +44,12 @@ export default function CustomImageForm({
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
-            cleanupURLs(); // Clean up any and all previous URLs.
-            
+            cleanupURLs();
             const previewUrl = URL.createObjectURL(file);
-            
             setImageForSubmission(file);
             setOriginalImageForEditor(previewUrl);
             setImageForPreview(previewUrl);
-
-            // Reset any saved editor state from a previous image.
             setEditorState(null);
-
         } else if (file) {
             alert("Please upload a valid image file (PNG or JPG).");
         }
@@ -76,21 +67,14 @@ export default function CustomImageForm({
         onSubmit({ imageFile: imageForSubmission, caption, action });
     };
 
-    // **MODIFIED**: Now receives an object with both the blob and the editor's state.
     const handleCropConfirm = ({ blob, state }) => {
         const croppedFile = new File([blob], "cropped-image.png", { type: "image/png" });
-        
-        // Clean up the previous preview URL if it was a cropped one.
         if (imageForPreview && imageForPreview !== originalImageForEditor) {
             URL.revokeObjectURL(imageForPreview);
         }
-
         setImageForSubmission(croppedFile);
         setImageForPreview(URL.createObjectURL(croppedFile));
-        
-        // **NEW**: Save the received editor state.
         setEditorState(state);
-
         setViewMode('upload');
     };
 
@@ -99,7 +83,6 @@ export default function CustomImageForm({
                     imagePreview={originalImageForEditor} 
                     onBack={() => setViewMode('upload')} 
                     onConfirm={handleCropConfirm}
-                    // **NEW**: Pass the saved state back into the editor.
                     initialState={editorState} 
                 />;
     }
@@ -121,7 +104,6 @@ export default function CustomImageForm({
                 </div>
 
                 <div className={styles.controlsColumn}>
-                    {/* ... form controls remain the same ... */}
                     <div className={styles.controlSection}>
                         <label htmlFor="caption" className={styles.sectionLabel}>Post Caption</label>
                         <textarea id="caption" className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here..." rows={8} />
@@ -138,34 +120,66 @@ export default function CustomImageForm({
                         </div>
                     )}
                     
-                    <div className={styles.controlSection}>
-                        <label className={styles.sectionLabel}>Schedule for...</label>
-                        <div className={styles.dateTimeInputs}>
-                            <div className={styles.inputGroup}>
-                                <label htmlFor="schedule-date-form">Date</label>
-                                <input id="schedule-date-form" type="date" value={selectedDate} onChange={onDateChange} />
+                    {/* ========================================================== */}
+                    {/* MODIFIED: Conditionally render layout based on context     */}
+                    {/* ========================================================== */}
+                    
+                    {context === 'create' ? (
+                        // NEW LAYOUT FOR THE CREATE PAGE
+                        <>
+                            <div className={styles.controlSection}>
+                                <button type="button" onClick={() => handleFormSubmit('post_now')} disabled={isSubmitting || !imageForSubmission} className={styles.actionButton_PostNow}>
+                                    <PostNowIcon />
+                                    {isSubmitting ? 'Posting...' : 'Post Now'}
+                                </button>
                             </div>
-                            <div className={styles.inputGroup}>
-                                <label htmlFor="schedule-time-form">Time</label>
-                                <select id="schedule-time-form" value={selectedTime} onChange={onTimeChange}>
-                                    {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
-                                </select>
+                            
+                            <div className={styles.scheduleSection}>
+                                <h3 className={styles.scheduleHeader}>Schedule for Later</h3>
+                                <div className={styles.dateTimeInputs}>
+                                    <div className={styles.inputGroup}>
+                                        <label htmlFor="schedule-date-form">Date</label>
+                                        <input id="schedule-date-form" type="date" value={selectedDate} onChange={onDateChange} />
+                                    </div>
+                                    <div className={styles.inputGroup}>
+                                        <label htmlFor="schedule-time-form">Time</label>
+                                        <select id="schedule-time-form" value={selectedTime} onChange={onTimeChange}>
+                                            {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="button" onClick={() => handleFormSubmit('schedule')} disabled={isSubmitting || !imageForSubmission} className={styles.actionButton_Schedule}>
+                                    <ScheduleIcon />
+                                    {isSubmitting ? 'Scheduling...' : 'Schedule for Later'}
+                                </button>
                             </div>
-                        </div>
-                    </div>
-
-                    <div className={`${styles.controlSection} ${styles.finalActions}`}>
-                        {context === 'create' && (
-                            <button type="button" onClick={() => handleFormSubmit('post_now')} disabled={isSubmitting || !imageForSubmission} className={styles.actionButton_PostNow}>
-                                <PostNowIcon />
-                                {isSubmitting ? 'Posting...' : 'Post Now'}
-                            </button>
-                        )}
-                        <button type="button" onClick={() => handleFormSubmit('schedule')} disabled={isSubmitting || !imageForSubmission} className={styles.actionButton_Schedule}>
-                            <ScheduleIcon />
-                            {isSubmitting ? 'Scheduling...' : (context === 'create' ? 'Schedule for Later' : 'Schedule Post')}
-                        </button>
-                    </div>
+                        </>
+                    ) : (
+                        // ORIGINAL LAYOUT FOR THE SCHEDULE PAGE
+                        <>
+                            <div className={styles.controlSection}>
+                                <label className={styles.sectionLabel}>Schedule for...</label>
+                                <div className={styles.dateTimeInputs}>
+                                    <div className={styles.inputGroup}>
+                                        <label htmlFor="schedule-date-form">Date</label>
+                                        <input id="schedule-date-form" type="date" value={selectedDate} onChange={onDateChange} />
+                                    </div>
+                                    <div className={styles.inputGroup}>
+                                        <label htmlFor="schedule-time-form">Time</label>
+                                        <select id="schedule-time-form" value={selectedTime} onChange={onTimeChange}>
+                                            {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className={`${styles.controlSection} ${styles.finalActions}`}>
+                                <button type="button" onClick={() => handleFormSubmit('schedule')} disabled={isSubmitting || !imageForSubmission} className={styles.actionButton_Schedule}>
+                                    <ScheduleIcon />
+                                    {isSubmitting ? 'Scheduling...' : 'Schedule Post'}
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </form>
