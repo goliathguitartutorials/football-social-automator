@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'react';
 import CustomImageForm from '../../common/post-creation-forms/CustomImageForm/CustomImageForm';
 import { useAppContext } from '../../../context/AppContext';
+import styles from './CustomImagePost.module.css'; // MODIFIED: Import the new CSS
 
 // Helper function to get the user's local timezone
 const getLocalTimeZone = () => {
@@ -86,15 +87,18 @@ export default function CustomImagePost() {
     };
 
     return (
-        <CustomImageForm
-            context="create"
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-            selectedDate={selectedDate}
-            onDateChange={(e) => setSelectedDate(e.target.value)}
-            selectedTime={selectedTime}
-            onTimeChange={(e) => setSelectedTime(e.target.value)}
-            timeSlots={timeSlots}
-        />
+        // MODIFIED: Added wrapper div with the container style
+        <div className={styles.container}>
+            <CustomImageForm
+                context="create"
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+                selectedDate={selectedDate}
+                onDateChange={(e) => setSelectedDate(e.target.value)}
+                selectedTime={selectedTime}
+                onTimeChange={(e) => setSelectedTime(e.target.value)}
+                timeSlots={timeSlots}
+            />
+        </div>
     );
 }
