@@ -61,6 +61,7 @@
 
 .top { object-position: 50% 0%; }
 .middleMid { object-position: 50% 58%; }
+.middleHighMore { object-position: 50% 30%; } /* ADDED: New position class */
 
 /* ==========================================================
  * END: BANNER STYLES
@@ -75,7 +76,6 @@
     margin-bottom: 0;
 }
 
-/* FIX: New style for the cleaner sub-header */
 .subHeader {
     font-size: 1.25rem;
     color: var(--text-secondary);
@@ -89,7 +89,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
-    margin-top: 2rem; /* FIX: Added margin-top to space it from the reordered post types */
+    margin-top: 2rem;
     padding: 1.5rem;
     border-radius: 8px;
     background-color: var(--background-dark);
@@ -162,64 +162,14 @@
     /* No styles needed here, inherits from parent */
 }
 
-/* Preview View Styles */
-.previewLayout {
-    display: flex;
-    gap: 2rem;
-    margin-top: 1.5rem;
-    align-items: flex-start;
-}
-.previewImageWrapper {
-    flex: 1 1 50%;
-    min-width: 280px;
-    position: relative;
-}
-.imageOverlay {
-    position: absolute;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    font-weight: bold;
-    border-radius: 0.5rem;
-    z-index: 10;
-}
-.previewImage {
-    display: block;
-    width: 100%;
-    height: auto;
-    border-radius: 0.5rem;
-    border: 1px solid var(--border-color);
-}
-.previewControls {
-    flex: 1 1 50%;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-.confirmDetails {
-    padding: 1.5rem;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background-color: var(--background-dark);
-}
-.confirmDetails p {
-    margin: 0.5rem 0;
-    font-size: 1.1rem;
-}
-
 /* General Action Buttons */
 .actions {
     display: flex;
     justify-content: flex-end;
     margin-top: 2rem;
-    gap: 1rem; /* FIX: Added gap for buttons that appear together */
+    gap: 1rem;
 }
 
-/* FIX: Specific style for form actions to override justify-content */
 .formActions {
     justify-content: space-between;
 }
@@ -231,7 +181,7 @@
     border-radius: 0.375rem;
     cursor: pointer;
     transition: background-color 0.3s, opacity 0.3s;
-    display: inline-flex; /* FIX: To align icons and text */
+    display: inline-flex;
     align-items: center;
     gap: 0.5rem;
 }
@@ -265,6 +215,4 @@
     .pageContainer { padding: 1rem; }
     .viewHeader { flex-direction: column; align-items: stretch; gap: 1rem; }
     .viewTitle { text-align: center; }
-    .previewLayout { flex-direction: column; }
-    .previewImageWrapper, .previewControls { width: 100%; }
 }
