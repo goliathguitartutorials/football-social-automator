@@ -14,13 +14,23 @@ import styles from './CanvasEditor.module.css';
 const EDITOR_WIDTH = 700;
 const EDITOR_HEIGHT = 700;
 
-// All required canvas sizes from the feature plan
+// All required ON-SCREEN canvas sizes for the editor UI
 const CANVAS_CONFIG = {
     '1:1': { name: 'Square', width: 450, height: 450 },
     '4:5': { name: 'Portrait', width: 400, height: 500 },
     '9:16': { name: 'Story', width: 337, height: 600 },
     '16:9': { name: 'Landscape', width: 600, height: 338 },
 };
+
+// **NEW**: Defines the FINAL EXPORT resolution for each canvas.
+// This separates the on-screen display size from the final output quality.
+const EXPORT_CONFIG = {
+    '1:1': { width: 1080, height: 1080 },
+    '4:5': { width: 1080, height: 1350 },
+    '9:16': { width: 1080, height: 1920 },
+    '16:9': { width: 1920, height: 1080 },
+};
+
 const ZOOM_STEP = 1.1;
 
 export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
@@ -84,19 +94,36 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm }) {
         }
     };
 
+    // **MODIFIED**: This function now exports at the correct high resolution.
     const handleConfirm = () => {
         setIsSelected(false); // Hide transformer before exporting
         setTimeout(() => {
-            const canvas = CANVAS_CONFIG[aspectRatio];
+            // Get both the on-screen size and the target export size
+            const displayCanvas = CANVAS_CONFIG[aspectRatio];
+            const exportCanvas = EXPORT_CONFIG[aspectRatio];
             const stage = stageRef.current;
+
+            if (!stage || !displayCanvas || !exportCanvas) return;
+
+            // Calculate the scaling factor needed to go from display size to export size
+            const scaleFactor = exportCanvas.width / displayCanvas.width;
+
+            // Define the crop area based on the on-screen display canvas
             const cropArea = {
-                x: (stage.width() - canvas.width) / 2,
-                y: (stage.height() - canvas.height) / 2,
-                width: canvas.width,
-                height: canvas.height,
+                x: (stage.width() - displayCanvas.width) / 2,
+                y: (stage.height() - displayCanvas.height) / 2,
+                width: displayCanvas.width,
+                height: displayCanvas.height,
             };
-            stage.toBlob({ ...cropArea, mimeType: 'image/png' })
-                 .then(blob => onConfirm(blob));
+
+            // Export the blob using the `pixelRatio` property to apply our scale factor.
+            // This renders the final image at the high resolution.
+            stage.toBlob({
+                ...cropArea,
+                pixelRatio: scaleFactor, // The magic happens here!
+                mimeType: 'image/png'
+            })
+            .then(blob => onConfirm(blob));
         }, 100);
     };
 
