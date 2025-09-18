@@ -10,9 +10,8 @@ import { NextResponse } from 'next/server';
 export async function POST(request) {
     try {
         // --- Security Check ---
-        // Get the security key from the Authorization header
         const authHeader = request.headers.get('authorization');
-        const authKey = authHeader?.split(' ')[1]; // Extract the key from "Bearer <key>"
+        const authKey = authHeader?.split(' ')[1];
 
         const { N8N_SCHEDULE_CUSTOM_POST_WEBHOOK_URL, APP_SECURITY_KEY } = process.env;
 
@@ -24,20 +23,21 @@ export async function POST(request) {
         }
 
         // --- Process Form Data ---
-        // This is different from other routes; we parse multipart/form-data
         const formData = await request.formData();
+        const postId = formData.get('post_id'); // FIX: Get the post_id from the form data
         const imageFile = formData.get('image');
         const caption = formData.get('caption');
         const schedule_time_utc = formData.get('schedule_time_utc');
-        const action = formData.get('action'); // 'schedule' or 'post_now'
+        const action = formData.get('action');
 
-        if (!imageFile || !caption || !schedule_time_utc || !action) {
+        // FIX: Add post_id to the validation check
+        if (!postId || !imageFile || !caption || !schedule_time_utc || !action) {
             return NextResponse.json({ error: 'Missing required form data fields.' }, { status: 400 });
         }
 
         // --- Forward Data to n8n Webhook ---
-        // We must reconstruct the FormData to forward it
         const n8nFormData = new FormData();
+        n8nFormData.append('post_id', postId); // FIX: Append the post_id to the data sent to n8n
         n8nFormData.append('image', imageFile);
         n8nFormData.append('caption', caption);
         n8nFormData.append('schedule_time_utc', schedule_time_utc);
@@ -46,8 +46,6 @@ export async function POST(request) {
         const n8nResponse = await fetch(N8N_SCHEDULE_CUSTOM_POST_WEBHOOK_URL, {
             method: 'POST',
             body: n8nFormData,
-            // NOTE: Do not set Content-Type header when using FormData with fetch,
-            // the browser/runtime will set it automatically with the correct boundary.
         });
 
         if (!n8nResponse.ok) {
