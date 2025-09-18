@@ -10,7 +10,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Stage, Layer, Image, Transformer } from 'react-konva';
 import styles from './CanvasEditor.module.css';
 
-// **NEW**: Custom hook to make the Konva Stage responsive.
+// Custom hook to make the Konva Stage responsive.
 const useStageSize = () => {
     const containerRef = useRef(null);
     const [stageSize, setStageSize] = useState({ width: 700, height: 700 });
@@ -18,40 +18,32 @@ const useStageSize = () => {
     useEffect(() => {
         const updateSize = () => {
             if (containerRef.current) {
-                const { width, height } = containerRef.current.getBoundingClientRect();
+                const { width } = containerRef.current.getBoundingClientRect();
+                // Ensure height is at least as much as width, capped for desktop
+                const height = Math.min(width, 700);
                 setStageSize({ width, height });
             }
         };
-
-        updateSize(); // Initial size
+        updateSize();
         const resizeObserver = new ResizeObserver(updateSize);
-        if (containerRef.current) {
-            resizeObserver.observe(containerRef.current);
-        }
-
+        if (containerRef.current) resizeObserver.observe(containerRef.current);
         return () => resizeObserver.disconnect();
     }, []);
-
     return [containerRef, stageSize];
 };
 
-
-const MAX_ONSCREEN_DIM = 650;
-
 const CANVAS_CONFIG = {
-    '1:1': { name: 'Square', width: 450, height: 450 },
-    '4:5': { name: 'Portrait', width: 400, height: 500 },
-    '9:16': { name: 'Story', width: 337, height: 600 },
-    '16:9': { name: 'Landscape', width: 600, height: 338 },
+    '1:1': { name: 'Square' },
+    '4:5': { name: 'Portrait' },
+    '9:16': { name: 'Story' },
+    '16:9': { name: 'Landscape' },
 };
-
 const EXPORT_CONFIG = {
     '1:1': { width: 1080, height: 1080 },
     '4:5': { width: 1080, height: 1350 },
     '9:16': { width: 1080, height: 1920 },
     '16:9': { width: 1920, height: 1080 },
 };
-
 const ZOOM_STEP = 1.1;
 
 export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialState = null }) {
@@ -66,27 +58,23 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
     const transformerRef = useRef(null);
     const stageRef = useRef(null);
     const isStateApplied = useRef(false);
-    
-    // **NEW**: Use the custom hook to get responsive stage dimensions.
     const [containerRef, stageSize] = useStageSize();
 
+    // **FIXED**: On-screen canvas dimensions are now fully responsive.
     const displayDimensions = useMemo(() => {
-        // ... (this logic is unchanged) ...
-        if (aspectRatio !== 'custom' && CANVAS_CONFIG[aspectRatio]) {
-            return CANVAS_CONFIG[aspectRatio];
-        }
-        if (!inputWidth || !inputHeight) {
-            return { width: MAX_ONSCREEN_DIM, height: MAX_ONSCREEN_DIM };
-        }
+        const maxDim = stageSize.width * 0.9; // Use 90% of available space
+        if (!inputWidth || !inputHeight) return { width: maxDim, height: maxDim };
+        
         const ratio = inputWidth / inputHeight;
-        let scaledWidth = MAX_ONSCREEN_DIM;
+        let scaledWidth = maxDim;
         let scaledHeight = scaledWidth / ratio;
-        if (scaledHeight > MAX_ONSCREEN_DIM) {
-            scaledHeight = MAX_ONSCREEN_DIM;
+
+        if (scaledHeight > maxDim) {
+            scaledHeight = maxDim;
             scaledWidth = scaledHeight * ratio;
         }
         return { width: scaledWidth, height: scaledHeight };
-    }, [aspectRatio, inputWidth, inputHeight]);
+    }, [aspectRatio, inputWidth, inputHeight, stageSize]);
     
     useEffect(() => {
         if (isSelected && imageRef.current && transformerRef.current) {
@@ -112,33 +100,31 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
                 y: initialState.y,
                 scaleX: initialState.scaleX,
                 scaleY: initialState.scaleY,
-                rotation: initialState.rotation || 0, // Apply rotation
+                rotation: initialState.rotation || 0,
                 width: image.width,
                 height: image.height,
+                offsetX: image.width / 2,
+                offsetY: image.height / 2,
             });
             isStateApplied.current = true;
-        } 
-        else if (!isStateApplied.current) {
-            const stage = stageRef.current;
-            const canvas = displayDimensions;
-            const scale = Math.min(canvas.width / image.width, canvas.height / image.height, 1);
+        } else if (!isStateApplied.current) {
+            const scale = Math.min(displayDimensions.width / image.width, displayDimensions.height / image.height, 1);
             imageRef.current.setAttrs({
-                x: stage.width() / 2,
-                y: stage.height() / 2,
-                offsetX: image.width / 2, // Center the origin for rotation
-                offsetY: image.height / 2,
+                x: stageSize.width / 2,
+                y: stageSize.height / 2,
                 scaleX: scale,
                 scaleY: scale,
                 width: image.width,
                 height: image.height,
+                offsetX: image.width / 2,
+                offsetY: image.height / 2,
             });
         }
-
         setIsSelected(true);
-    }, [image, displayDimensions, initialState, stageSize]); // Re-run if stageSize changes
+    }, [image, displayDimensions, initialState, stageSize]);
 
-    const handleStageMouseDown = (e) => {
-        if (e.target === e.target.getStage() || e.target.name() === 'canvas-background') setIsSelected(false);
+    const handleStageInteraction = (e) => {
+        if (e.target === e.target.getStage()) setIsSelected(false);
     };
 
     const handleManualZoom = (direction) => {
@@ -166,7 +152,6 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
         setAspectRatio('custom');
     };
 
-    // **MODIFIED**: Now captures rotation in the saved state.
     const handleConfirm = () => {
         setIsSelected(false);
         setTimeout(() => {
@@ -179,17 +164,16 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
                 y: imageNode.y(),
                 scaleX: imageNode.scaleX(),
                 scaleY: imageNode.scaleY(),
-                rotation: imageNode.rotation(), // Capture rotation
+                rotation: imageNode.rotation(),
                 aspectRatio,
                 inputWidth,
                 inputHeight,
             };
             
-            // Adjust crop area calculation for responsive stage
             const scaleFactor = inputWidth / displayDimensions.width;
             const cropArea = {
-                x: (stage.width() - displayDimensions.width) / 2,
-                y: (stage.height() - displayDimensions.height) / 2,
+                x: (stageSize.width - displayDimensions.width) / 2,
+                y: (stageSize.height - displayDimensions.height) / 2,
                 width: displayDimensions.width,
                 height: displayDimensions.height,
             };
@@ -211,8 +195,8 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
                     ref={stageRef}
                     width={stageSize.width}
                     height={stageSize.height}
-                    onMouseDown={handleStageMouseDown}
-                    onTouchStart={handleStageMouseDown} // Added for touch
+                    onMouseDown={handleStageInteraction}
+                    onTouchStart={handleStageInteraction}
                 >
                     <Layer>
                         {image && (
@@ -222,23 +206,25 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
                                 draggable
                                 onClick={() => setIsSelected(true)}
                                 onTap={() => setIsSelected(true)}
-                                onTransform={(e) => {
+                                onTransformEnd={() => {
                                     const node = imageRef.current;
                                     node.scaleX(node.scaleX());
                                     node.scaleY(node.scaleY());
-                                    node.rotation(node.rotation());
                                 }}
                             />
                         )}
                         {isSelected && (
                              <Transformer 
                                 ref={transformerRef} 
-                                // **NEW**: Mobile-friendly transformer config
+                                // **FIXED**: Transformer functionality and appearance restored.
                                 rotateEnabled={true}
-                                borderEnabled={false}
-                                anchorSize={0}
-                                anchorFill="transparent"
-                                anchorStroke="transparent"
+                                keepRatio={true}
+                                anchorStroke="var(--accent-color)"
+                                anchorFill="white"
+                                anchorSize={12}
+                                borderStroke="var(--accent-color)"
+                                borderStrokeWidth={2}
+                                rotateAnchorOffset={25}
                              />
                         )}
                     </Layer>
@@ -259,7 +245,6 @@ export default function CanvasEditor({ imagePreview, onBack, onConfirm, initialS
             </div>
 
             <div className={styles.controlsFooter}>
-                 {/* ... JSX for controls is unchanged ... */}
                 <div className={styles.aspectRatioControls}>
                     {Object.entries(CANVAS_CONFIG).map(([key, { name }]) => (
                         <button
