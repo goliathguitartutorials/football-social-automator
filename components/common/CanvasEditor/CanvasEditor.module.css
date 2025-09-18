@@ -32,6 +32,8 @@
     border: 2px solid white;
     box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.7);
     pointer-events: none;
+    /* Added transition for smooth resizing */
+    transition: width 0.1s ease-in-out, height 0.1s ease-in-out, top 0.1s ease-in-out, left 0.1s ease-in-out;
 }
 
 .controlsFooter {
@@ -40,12 +42,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: 1rem;
 }
 
 .aspectRatioControls {
     display: flex;
     gap: 0.75rem;
-    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+    flex-wrap: wrap;
 }
 
 .aspectRatioButton {
@@ -70,9 +74,38 @@
     font-weight: bold;
 }
 
+/* **NEW**: Styles for the custom dimension input container */
+.customSizeInputs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+}
+
+/* **NEW**: Styles for the width/height text fields */
+.sizeInput {
+    background-color: var(--surface-dark);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 6px;
+    padding: 0.5rem;
+    width: 70px;
+    text-align: center;
+    font-size: 0.9rem;
+    -moz-appearance: textfield; /* Removes spinner for Firefox */
+}
+
+/* Removes spinner for Chrome, Safari, Edge, Opera */
+.sizeInput::-webkit-outer-spin-button,
+.sizeInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .actionButtons {
     display: flex;
     gap: 1rem;
+    margin-left: auto; /* Pushes action buttons to the far right */
 }
 
 .confirmButton, .cancelButton {
