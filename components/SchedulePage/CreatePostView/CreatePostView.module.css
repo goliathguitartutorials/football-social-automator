@@ -61,7 +61,7 @@
 
 .top { object-position: 50% 0%; }
 .middleMid { object-position: 50% 58%; }
-.middleHighMore { object-position: 50% 30%; } /* ADDED: New position class */
+.middleHighMore { object-position: 50% 30%; }
 
 /* ==========================================================
  * END: BANNER STYLES
@@ -89,7 +89,6 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
-    margin-top: 2rem;
     padding: 1.5rem;
     border-radius: 8px;
     background-color: var(--background-dark);
@@ -159,7 +158,7 @@
 }
 
 .formWrapper {
-    /* No styles needed here, inherits from parent */
+    /* Styles for the wrapper around the dynamic forms */
 }
 
 /* General Action Buttons */
