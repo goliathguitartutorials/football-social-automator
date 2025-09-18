@@ -31,19 +31,35 @@ export default function PostPreviewAndEditView({ post, mode = 'edit', onClose, o
     const [feedbackMessage, setFeedbackMessage] = useState({ type: '', text: '' });
     const [view, setView] = useState('details');
 
-    const initialDate = new Date(post.scheduled_time_utc);
-    const [scheduleDate, setScheduleDate] = useState(initialDate.toISOString().split('T')[0]);
-    const roundedMinutes = Math.floor(initialDate.getUTCMinutes() / 15) * 15;
-    const initialTime = `${initialDate.getUTCHours().toString().padStart(2, '0')}:${roundedMinutes.toString().padStart(2, '0')}`;
-    const [scheduleTime, setScheduleTime] = useState(initialTime);
+    // FIX 1: Set initial state using local date/time methods
+    const getInitialLocalState = (utcDateString) => {
+        const dateObj = new Date(utcDateString);
+        const year = dateObj.getFullYear();
+        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+        const day = dateObj.getDate().toString().padStart(2, '0');
+        
+        const roundedMinutes = Math.floor(dateObj.getMinutes() / 15) * 15;
+        const hours = dateObj.getHours().toString().padStart(2, '0');
+        const minutes = roundedMinutes.toString().padStart(2, '0');
+
+        return {
+            date: `${year}-${month}-${day}`,
+            time: `${hours}:${minutes}`
+        };
+    };
+
+    const initialState = getInitialLocalState(post.scheduled_time_utc);
+    const [scheduleDate, setScheduleDate] = useState(initialState.date);
+    const [scheduleTime, setScheduleTime] = useState(initialState.time);
     
     useEffect(() => {
-        const postDate = new Date(post.scheduled_time_utc);
         setEditedCaption(post.post_caption || '');
-        setScheduleDate(postDate.toISOString().split('T')[0]);
-        const postRoundedMinutes = Math.floor(postDate.getUTCMinutes() / 15) * 15;
-        const postInitialTime = `${postDate.getUTCHours().toString().padStart(2, '0')}:${postRoundedMinutes.toString().padStart(2, '0')}`;
-        setScheduleTime(postInitialTime);
+        
+        // FIX 2: Re-calculate local state when the post prop changes
+        const localState = getInitialLocalState(post.scheduled_time_utc);
+        setScheduleDate(localState.date);
+        setScheduleTime(localState.time);
+
         setView('details');
         setFeedbackMessage({ type: '', text: '' });
     }, [post]);
@@ -97,7 +113,12 @@ export default function PostPreviewAndEditView({ post, mode = 'edit', onClose, o
 
     const handleUpdateCaption = () => handleApiAction({ action: 'update_caption', post_id: post.id, new_caption: editedCaption }, 'Caption updated!');
     const handleDelete = () => handleApiAction({ action: 'delete_post', post_id: post.id }, 'Post deleted.');
-    const handleReschedule = () => handleApiAction({ action: 'reschedule_post', post_id: post.id, new_schedule_time_utc: new Date(`${scheduleDate}T${scheduleTime}:00.000Z`).toISOString() }, 'Post rescheduled!');
+    
+    // FIX 3: Correctly convert local time back to UTC for the API call
+    const handleReschedule = () => {
+        const localDateTime = new Date(`${scheduleDate}T${scheduleTime}:00`);
+        handleApiAction({ action: 'reschedule_post', post_id: post.id, new_schedule_time_utc: localDateTime.toISOString() }, 'Post rescheduled!');
+    };
     
     const handlePrimaryAction = () => {
         if (mode === 'create') {
@@ -144,7 +165,7 @@ export default function PostPreviewAndEditView({ post, mode = 'edit', onClose, o
                         <textarea id="previewCaption" className={styles.previewCaptionTextarea} value={editedCaption} onChange={(e) => setEditedCaption(e.target.value)} rows={8} disabled={isProcessing || isGeneratingCaption} />
                         {mode === 'edit' && (
                              <button onClick={handleUpdateCaption} className={styles.actionButton} disabled={isProcessing || isGeneratingCaption || editedCaption === post.post_caption}>
-                                {isProcessing ? 'Saving...' : 'Update Caption'}
+                                 {isProcessing ? 'Saving...' : 'Update Caption'}
                             </button>
                         )}
                     </div>
