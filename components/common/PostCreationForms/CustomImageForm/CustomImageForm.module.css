@@ -10,46 +10,56 @@
     width: 100%;
 }
 
-.section {
-    margin-bottom: 2.5rem;
-}
-.section:last-of-type {
-    margin-bottom: 0;
-}
-
-.sectionHeader {
+/* NEW: Main two-column layout container */
+.unifiedLayout {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
+    gap: 2rem;
+    align-items: flex-start;
 }
 
-.sectionTitle {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
+/* Left Column */
+.imageColumn {
+    flex: 1 1 55%;
+    min-width: 280px;
+    position: relative;
+    background-color: var(--background-dark);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
 }
 
-/* Upload Area Styles */
+/* Right Column */
+.controlsColumn {
+    flex: 1 1 45%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
 .uploadArea {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1 / 1; /* Makes it a square, good for a placeholder */
     border: 2px dashed var(--border-color);
     border-radius: 8px;
-    padding: 3rem;
+    padding: 2rem;
     text-align: center;
     cursor: pointer;
-    background-color: var(--background-dark);
+    background-color: transparent; /* Changed to transparent */
     transition: background-color 0.2s, border-color 0.2s;
 }
 .uploadArea:hover {
-    background-color: #2d3748;
+    background-color: var(--surface-dark);
     border-color: var(--accent-color);
 }
 .uploadIcon {
     color: var(--accent-color);
     width: 48px;
     height: 48px;
-    margin: 0 auto 1rem;
+    margin-bottom: 1rem;
 }
 .uploadText {
     font-size: 1.2rem;
@@ -63,42 +73,25 @@
     margin-top: 0.25rem;
 }
 
-/* === NEW: Preview Layout Styles === */
-.previewLayout {
-    display: flex;
-    gap: 2rem;
-    align-items: flex-start;
-}
-.previewImageWrapper {
-    flex: 1 1 55%;
-    min-width: 280px;
-    position: relative;
-    background-color: var(--background-dark);
-    border-radius: 8px;
-}
 .previewImage {
     display: block;
     width: 100%;
     height: auto;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
 }
-.previewControls {
-    flex: 1 1 45%;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-.previewSection {
+
+/* Control Sections & Inputs */
+.controlSection {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    background-color: var(--background-dark);
-    padding: 1.5rem;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
+    width: 100%;
 }
-
+.sectionLabel {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
 .captionTextarea {
     width: 100%;
     padding: 0.75rem;
@@ -111,7 +104,40 @@
     min-height: 120px;
 }
 
-/* === NEW & REVISED: Action Button Styles === */
+.dateTimeInputs {
+    display: flex;
+    gap: 1rem;
+}
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+.inputGroup label {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+.inputGroup input,
+.inputGroup select {
+    padding: 0.75rem;
+    border-radius: 6px;
+    background-color: var(--surface-dark);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+/* Action Button Styles */
+.imageActions {
+    flex-direction: row;
+}
+
+.finalActions {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1.5rem;
+}
+
 .actionButton_FullWidth,
 .actionButton_Secondary,
 .actionButton_Schedule,
@@ -129,7 +155,6 @@
     cursor: pointer;
     transition: background-color 0.2s, opacity 0.2s;
 }
-
 .actionButton_FullWidth {
     background-color: var(--accent-color);
     color: white;
@@ -137,7 +162,6 @@
 .actionButton_FullWidth:hover:not(:disabled) {
     background-color: var(--accent-color-hover);
 }
-
 .actionButton_Secondary {
     background-color: #4b5563;
     color: var(--text-primary);
@@ -145,27 +169,20 @@
 .actionButton_Secondary:hover:not(:disabled) {
     background-color: #6b7280;
 }
-
-.actionsSection {
-    flex-direction: column;
-    gap: 1rem;
-}
-
 .actionButton_Schedule {
-    background-color: #38a169; /* Green to match reschedule button */
+    background-color: #38a169;
     color: #fff;
 }
 .actionButton_Schedule:hover:not(:disabled) {
     background-color: #2f855a;
 }
 .actionButton_PostNow {
-    background-color: #ef4444; /* Red for high-impact action */
+    background-color: #ef4444;
     color: #fff;
 }
 .actionButton_PostNow:hover:not(:disabled) {
     background-color: #dc2626;
 }
-
 .actionButton_Schedule:disabled,
 .actionButton_PostNow:disabled,
 .actionButton_FullWidth:disabled,
@@ -176,7 +193,7 @@
 
 /* Mobile Adjustments */
 @media (max-width: 768px) {
-    .previewLayout {
+    .unifiedLayout {
         flex-direction: column;
     }
 }
