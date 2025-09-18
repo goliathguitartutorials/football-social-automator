@@ -63,3 +63,12 @@ export const BespokeIcon = () => (
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
     </Icon>
 );
+
+// NEW: Icon for the Custom Image upload workflow
+export const CustomImageIcon = () => (
+    <Icon>
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+        <polyline points="21 15 16 10 5 21"></polyline>
+    </Icon>
+);

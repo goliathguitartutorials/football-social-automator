@@ -4,22 +4,23 @@
  * PAGE: Schedule Page
  * FILE: /components/SchedulePage/CreatePostView/CreatePostView.js
  * ==========================================================
-*/
+ */
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import styles from './CreatePostView.module.css';
 import { useAppContext } from '@/app/context/AppContext';
-import PostPreviewAndEditView from '../PostPreviewAndEditView/PostPreviewAndEditView'; // Import the new component
+import PostPreviewAndEditView from '../PostPreviewAndEditView/PostPreviewAndEditView';
 
 // Reusable Forms
 import UpNextForm from '@/components/common/PostCreationForms/UpNextForm/UpNextForm';
 import MatchDayForm from '@/components/common/PostCreationForms/MatchDayForm/MatchDayForm';
 import SquadForm from '@/components/common/PostCreationForms/SquadForm/SquadForm';
 import MatchResultForm from '@/components/common/PostCreationForms/MatchResultForm/MatchResultForm';
+import CustomImageForm from '@/components/common/PostCreationForms/CustomImageForm/CustomImageForm'; // Import the new form
 
 // Icons
-import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon } from '@/components/CreatePage/CreatePageIcons';
+import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, CustomImageIcon } from '@/components/CreatePage/CreatePageIcons'; // Import the new icon
 import { ArrowLeftIcon, ArrowRightIcon } from './CreatePostViewIcons';
 
 const postTypes = [
@@ -27,6 +28,7 @@ const postTypes = [
     { id: 'matchDay', label: 'Match Day', component: MatchDayForm, action: 'match_day_announcement', icon: <MatchDayIcon /> },
     { id: 'squad', label: 'Squad', component: SquadForm, action: 'squad_announcement', icon: <SquadIcon /> },
     { id: 'result', label: 'Result', component: MatchResultForm, action: 'result', icon: <ResultIcon /> },
+    { id: 'customImage', label: 'Custom Image', component: CustomImageForm, action: 'custom', icon: <CustomImageIcon /> }, // Add new post type
 ];
 
 const bannerImages = {
@@ -34,6 +36,7 @@ const bannerImages = {
     matchDay: { src: '/matchday.png', position: 'top' },
     squad: { src: '/squad.png', position: 'top' },
     result: { src: '/result.png', position: 'top' },
+    // No banner for customImage, so it will be omitted correctly
 };
 
 const generateTimeSlots = () => {
@@ -93,7 +96,6 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         if (scheduleDate) {
             setView('CONFIG');
             
-            // FIX 1: Correctly format the local date without converting to UTC
             const year = scheduleDate.getFullYear();
             const month = (scheduleDate.getMonth() + 1).toString().padStart(2, '0');
             const day = scheduleDate.getDate().toString().padStart(2, '0');
@@ -143,13 +145,43 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             setIsSubmitting(false);
         }
     };
+    
+    // NEW: Handler for submitting a custom image post
+    const handleCustomImageSubmit = async ({ imageFile, caption, action }) => {
+        setIsSubmitting(true);
+        setMessage('');
+
+        const localDateTime = new Date(`${selectedDate}T${selectedTime}:00`);
+        const schedule_time_utc = localDateTime.toISOString();
+
+        const apiFormData = new FormData();
+        apiFormData.append('image', imageFile);
+        apiFormData.append('caption', caption);
+        apiFormData.append('schedule_time_utc', schedule_time_utc);
+        apiFormData.append('action', action); // 'schedule' or 'post_now'
+
+        try {
+            // NOTE: We will create this API route in a future step.
+            const response = await fetch('/api/schedule-custom-post', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${authKey}` },
+                body: apiFormData
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to process post.');
+
+            setMessage('Post scheduled successfully!');
+            setTimeout(onPostScheduled, 1500);
+        } catch (err) {
+            setMessage(`Error: ${err.message}`);
+            setIsSubmitting(false);
+        }
+    };
 
     const handleSchedulePost = async ({ caption, date, time }) => {
-        // This function now receives the final data from PostPreviewAndEditView
         setIsSubmitting(true);
         setMessage('');
         
-        // FIX 2: Create a date from local parts, then convert to a proper UTC ISO string
         const localDateTime = new Date(`${date}T${time}:00`);
         const schedule_time_utc = localDateTime.toISOString();
 
@@ -161,7 +193,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             schedule_time_utc: schedule_time_utc,
             post_type: selectedPostType.id,
             image_url: previewUrl,
-            caption: caption // Use the potentially updated caption
+            caption: caption
         };
 
         try {
@@ -184,7 +216,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         const previewPostData = {
             image_url: previewUrl,
             post_caption: formData.caption,
-            scheduled_time_utc: localDateTime.toISOString(), // Correctly set initial time for preview
+            scheduled_time_utc: localDateTime.toISOString(),
         };
 
         return (
@@ -254,14 +286,22 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
             {view === 'FORM' && (
                 <section className={styles.section}>
                     <div className={styles.formWrapper}>
-                        <ActiveForm
-                            appData={appData}
-                            initialData={formData}
-                            onSubmit={handleGeneratePreview}
-                            onGenerateCaption={handleGenerateCaption}
-                            isSubmitting={isSubmitting}
-                            isGeneratingCaption={isGeneratingCaption}
-                        />
+                        {selectedPostType.id === 'customImage' ? (
+                            <CustomImageForm
+                                context="schedule"
+                                onSubmit={handleCustomImageSubmit}
+                                isSubmitting={isSubmitting}
+                            />
+                        ) : (
+                            <ActiveForm
+                                appData={appData}
+                                initialData={formData}
+                                onSubmit={handleGeneratePreview}
+                                onGenerateCaption={handleGenerateCaption}
+                                isSubmitting={isSubmitting}
+                                isGeneratingCaption={isGeneratingCaption}
+                            />
+                        )}
                     </div>
                     <div className={`${styles.actions} ${styles.formActions}`}>
                         <button onClick={() => setView('CONFIG')} className={styles.backButton}>
