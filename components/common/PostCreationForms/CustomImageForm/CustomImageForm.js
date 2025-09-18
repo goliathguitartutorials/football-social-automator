@@ -7,9 +7,16 @@
  */
 'use client';
 import { useState, useRef } from 'react';
+import dynamic from 'next/dynamic'; // FIXED: Import 'dynamic' from Next.js
 import styles from './CustomImageForm.module.css';
 import { UploadIcon, EditIcon, ScheduleIcon, PostNowIcon } from './CustomImageFormIcons';
-import CanvasEditor from '../../CanvasEditor/CanvasEditor'; // UPDATED: Corrected import path
+
+// FIXED: Use a dynamic import to ensure the CanvasEditor only loads on the client-side
+const CanvasEditor = dynamic(() => import('../../CanvasEditor/CanvasEditor'), {
+    ssr: false,
+    loading: () => <p>Loading Editor...</p> // Optional: Show a loading message
+});
+
 
 export default function CustomImageForm({
     context = 'schedule',
