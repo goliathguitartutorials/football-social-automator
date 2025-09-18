@@ -17,10 +17,10 @@ import UpNextForm from '@/components/common/PostCreationForms/UpNextForm/UpNextF
 import MatchDayForm from '@/components/common/PostCreationForms/MatchDayForm/MatchDayForm';
 import SquadForm from '@/components/common/PostCreationForms/SquadForm/SquadForm';
 import MatchResultForm from '@/components/common/PostCreationForms/MatchResultForm/MatchResultForm';
-import CustomImageForm from '@/components/common/PostCreationForms/CustomImageForm/CustomImageForm'; // Import the new form
+import CustomImageForm from '@/components/common/PostCreationForms/CustomImageForm/CustomImageForm';
 
 // Icons
-import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, CustomImageIcon } from '@/components/CreatePage/CreatePageIcons'; // Import the new icon
+import { UpNextIcon, MatchDayIcon, SquadIcon, ResultIcon, CustomImageIcon } from '@/components/CreatePage/CreatePageIcons';
 import { ArrowLeftIcon, ArrowRightIcon } from './CreatePostViewIcons';
 
 const postTypes = [
@@ -28,7 +28,7 @@ const postTypes = [
     { id: 'matchDay', label: 'Match Day', component: MatchDayForm, action: 'match_day_announcement', icon: <MatchDayIcon /> },
     { id: 'squad', label: 'Squad', component: SquadForm, action: 'squad_announcement', icon: <SquadIcon /> },
     { id: 'result', label: 'Result', component: MatchResultForm, action: 'result', icon: <ResultIcon /> },
-    { id: 'customImage', label: 'Custom Image', component: CustomImageForm, action: 'custom', icon: <CustomImageIcon /> }, // Add new post type
+    { id: 'customImage', label: 'Custom Image', component: CustomImageForm, action: 'custom', icon: <CustomImageIcon /> },
 ];
 
 const bannerImages = {
@@ -36,7 +36,7 @@ const bannerImages = {
     matchDay: { src: '/matchday.png', position: 'top' },
     squad: { src: '/squad.png', position: 'top' },
     result: { src: '/result.png', position: 'top' },
-    // No banner for customImage, so it will be omitted correctly
+    customImage: { src: '/custom.png', position: 'middleHighMore' }, // ADDED: Banner for Custom Image
 };
 
 const generateTimeSlots = () => {
@@ -146,7 +146,6 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         }
     };
     
-    // NEW: Handler for submitting a custom image post
     const handleCustomImageSubmit = async ({ imageFile, caption, action }) => {
         setIsSubmitting(true);
         setMessage('');
@@ -158,10 +157,9 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         apiFormData.append('image', imageFile);
         apiFormData.append('caption', caption);
         apiFormData.append('schedule_time_utc', schedule_time_utc);
-        apiFormData.append('action', action); // 'schedule' or 'post_now'
+        apiFormData.append('action', action);
 
         try {
-            // NOTE: We will create this API route in a future step.
             const response = await fetch('/api/schedule-custom-post', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${authKey}` },
