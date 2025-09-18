@@ -9,19 +9,7 @@
 import { useState, useRef } from 'react';
 import styles from './CustomImageForm.module.css';
 import { UploadIcon, EditIcon, ScheduleIcon, PostNowIcon } from './CustomImageFormIcons';
-
-// NEW: A placeholder for the canvas editor component we will build next.
-const CanvasEditor = ({ imagePreview, onBack }) => (
-    <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: 'var(--background-dark)', borderRadius: '8px' }}>
-        <h2>Canvas Editor (Placeholder)</h2>
-        <p>The image editor will be implemented here.</p>
-        <img src={imagePreview} alt="Editing preview" style={{ maxWidth: '100%', maxHeight: '300px', margin: '1rem 0' }} />
-        <button type="button" className={styles.actionButton_Secondary} onClick={onBack} style={{ width: 'auto' }}>
-            Back to Form
-        </button>
-    </div>
-);
-
+import CanvasEditor from '../../CanvasEditor/CanvasEditor'; // UPDATED: Corrected import path
 
 export default function CustomImageForm({
     context = 'schedule',
@@ -38,7 +26,6 @@ export default function CustomImageForm({
     const [caption, setCaption] = useState('');
     const fileInputRef = useRef(null);
 
-    // NEW: State to manage which view is active ('upload' or 'editor')
     const [viewMode, setViewMode] = useState('upload');
 
     const handleImageUpload = (e) => {
@@ -71,7 +58,7 @@ export default function CustomImageForm({
         });
     };
 
-    // If the view is the editor, render the CanvasEditor placeholder.
+    // If the view is the editor, render the real CanvasEditor component.
     if (viewMode === 'editor') {
         return <CanvasEditor imagePreview={imagePreview} onBack={() => setViewMode('upload')} />;
     }
@@ -118,7 +105,6 @@ export default function CustomImageForm({
                     {/* Image Actions Section (only appears after upload) */}
                     {imagePreview && (
                         <div className={`${styles.controlSection} ${styles.imageActions}`}>
-                             {/* MODIFIED: This button now switches the view to the editor */}
                             <button type="button" className={styles.actionButton_FullWidth} onClick={() => setViewMode('editor')}>
                                 <EditIcon /> Adjust Canvas
                             </button>
