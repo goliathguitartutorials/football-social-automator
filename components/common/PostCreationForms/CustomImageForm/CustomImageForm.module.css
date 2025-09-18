@@ -7,29 +7,26 @@
  */
 
 .formContainer {
-    /* Inherits styling from parent, no specific container styles needed yet */
+    width: 100%;
 }
 
 .section {
     margin-bottom: 2.5rem;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 2rem;
 }
 .section:last-of-type {
     margin-bottom: 0;
-    border-bottom: none;
-    padding-bottom: 0;
 }
 
 .sectionHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .sectionTitle {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
     color: var(--text-primary);
     margin: 0;
 }
@@ -66,63 +63,42 @@
     margin-top: 0.25rem;
 }
 
-/* Preview Styles */
-.previewContainer {
-    display: grid;
-    grid-template-columns: 1fr 200px;
-    gap: 1.5rem;
+/* === NEW: Preview Layout Styles === */
+.previewLayout {
+    display: flex;
+    gap: 2rem;
     align-items: flex-start;
 }
-.imageWrapper {
-    width: 100%;
-    max-width: 450px;
-    aspect-ratio: 1 / 1;
+.previewImageWrapper {
+    flex: 1 1 55%;
+    min-width: 280px;
+    position: relative;
     background-color: var(--background-dark);
     border-radius: 8px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 .previewImage {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
 }
-.previewActions {
+.previewControls {
+    flex: 1 1 45%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+.previewSection {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-}
-.editButton, .changeButton {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 0.95rem;
-    transition: background-color 0.2s;
-}
-.editButton {
-    background-color: var(--accent-color);
-    color: white;
-}
-.editButton:hover {
-    background-color: var(--accent-color-hover);
-}
-.changeButton {
-    background-color: #4b5563;
-    color: var(--text-primary);
-}
-.changeButton:hover {
-    background-color: #6b7280;
+    background-color: var(--background-dark);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
 }
 
-/* Caption Styles */
 .captionTextarea {
     width: 100%;
     padding: 0.75rem;
@@ -132,65 +108,75 @@
     color: var(--text-primary);
     font-size: 1rem;
     resize: vertical;
-    min-height: 150px;
+    min-height: 120px;
 }
 
-/* Action Button Styles */
-.actionsContainer {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 1.5rem;
-}
-.actionButton_Schedule, .actionButton_PostNow {
+/* === NEW & REVISED: Action Button Styles === */
+.actionButton_FullWidth,
+.actionButton_Secondary,
+.actionButton_Schedule,
+.actionButton_PostNow {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
-    padding: 0.85rem 2rem;
-    font-size: 1.1rem;
+    width: 100%;
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
     font-weight: bold;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     transition: background-color 0.2s, opacity 0.2s;
 }
-.actionButton_Schedule {
+
+.actionButton_FullWidth {
     background-color: var(--accent-color);
+    color: white;
+}
+.actionButton_FullWidth:hover:not(:disabled) {
+    background-color: var(--accent-color-hover);
+}
+
+.actionButton_Secondary {
+    background-color: #4b5563;
+    color: var(--text-primary);
+}
+.actionButton_Secondary:hover:not(:disabled) {
+    background-color: #6b7280;
+}
+
+.actionsSection {
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.actionButton_Schedule {
+    background-color: #38a169; /* Green to match reschedule button */
     color: #fff;
 }
 .actionButton_Schedule:hover:not(:disabled) {
-    background-color: var(--accent-color-hover);
+    background-color: #2f855a;
 }
 .actionButton_PostNow {
-    background-color: #ef4444;
+    background-color: #ef4444; /* Red for high-impact action */
     color: #fff;
 }
 .actionButton_PostNow:hover:not(:disabled) {
     background-color: #dc2626;
 }
-.actionButton_Schedule:disabled, .actionButton_PostNow:disabled {
-    background-color: #4b5563;
+
+.actionButton_Schedule:disabled,
+.actionButton_PostNow:disabled,
+.actionButton_FullWidth:disabled,
+.actionButton_Secondary:disabled {
+    opacity: 0.6;
     cursor: not-allowed;
-    opacity: 0.7;
 }
 
 /* Mobile Adjustments */
 @media (max-width: 768px) {
-    .previewContainer {
-        grid-template-columns: 1fr;
-    }
-    .previewActions {
-        flex-direction: row;
-        justify-content: center;
-    }
-    .imageWrapper {
-        max-width: 100%;
-    }
-    .actionsContainer {
-        flex-direction: column-reverse;
-        align-items: stretch;
-        gap: 1.5rem;
+    .previewLayout {
+        flex-direction: column;
     }
 }
