@@ -219,61 +219,64 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
     }
     
     return (
-        <div className={styles.pageContainer}>
-            <div className={styles.viewHeader}>
+        <div className={styles.viewContainer}>
+            <div className={styles.topHeader}>
                 <h1 className={styles.viewTitle}>Schedule New Post</h1>
                 <button onClick={onCancel} className={styles.cancelButton}>
                     <ArrowLeftIcon /> Back to Calendar
                 </button>
             </div>
 
-            {activeBanner && (
-                <div className={styles.bannerContainer}>
-                    <Image
-                        key={selectedPostType.id}
-                        src={activeBanner.src}
-                        alt={`${selectedPostType.label} Banner`}
-                        fill priority
-                        placeholder="blur"
-                        blurDataURL={activeBanner.src}
-                        className={`${styles.bannerImage} ${styles[activeBanner.position]}`}
-                    />
-                </div>
-            )}
-
-            <section className={styles.section}>
-                <h3 className={styles.subHeader}>Select Post Type</h3>
-                <div className={styles.selectorGrid}>
-                    {postTypes.map(type => (
-                        <button key={type.id} className={`${styles.typeButton} ${selectedPostType?.id === type.id ? styles.selectedType : ''}`} onClick={() => setSelectedPostType(type)}>
-                            <span className={styles.typeIcon}>{type.icon}</span>
-                            {type.label}
+            <header className={styles.contentHeader}>
+                <nav className={styles.subNav}>
+                    {postTypes.map((type) => (
+                        <button
+                            key={type.id}
+                            className={`${styles.navButton} ${
+                                selectedPostType.id === type.id ? styles.active : ''
+                            }`}
+                            onClick={() => setSelectedPostType(type)}
+                        >
+                            <span className={styles.navIcon}>{type.icon}</span>
+                            <span className={styles.navLabel}>{type.label}</span>
                         </button>
                     ))}
-                </div>
-            </section>
-            
-            {/* RENDERER FOR CUSTOM IMAGE (UNIFIED VIEW) */}
-            {selectedPostType.id === 'customImage' && (
-                 <section className={styles.section}>
-                     <div className={styles.formWrapper}>
-                         <CustomImageForm
-                             context="schedule"
-                             onSubmit={handleCustomImageSubmit}
-                             isSubmitting={isSubmitting}
-                             selectedDate={selectedDate}
-                             onDateChange={(e) => setSelectedDate(e.target.value)}
-                             selectedTime={selectedTime}
-                             onTimeChange={(e) => setSelectedTime(e.target.value)}
-                             timeSlots={timeSlots}
-                         />
-                     </div>
-                 </section>
-            )}
+                </nav>
 
-            {/* RENDERER FOR TEMPLATE-BASED FORMS (SINGLE-STEP VIEW) */}
-            {selectedPostType.id !== 'customImage' && view === 'FORM' && (
-                <section className={styles.section}>
+                {activeBanner && (
+                     <div className={styles.bannerContainer}>
+                        <Image
+                            key={selectedPostType.id}
+                            src={activeBanner.src}
+                            alt={`${selectedPostType.label} Banner`}
+                            fill priority
+                            placeholder="blur"
+                            blurDataURL={activeBanner.src}
+                            className={`${styles.bannerImage} ${styles[activeBanner.position]}`}
+                        />
+                    </div>
+                )}
+            </header>
+
+            <div className={styles.contentArea}>
+                {/* RENDERER FOR CUSTOM IMAGE (UNIFIED VIEW) */}
+                {selectedPostType.id === 'customImage' && (
+                    <div className={styles.formWrapper}>
+                        <CustomImageForm
+                            context="schedule"
+                            onSubmit={handleCustomImageSubmit}
+                            isSubmitting={isSubmitting}
+                            selectedDate={selectedDate}
+                            onDateChange={(e) => setSelectedDate(e.target.value)}
+                            selectedTime={selectedTime}
+                            onTimeChange={(e) => setSelectedTime(e.target.value)}
+                            timeSlots={timeSlots}
+                        />
+                    </div>
+                )}
+
+                {/* RENDERER FOR TEMPLATE-BASED FORMS (SINGLE-STEP VIEW) */}
+                {selectedPostType.id !== 'customImage' && view === 'FORM' && (
                     <div className={styles.formWrapper}>
                         <ActiveForm
                             appData={appData}
@@ -284,8 +287,8 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                             isGeneratingCaption={isGeneratingCaption}
                         />
                     </div>
-                </section>
-            )}
+                )}
+            </div>
             
             {message && <p className={styles.message}>{message}</p>}
         </div>
