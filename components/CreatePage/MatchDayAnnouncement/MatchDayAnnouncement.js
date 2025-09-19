@@ -18,6 +18,7 @@ const initialFormData = {
     matchDate: '',
     kickOffTime: '',
     venue: '',
+    teamType: 'First Team', // ADDED: Team type state
     caption: '',
     selectedBackground: '',
     saveCustomBackground: true,
@@ -68,6 +69,7 @@ export default function MatchDayAnnouncement() {
             match_date: data.match_date, // This is already formatted by the form
             kick_off_time: data.kickOffTime,
             venue: data.venue,
+            team: data.teamType, // ADDED: Team type to the payload
             background: data.selectedBackground,
             caption: data.caption,
             save_background: data.saveCustomBackground
