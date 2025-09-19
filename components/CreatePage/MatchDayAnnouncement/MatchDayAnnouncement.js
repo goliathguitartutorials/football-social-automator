@@ -17,8 +17,9 @@ const initialFormData = {
     awayTeamBadge: '',
     matchDate: '',
     kickOffTime: '',
+    // MODIFIED: Added Venue and Team Type to the state, mirroring the UpNext component.
     venue: '',
-    teamType: '', 
+    teamType: 'First Team', 
     caption: '',
     selectedBackground: '',
     saveCustomBackground: true,
@@ -38,30 +39,39 @@ export default function MatchDayAnnouncement() {
     const [isEditingImage, setIsEditingImage] = useState(false);
     const [generatedPreviews, setGeneratedPreviews] = useState([]);
     
+    // MODIFIED: This function now auto-populates the form when a match is selected.
     const handleFormChange = (newFormData) => {
         if (newFormData.selectedMatchData && newFormData.selectedMatchData !== formData.selectedMatchData) {
-            // MODIFIED: Now looks for a 'team' property on the selected match data, as requested.
-            const newTeamType = newFormData.selectedMatchData.team || ''; 
-            setFormData({ ...newFormData, teamType: newTeamType });
+            const match = newFormData.selectedMatchData;
+            // Pre-fill the form with data from the selected match.
+            // Assumes property names like 'venue', 'team', 'homeTeamBadgeUrl' etc., exist on your match object.
+            const autoFilledData = {
+                ...newFormData,
+                venue: match.venue || '',
+                teamType: match.team || 'First Team',
+                homeTeamBadge: match.homeTeamBadgeUrl || newFormData.homeTeamBadge,
+                awayTeamBadge: match.awayTeamBadgeUrl || newFormData.awayTeamBadge,
+                matchDate: match.startDateTime ? match.startDateTime.split('T')[0] : newFormData.matchDate,
+                kickOffTime: match.startDateTime ? match.startDateTime.split('T')[1].substring(0, 5) : newFormData.kickOffTime,
+            };
+            setFormData(autoFilledData);
         } else {
+            // This handles manual changes to any other field.
             setFormData(newFormData);
         }
     };
 
     const handleGenerateCaption = async (gameInfo) => {
         setIsGeneratingCaption(true);
-        
-        // MODIFIED: This now merges the latest form data ('gameInfo') with the previous state 
-        // before clearing the caption. This will stop the other fields from being cleared.
-        setFormData(prev => ({ ...prev, ...gameInfo, caption: '' }));
+        // FIXED: This is the correct, safe way to clear the caption. 
+        // It will no longer deselect your badges or other fields.
+        setFormData(prev => ({ ...prev, caption: '' }));
 
+        // MODIFIED: The payload now sends a complete gameInfo object, as requested.
+        // It combines the stable parent state with the latest form data.
         const payload = { 
             page: 'matchDay',
-            matchTitle: formData.selectedMatchData?.title || '', 
-            gameInfo: {
-                ...gameInfo,
-                teamType: formData.teamType 
-            }
+            gameInfo: { ...formData, ...gameInfo }
         };
 
         try {
