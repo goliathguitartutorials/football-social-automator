@@ -18,7 +18,7 @@ const initialFormData = {
     matchDate: '',
     kickOffTime: '',
     venue: '',
-    teamType: '', // MODIFIED: Removed hardcoded value. This will be set dynamically.
+    teamType: '', 
     caption: '',
     selectedBackground: '',
     saveCustomBackground: true,
@@ -38,11 +38,10 @@ export default function MatchDayAnnouncement() {
     const [isEditingImage, setIsEditingImage] = useState(false);
     const [generatedPreviews, setGeneratedPreviews] = useState([]);
     
-    // ADDED: New handler to dynamically update state from the form component.
     const handleFormChange = (newFormData) => {
-        // When a match is selected in the form, update the teamType from its data.
         if (newFormData.selectedMatchData && newFormData.selectedMatchData !== formData.selectedMatchData) {
-            const newTeamType = newFormData.selectedMatchData.teamType || ''; // Assumes the match object has a 'teamType' property.
+            // MODIFIED: Now looks for a 'team' property on the selected match data, as requested.
+            const newTeamType = newFormData.selectedMatchData.team || ''; 
             setFormData({ ...newFormData, teamType: newTeamType });
         } else {
             setFormData(newFormData);
@@ -51,15 +50,17 @@ export default function MatchDayAnnouncement() {
 
     const handleGenerateCaption = async (gameInfo) => {
         setIsGeneratingCaption(true);
-        setFormData(prev => ({ ...prev, caption: '' }));
+        
+        // MODIFIED: This now merges the latest form data ('gameInfo') with the previous state 
+        // before clearing the caption. This will stop the other fields from being cleared.
+        setFormData(prev => ({ ...prev, ...gameInfo, caption: '' }));
 
-        // MODIFIED: Payload now includes dynamic teamType and matchTitle.
         const payload = { 
             page: 'matchDay',
-            matchTitle: formData.selectedMatchData?.title || '', // Assumes match object has a 'title' property.
+            matchTitle: formData.selectedMatchData?.title || '', 
             gameInfo: {
                 ...gameInfo,
-                teamType: formData.teamType // This is now dynamic from the selected match.
+                teamType: formData.teamType 
             }
         };
 
