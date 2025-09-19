@@ -18,7 +18,7 @@ const initialFormData = {
     matchDate: '',
     kickOffTime: '',
     venue: '',
-    teamType: 'First Team', // ADDED: Team type state
+    teamType: '', // MODIFIED: Removed hardcoded value. This will be set dynamically.
     caption: '',
     selectedBackground: '',
     saveCustomBackground: true,
@@ -38,16 +38,28 @@ export default function MatchDayAnnouncement() {
     const [isEditingImage, setIsEditingImage] = useState(false);
     const [generatedPreviews, setGeneratedPreviews] = useState([]);
     
+    // ADDED: New handler to dynamically update state from the form component.
+    const handleFormChange = (newFormData) => {
+        // When a match is selected in the form, update the teamType from its data.
+        if (newFormData.selectedMatchData && newFormData.selectedMatchData !== formData.selectedMatchData) {
+            const newTeamType = newFormData.selectedMatchData.teamType || ''; // Assumes the match object has a 'teamType' property.
+            setFormData({ ...newFormData, teamType: newTeamType });
+        } else {
+            setFormData(newFormData);
+        }
+    };
+
     const handleGenerateCaption = async (gameInfo) => {
         setIsGeneratingCaption(true);
         setFormData(prev => ({ ...prev, caption: '' }));
 
-        // MODIFIED: Added teamType to the gameInfo object being sent.
+        // MODIFIED: Payload now includes dynamic teamType and matchTitle.
         const payload = { 
-            page: 'matchDay', 
+            page: 'matchDay',
+            matchTitle: formData.selectedMatchData?.title || '', // Assumes match object has a 'title' property.
             gameInfo: {
                 ...gameInfo,
-                teamType: formData.teamType
+                teamType: formData.teamType // This is now dynamic from the selected match.
             }
         };
 
@@ -75,10 +87,10 @@ export default function MatchDayAnnouncement() {
             action,
             home_team_badge: data.homeTeamBadge,
             away_team_badge: data.awayTeamBadge,
-            match_date: data.match_date, // This is already formatted by the form
+            match_date: data.match_date, 
             kick_off_time: data.kickOffTime,
             venue: data.venue,
-            team: data.teamType, // ADDED: Team type to the payload
+            team: data.teamType, 
             background: data.selectedBackground,
             caption: data.caption,
             save_background: data.saveCustomBackground
@@ -96,7 +108,7 @@ export default function MatchDayAnnouncement() {
                 setView('PREVIEW');
             } else if (action === 'yolo') {
                 setMessage('YOLO post successfully generated and sent!');
-                setFormData(initialFormData); // Reset form on success
+                setFormData(initialFormData); 
             }
         } catch (err) {
             setMessage(`Error: ${err.message}`);
@@ -197,7 +209,7 @@ export default function MatchDayAnnouncement() {
                     </div>
                 </div>
                 <div className={styles.previewActions}>
-                    <button onClick={handleBackToEdit} className={styles.backButton} disabled={isSubmitting || isSubmitting}>Back to Config</button>
+                    <button onClick={handleBackToEdit} className={styles.backButton} disabled={isSubmitting || isEditingImage}>Back to Config</button>
                     <button onClick={handlePostToSocial} disabled={isSubmitting || isEditingImage} className={styles.postButton}>
                         {isSubmitting ? 'Posting...' : 'Post Now'}
                     </button>
@@ -212,6 +224,7 @@ export default function MatchDayAnnouncement() {
             <MatchDayForm
                 appData={appData}
                 initialData={formData}
+                onFormChange={handleFormChange} 
                 onSubmit={handleGeneratePreview}
                 onYoloSubmit={handleYoloPost}
                 onGenerateCaption={handleGenerateCaption}
