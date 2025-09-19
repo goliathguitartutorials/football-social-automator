@@ -41,7 +41,16 @@ export default function MatchDayAnnouncement() {
     const handleGenerateCaption = async (gameInfo) => {
         setIsGeneratingCaption(true);
         setFormData(prev => ({ ...prev, caption: '' }));
-        const payload = { page: 'matchDay', gameInfo };
+
+        // MODIFIED: Added teamType to the gameInfo object being sent.
+        const payload = { 
+            page: 'matchDay', 
+            gameInfo: {
+                ...gameInfo,
+                teamType: formData.teamType
+            }
+        };
+
         try {
             const response = await fetch('/api/generate-caption', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
             if (!response.ok) { throw new Error('Failed to generate caption.'); }
@@ -188,7 +197,7 @@ export default function MatchDayAnnouncement() {
                     </div>
                 </div>
                 <div className={styles.previewActions}>
-                    <button onClick={handleBackToEdit} className={styles.backButton} disabled={isSubmitting || isEditingImage}>Back to Config</button>
+                    <button onClick={handleBackToEdit} className={styles.backButton} disabled={isSubmitting || isSubmitting}>Back to Config</button>
                     <button onClick={handlePostToSocial} disabled={isSubmitting || isEditingImage} className={styles.postButton}>
                         {isSubmitting ? 'Posting...' : 'Post Now'}
                     </button>
