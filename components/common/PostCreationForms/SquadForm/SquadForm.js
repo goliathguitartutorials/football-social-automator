@@ -68,12 +68,13 @@ const PlayerAutocomplete = ({ index, value, onSelect, players, selectedPlayers }
 };
 
 
-export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
+export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloSubmit, isSubmitting, authKey }) {
     const { players = [], backgrounds = [], badges = [], matches = [] } = appData;
 
     const [formData, setFormData] = useState({});
     const [badgeMessage, setBadgeMessage] = useState('');
     const [backgroundSource, setBackgroundSource] = useState('gallery');
+    const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
 
     useEffect(() => {
         setFormData({
@@ -92,7 +93,7 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
     };
     
     const handlePlayerSelect = (index, value) => {
-        const newSelectedPlayers = [...formData.selectedPlayers];
+        const newSelectedPlayers = [...(formData.selectedPlayers || Array(16).fill(''))];
         newSelectedPlayers[index] = value;
         setFormData(prev => ({ ...prev, selectedPlayers: newSelectedPlayers }));
     };
@@ -108,11 +109,26 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
     const handleMatchSelect = (eventId) => {
         setBadgeMessage('');
         if (!eventId) {
-            setFormData(prev => ({ ...prev, homeTeamBadge: '', awayTeamBadge: '' }));
+            setFormData(prev => ({
+                ...prev,
+                homeTeamBadge: '',
+                awayTeamBadge: '',
+                matchDate: '',
+                kickOffTime: '',
+                venue: '',
+                teamType: 'First Team',
+                selectedMatchData: null
+            }));
             return;
         }
         const selectedMatch = matches.find(m => m.eventId === eventId);
         if (!selectedMatch) return;
+
+        const venue = selectedMatch.venue;
+        const dateTime = new Date(selectedMatch.startDateTime);
+        const matchDate = dateTime.toISOString().split('T')[0];
+        const kickOffTime = dateTime.toTimeString().substring(0, 5);
+        const teamType = `${selectedMatch.team.charAt(0).toUpperCase()}${selectedMatch.team.slice(1)} Team`.replace('First-team', 'First Team');
 
         const [homeTeamName, awayTeamName] = selectedMatch.title.split(' vs ');
         const glannauBadge = badges.find(b => b.Name.toLowerCase().includes('glannau'))?.Link || '';
@@ -138,10 +154,20 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
             setBadgeMessage("Opposition badge not matched. Please select manually.");
         }
         
-        setFormData(prev => ({ ...prev, homeTeamBadge: foundHomeBadge, awayTeamBadge: foundAwayBadge }));
+        setFormData(prev => ({
+            ...prev,
+            homeTeamBadge: foundHomeBadge,
+            awayTeamBadge: foundAwayBadge,
+            matchDate,
+            kickOffTime,
+            venue,
+            teamType,
+            selectedMatchData: selectedMatch
+        }));
     };
 
-    const handleCaptionGeneration = () => {
+    const handleCaptionGeneration = async () => {
+        setIsGeneratingCaption(true);
         const getTeamNameFromBadge = (badgeUrl) => {
             const badge = badges.find(b => b.Link === badgeUrl);
             if (!badge) return 'Unknown Team';
@@ -150,24 +176,53 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
         const gameInfo = {
             homeTeam: getTeamNameFromBadge(formData.homeTeamBadge),
             awayTeam: getTeamNameFromBadge(formData.awayTeamBadge),
+            matchDate: formData.matchDate,
+            kickOffTime: formData.kickOffTime,
+            venue: formData.venue,
+            teamType: formData.teamType,
+            competition: formData.selectedMatchData?.competition || '',
+            referee: formData.selectedMatchData?.referee || ''
         };
-        onGenerateCaption(gameInfo);
+
+        const payload = { page: 'squad', gameInfo };
+
+        try {
+            const response = await fetch('/api/generate-caption', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) { throw new Error('Failed to generate caption.'); }
+            const result = await response.json();
+            setFormData(prev => ({ ...prev, caption: result.caption || 'Sorry, could not generate a caption.' }));
+        } catch (err) {
+            setFormData(prev => ({ ...prev, caption: `Error: ${err.message}` }));
+        } finally {
+            setIsGeneratingCaption(false);
+        }
+    };
+    
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSubmit(formData);
+    };
+
+    const handleYoloSubmit = (e) => {
+        e.preventDefault();
+        onYoloSubmit(formData);
     };
 
     return (
-        <form className={styles.formContainer} onSubmit={(e) => { e.preventDefault(); onSubmit(formData); }}>
-            <div className={styles.section}>
-                <div className={styles.formGroupFull}>
-                    <label htmlFor="matchSelector">Select a Match (Optional)</label>
-                    <select id="matchSelector" onChange={(e) => handleMatchSelect(e.target.value)} defaultValue="">
-                        <option value="">-- Select an upcoming match --</option>
-                        {matches.map((match) => (<option key={match.eventId} value={match.eventId}>{match.title}</option>))}
-                    </select>
-                </div>
-            </div>
-
+        <form className={styles.formContainer} onSubmit={handleSubmit}>
             <div className={styles.section}>
                 <div className={styles.formGrid}>
+                    <div className={styles.formGroupFull}>
+                        <label htmlFor="matchSelector">Select a Match (Optional)</label>
+                        <select id="matchSelector" onChange={(e) => handleMatchSelect(e.target.value)} defaultValue="">
+                            <option value="">-- Select an upcoming match --</option>
+                            {matches.map((match) => (<option key={match.eventId} value={match.eventId}>{match.title}</option>))}
+                        </select>
+                    </div>
                     {badgeMessage && <p className={styles.badgeNotice}>{badgeMessage}</p>}
                     <div className={styles.formGroup}>
                         <label htmlFor="homeTeamBadge">Home Team Badge</label>
@@ -181,6 +236,25 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
                         <select id="awayTeamBadge" value={formData.awayTeamBadge || ''} onChange={handleChange} required>
                             <option value="">Select a badge...</option>
                             {badges.map((badge) => (<option key={badge.Link} value={badge.Link}>{badge.Name.replace(/.png/i, '').substring(14)}</option>))}
+                        </select>
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="matchDate">Match Date</label>
+                        <input type="date" id="matchDate" value={formData.matchDate || ''} onChange={handleChange} required />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="kickOffTime">Kick-off Time</label>
+                        <input type="time" id="kickOffTime" value={formData.kickOffTime || ''} onChange={handleChange} required />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="venue">Venue</label>
+                        <input type="text" id="venue" placeholder="e.g., Cae Llan" value={formData.venue || ''} onChange={handleChange} required />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="teamType">Team</label>
+                        <select id="teamType" value={formData.teamType || 'First Team'} onChange={handleChange}>
+                            <option value="First Team">First Team</option>
+                            <option value="Development Team">Development Team</option>
                         </select>
                     </div>
                 </div>
@@ -244,7 +318,7 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
             <div className={styles.actionsContainer}>
                 <button type="submit" disabled={isSubmitting} className={styles.actionButton}>{isSubmitting ? 'Generating...' : 'Generate Preview'}</button>
                 <div className={styles.yoloAction}>
-                    <button type="button" onClick={() => onYoloSubmit(formData)} disabled={isSubmitting} className={styles.yoloButton}>{isSubmitting ? 'Sending...' : 'Post Now (YOLO)'}</button>
+                    <button type="button" onClick={handleYoloSubmit} disabled={isSubmitting} className={styles.yoloButton}>{isSubmitting ? 'Sending...' : 'Post Now (YOLO)'}</button>
                 </div>
             </div>
         </form>
