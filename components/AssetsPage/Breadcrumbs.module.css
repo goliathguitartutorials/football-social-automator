@@ -1,0 +1,48 @@
+/*
+ * ==========================================================
+ * COMPONENT: Breadcrumbs
+ * PAGE: /assets
+ * FILE: /components/AssetsPage/Breadcrumbs.module.css
+ * ==========================================================
+ */
+
+.breadcrumbsNav {
+    display: flex;
+    align-items: center;
+    background-color: #1e293b;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+}
+
+.breadcrumbSegment {
+    display: inline-flex;
+    align-items: center;
+}
+
+.separator {
+    margin: 0 8px;
+    color: #64748b;
+    font-size: 1.1em;
+}
+
+.breadcrumbButton {
+    background: none;
+    border: none;
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 1em;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.breadcrumbButton:hover {
+    background-color: #334155;
+    color: #ffffff;
+}
