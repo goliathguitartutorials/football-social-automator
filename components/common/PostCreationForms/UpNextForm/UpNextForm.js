@@ -30,11 +30,12 @@ const formatDateForWebhook = (dateString) => {
     return `${dayOfWeek} ${dayOfMonth}${suffix} ${month}`;
 };
 
-export default function UpNextForm({ appData = {}, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
+export default function UpNextForm({ appData = {}, initialData, onSubmit, onYoloSubmit, isSubmitting, authKey }) {
     const { backgrounds = [], badges = [], matches = [] } = appData;
     const [formData, setFormData] = useState(initialData || {});
     const [badgeMessage, setBadgeMessage] = useState('');
     const [backgroundSource, setBackgroundSource] = useState('gallery');
+    const [isGeneratingCaption, setIsGeneratingCaption] = useState(false); // Internal state for caption generation
 
     useEffect(() => {
         setFormData(prev => ({ ...prev, ...initialData }));
@@ -111,7 +112,8 @@ export default function UpNextForm({ appData = {}, initialData, onSubmit, onYolo
         }));
     };
 
-    const handleCaptionGeneration = () => {
+    const handleCaptionGeneration = async () => {
+        setIsGeneratingCaption(true);
         const getTeamNameFromBadge = (badgeUrl) => {
             const badge = badges.find(b => b.Link === badgeUrl);
             if (!badge) return 'Unknown Team';
@@ -123,13 +125,27 @@ export default function UpNextForm({ appData = {}, initialData, onSubmit, onYolo
             matchDate: formData.matchDate,
             kickOffTime: formData.kickOffTime,
             venue: formData.venue,
-            teamType: formData.teamType
+            teamType: formData.teamType,
+            competition: formData.selectedMatchData?.competition || '',
+            referee: formData.selectedMatchData?.referee || ''
         };
-        if (formData.selectedMatchData) {
-            gameInfo.competition = formData.selectedMatchData.competition || '';
-            gameInfo.referee = formData.selectedMatchData.referee || '';
+
+        const payload = { page: 'upNext', gameInfo };
+
+        try {
+            const response = await fetch('/api/generate-caption', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) { throw new Error('Failed to generate caption.'); }
+            const result = await response.json();
+            setFormData(prev => ({ ...prev, caption: result.caption || 'Sorry, could not generate a caption.' }));
+        } catch (err) {
+            setFormData(prev => ({ ...prev, caption: `Error: ${err.message}` }));
+        } finally {
+            setIsGeneratingCaption(false);
         }
-        onGenerateCaption(gameInfo);
     };
 
     const handleSubmit = (e) => {
