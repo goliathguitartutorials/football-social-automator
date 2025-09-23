@@ -18,7 +18,7 @@ const initialFormData = {
     matchDate: '',
     kickOffTime: '',
     venue: '',
-    teamType: 'First Team', 
+    teamType: '', 
     caption: '',
     selectedBackground: '',
     saveCustomBackground: true,
