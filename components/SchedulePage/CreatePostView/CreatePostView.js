@@ -90,7 +90,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
     const [previewUrl, setPreviewUrl] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState('');
-    const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
+    // isGeneratingCaption state is no longer needed here.
 
     useEffect(() => {
         if (scheduleDate) {
@@ -107,22 +107,7 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
         }
     }, [scheduleDate]);
 
-    const handleGenerateCaption = async (gameInfo) => {
-        setIsGeneratingCaption(true);
-        setFormData(prev => ({ ...prev, caption: '' }));
-        const payload = { action: selectedPostType.id, gameInfo };
-        try {
-            const response = await fetch('/api/generate-caption', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
-            if (!response.ok) { throw new Error('Failed to generate caption.'); }
-            const result = await response.json();
-            const newCaption = result.caption || 'Sorry, could not generate a caption.';
-            setFormData(prev => ({ ...prev, caption: newCaption }));
-        } catch (err) {
-            setFormData(prev => ({ ...prev, caption: `Error: ${err.message}` }));
-        } finally {
-            setIsGeneratingCaption(false);
-        }
-    };
+    // handleGenerateCaption function is now removed from this component.
 
     const handleGeneratePreview = async (formPayload) => {
         setIsSubmitting(true);
@@ -244,17 +229,17 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                 </nav>
 
                 {activeBanner && (
-                     <div className={styles.bannerContainer}>
-                        <Image
-                            key={selectedPostType.id}
-                            src={activeBanner.src}
-                            alt={`${selectedPostType.label} Banner`}
-                            fill priority
-                            placeholder="blur"
-                            blurDataURL={activeBanner.src}
-                            className={`${styles.bannerImage} ${styles[activeBanner.position]}`}
-                        />
-                    </div>
+                       <div className={styles.bannerContainer}>
+                            <Image
+                                key={selectedPostType.id}
+                                src={activeBanner.src}
+                                alt={`${selectedPostType.label} Banner`}
+                                fill priority
+                                placeholder="blur"
+                                blurDataURL={activeBanner.src}
+                                className={`${styles.bannerImage} ${styles[activeBanner.position]}`}
+                            />
+                        </div>
                 )}
             </header>
 
@@ -282,9 +267,9 @@ export default function CreatePostView({ scheduleDate, onPostScheduled, onCancel
                             appData={appData}
                             initialData={formData}
                             onSubmit={handleGeneratePreview}
-                            onGenerateCaption={handleGenerateCaption}
                             isSubmitting={isSubmitting}
-                            isGeneratingCaption={isGeneratingCaption}
+                            authKey={authKey}
+                            // onGenerateCaption and isGeneratingCaption props are removed
                         />
                     </div>
                 )}
