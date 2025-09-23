@@ -15,6 +15,10 @@ import { GenerateIcon, EditIcon } from './SquadAnnouncementIcons';
 const initialFormData = {
     homeTeamBadge: '',
     awayTeamBadge: '',
+    matchDate: '',
+    kickOffTime: '',
+    venue: '',
+    teamType: '',
     caption: '',
     selectedBackground: '',
     saveCustomBackground: true,
@@ -30,27 +34,12 @@ export default function SquadAnnouncement() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [previewUrl, setPreviewUrl] = useState('');
     const [message, setMessage] = useState('');
-    const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
     const [editPrompt, setEditPrompt] = useState('');
     const [isEditingImage, setIsEditingImage] = useState(false);
     const [generatedPreviews, setGeneratedPreviews] = useState([]);
     
-    const handleGenerateCaption = async (gameInfo) => {
-        setIsGeneratingCaption(true);
-        setFormData(prev => ({ ...prev, caption: '' }));
-        const payload = { page: 'squad', gameInfo };
-        try {
-            const response = await fetch('/api/generate-caption', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
-            if (!response.ok) { throw new Error('Failed to generate caption.'); }
-            const result = await response.json();
-            setFormData(prev => ({ ...prev, caption: result.caption || 'Sorry, could not generate a caption.' }));
-        } catch (err) {
-            setFormData(prev => ({ ...prev, caption: `Error: ${err.message}` }));
-        } finally {
-            setIsGeneratingCaption(false);
-        }
-    };
-    
+    // handleGenerateCaption and isGeneratingCaption state removed from this component.
+
     const triggerWorkflow = async (action, data) => {
         if (!authKey || !data.selectedBackground) {
             alert('Please ensure you have an Authorization Key and have selected a background.');
@@ -58,6 +47,7 @@ export default function SquadAnnouncement() {
         }
         setIsSubmitting(true);
         setMessage('');
+        setFormData(data);
 
         const playersWithSponsors = data.selectedPlayers
             .map(playerName => {
@@ -161,10 +151,6 @@ export default function SquadAnnouncement() {
                         <div className={styles.previewSection}>
                             <div className={styles.previewSectionHeader}>
                                 <label htmlFor="previewCaption">Post Caption</label>
-                                <button onClick={() => handleGenerateCaption(formData)} className={styles.aiButton} disabled={isGeneratingCaption}>
-                                    <GenerateIcon />
-                                    {isGeneratingCaption ? 'Generating...' : 'Regenerate'}
-                                </button>
                             </div>
                             <textarea id="previewCaption" className={styles.previewCaptionTextarea} value={formData.caption} onChange={(e) => setFormData(prev => ({...prev, caption: e.target.value}))} rows={8} />
                         </div>
@@ -196,9 +182,8 @@ export default function SquadAnnouncement() {
                 initialData={formData}
                 onSubmit={handleGeneratePreview}
                 onYoloSubmit={handleYoloPost}
-                onGenerateCaption={handleGenerateCaption}
                 isSubmitting={isSubmitting}
-                isGeneratingCaption={isGeneratingCaption}
+                authKey={authKey}
             />
             {generatedPreviews.length > 0 && (
                 <div className={styles.section}>
