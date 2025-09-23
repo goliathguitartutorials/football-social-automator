@@ -124,6 +124,7 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
             matchDate: formData.matchDate,
             kickOffTime: formData.kickOffTime,
             venue: formData.venue,
+            teamType: formData.teamType, // CORRECTED: Added teamType to the payload
             competition: formData.selectedMatchData?.competition || '',
             referee: formData.selectedMatchData?.referee || ''
         };
