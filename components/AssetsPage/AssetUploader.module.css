@@ -1,0 +1,80 @@
+/*
+ * ==========================================================
+ * COMPONENT: Asset Uploader
+ * PAGE: /assets
+ * FILE: /components/AssetsPage/AssetUploader.module.css
+ * ==========================================================
+ */
+
+.container {
+    width: 100%;
+    padding: 20px;
+    border: 2px dashed #334155;
+    border-radius: 8px;
+    background-color: #1e293b;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+.initialState {
+    text-align: center;
+}
+
+.fileInput {
+    display: none;
+}
+
+.uploadButton {
+    background-color: #3b82f6;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.uploadButton:hover {
+    background-color: #2563eb;
+}
+
+.processingContainer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.utilityButton {
+    background-color: #10b981;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.utilityButton:hover {
+    background-color: #059669;
+}
+
+.previewContainer {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.previewImage {
+    max-width: 250px;
+    max-height: 250px;
+    border-radius: 8px;
+    border: 1px solid #475569;
+    object-fit: contain;
+}
