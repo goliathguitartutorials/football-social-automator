@@ -168,6 +168,18 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
 
     const handleCaptionGeneration = async () => {
         setIsGeneratingCaption(true);
+
+        const playersWithSponsors = formData.selectedPlayers
+            .map(playerName => {
+                if (!playerName) return null;
+                const playerObject = players.find(p => p.fullName === playerName);
+                return {
+                    fullName: playerName,
+                    sponsor: playerObject ? playerObject.Sponsor : 'N/A'
+                };
+            })
+            .filter(Boolean);
+
         const getTeamNameFromBadge = (badgeUrl) => {
             const badge = badges.find(b => b.Link === badgeUrl);
             if (!badge) return 'Unknown Team';
@@ -181,7 +193,8 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
             venue: formData.venue,
             teamType: formData.teamType,
             competition: formData.selectedMatchData?.competition || '',
-            referee: formData.selectedMatchData?.referee || ''
+            referee: formData.selectedMatchData?.referee || '',
+            playersInSquad: playersWithSponsors
         };
 
         const payload = { page: 'squad', gameInfo };
