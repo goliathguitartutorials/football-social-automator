@@ -260,25 +260,27 @@ export default function MatchResultForm({ appData = {}, initialData, onSubmit, o
                     {badgeMessage && <p className={styles.badgeNotice}>{badgeMessage}</p>}
                     <div className={styles.formGroup}><label htmlFor="homeTeamBadge">Home Team Badge</label><select id="homeTeamBadge" value={formData.homeTeamBadge || ''} onChange={handleChange} required><option value="">Select a badge...</option>{badges.map((badge) => (<option key={badge.Link} value={badge.Link}>{badge.Name.replace(/.png/i, '').substring(14)}</option>))}</select></div>
                     <div className={styles.formGroup}><label htmlFor="awayTeamBadge">Away Team Badge</label><select id="awayTeamBadge" value={formData.awayTeamBadge || ''} onChange={handleChange} required><option value="">Select a badge...</option>{badges.map((badge) => (<option key={badge.Link} value={badge.Link}>{badge.Name.replace(/.png/i, '').substring(14)}</option>))}</select></div>
-                    <div className={styles.formGroup}><label htmlFor="homeTeamScore">Home Team Score</label><input type="number" id="homeTeamScore" placeholder="e.g., 3" value={formData.homeTeamScore || ''} onChange={handleChange} required /></div>
-                    <div className={styles.formGroup}><label htmlFor="awayTeamScore">Away Team Score</label><input type="number" id="awayTeamScore" placeholder="e.g., 1" value={formData.awayTeamScore || ''} onChange={handleChange} required /></div>
                     <div className={styles.formGroup}><label htmlFor="matchDate">Match Date</label><input type="date" id="matchDate" value={formData.matchDate || ''} onChange={handleChange} required /></div>
                     <div className={styles.formGroup}><label htmlFor="kickOffTime">Kick-off Time</label><input type="time" id="kickOffTime" value={formData.kickOffTime || ''} onChange={handleChange} required /></div>
                     <div className={styles.formGroup}><label htmlFor="venue">Venue</label><input type="text" id="venue" placeholder="e.g., Cae Llan" value={formData.venue || ''} onChange={handleChange} required /></div>
                     <div className={styles.formGroup}><label htmlFor="teamType">Team</label><select id="teamType" value={formData.teamType || 'First Team'} onChange={handleChange}><option value="First Team">First Team</option><option value="Development Team">Development Team</option></select></div>
+                    <div className={styles.formGroup}><label htmlFor="homeTeamScore">Home Team Score</label><input type="number" id="homeTeamScore" placeholder="e.g., 3" value={formData.homeTeamScore || ''} onChange={handleChange} required /></div>
+                    <div className={styles.formGroup}><label htmlFor="awayTeamScore">Away Team Score</label><input type="number" id="awayTeamScore" placeholder="e.g., 1" value={formData.awayTeamScore || ''} onChange={handleChange} required /></div>
                 </div>
             </div>
             
-            <div className={styles.scorersGrid}>
-                <div className={styles.section}>
-                    <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Goal Scorers (Y Glannau)</h3></div>
-                    <div className={styles.scorersContainer}>{formData.scorers && formData.scorers.map((scorer) => (<GlannauScorerInput key={scorer.id} scorer={scorer} onUpdate={handleScorerUpdate} onRemove={handleRemoveScorer} players={players || []} />))}</div>
-                    <button type="button" onClick={handleAddScorer} className={styles.addScorerBtn}><AddIcon /> Add Scorer</button>
-                </div>
-                <div className={styles.section}>
-                    <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Goal Scorers (Opposition)</h3></div>
-                    <div className={styles.scorersContainer}>{formData.oppositionScorers && formData.oppositionScorers.map((scorer) => (<OppositionScorerInput key={scorer.id} scorer={scorer} onUpdate={handleOppositionScorerUpdate} onRemove={handleRemoveOppositionScorer} />))}</div>
-                    <button type="button" onClick={handleAddOppositionScorer} className={styles.addScorerBtn}><AddIcon /> Add Scorer</button>
+            <div className={styles.section}>
+                <div className={styles.scorersGrid}>
+                    <div>
+                        <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Goal Scorers (Y Glannau)</h3></div>
+                        <div className={styles.scorersContainer}>{formData.scorers && formData.scorers.map((scorer) => (<GlannauScorerInput key={scorer.id} scorer={scorer} onUpdate={handleScorerUpdate} onRemove={handleRemoveScorer} players={players || []} />))}</div>
+                        <button type="button" onClick={handleAddScorer} className={styles.addScorerBtn}><AddIcon /> Add Scorer</button>
+                    </div>
+                    <div>
+                        <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Goal Scorers (Opposition)</h3></div>
+                        <div className={styles.scorersContainer}>{formData.oppositionScorers && formData.oppositionScorers.map((scorer) => (<OppositionScorerInput key={scorer.id} scorer={scorer} onUpdate={handleOppositionScorerUpdate} onRemove={handleRemoveOppositionScorer} />))}</div>
+                        <button type="button" onClick={handleAddOppositionScorer} className={styles.addScorerBtn}><AddIcon /> Add Scorer</button>
+                    </div>
                 </div>
             </div>
 
