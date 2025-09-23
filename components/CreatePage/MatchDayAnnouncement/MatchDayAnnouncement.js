@@ -10,14 +10,13 @@ import { useState } from 'react';
 import styles from './MatchDayAnnouncement.module.css';
 import { useAppContext } from '@/app/context/AppContext';
 import MatchDayForm from '../../common/PostCreationForms/MatchDayForm/MatchDayForm';
-import { GenerateIcon, EditIcon } from './MatchDayAnnouncementIcons';
+import { EditIcon } from './MatchDayAnnouncementIcons';
 
 const initialFormData = {
     homeTeamBadge: '',
     awayTeamBadge: '',
     matchDate: '',
     kickOffTime: '',
-    // MODIFIED: Added Venue and Team Type to the state, mirroring the UpNext component.
     venue: '',
     teamType: 'First Team', 
     caption: '',
@@ -34,57 +33,12 @@ export default function MatchDayAnnouncement() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [previewUrl, setPreviewUrl] = useState('');
     const [message, setMessage] = useState('');
-    const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
     const [editPrompt, setEditPrompt] = useState('');
     const [isEditingImage, setIsEditingImage] = useState(false);
     const [generatedPreviews, setGeneratedPreviews] = useState([]);
     
-    // MODIFIED: This function now auto-populates the form when a match is selected.
-    const handleFormChange = (newFormData) => {
-        if (newFormData.selectedMatchData && newFormData.selectedMatchData !== formData.selectedMatchData) {
-            const match = newFormData.selectedMatchData;
-            // Pre-fill the form with data from the selected match.
-            // Assumes property names like 'venue', 'team', 'homeTeamBadgeUrl' etc., exist on your match object.
-            const autoFilledData = {
-                ...newFormData,
-                venue: match.venue || '',
-                teamType: match.team || 'First Team',
-                homeTeamBadge: match.homeTeamBadgeUrl || newFormData.homeTeamBadge,
-                awayTeamBadge: match.awayTeamBadgeUrl || newFormData.awayTeamBadge,
-                matchDate: match.startDateTime ? match.startDateTime.split('T')[0] : newFormData.matchDate,
-                kickOffTime: match.startDateTime ? match.startDateTime.split('T')[1].substring(0, 5) : newFormData.kickOffTime,
-            };
-            setFormData(autoFilledData);
-        } else {
-            // This handles manual changes to any other field.
-            setFormData(newFormData);
-        }
-    };
-
-    const handleGenerateCaption = async (gameInfo) => {
-        setIsGeneratingCaption(true);
-        // FIXED: This is the correct, safe way to clear the caption. 
-        // It will no longer deselect your badges or other fields.
-        setFormData(prev => ({ ...prev, caption: '' }));
-
-        // MODIFIED: The payload now sends a complete gameInfo object, as requested.
-        // It combines the stable parent state with the latest form data.
-        const payload = { 
-            page: 'matchDay',
-            gameInfo: { ...formData, ...gameInfo }
-        };
-
-        try {
-            const response = await fetch('/api/generate-caption', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
-            if (!response.ok) { throw new Error('Failed to generate caption.'); }
-            const result = await response.json();
-            setFormData(prev => ({ ...prev, caption: result.caption || 'Sorry, could not generate a caption.' }));
-        } catch (err) {
-            setFormData(prev => ({ ...prev, caption: `Error: ${err.message}` }));
-        } finally {
-            setIsGeneratingCaption(false);
-        }
-    };
+    // Note: handleGenerateCaption and isGeneratingCaption state have been removed.
+    // The logic is now self-contained within MatchDayForm.
 
     const triggerWorkflow = async (action, data) => {
         if (!authKey || !data.selectedBackground) {
@@ -93,6 +47,7 @@ export default function MatchDayAnnouncement() {
         }
         setIsSubmitting(true);
         setMessage('');
+        setFormData(data); // Ensure parent state is synced with form state on submission
 
         const payload = {
             action,
@@ -189,10 +144,6 @@ export default function MatchDayAnnouncement() {
                         <div className={styles.previewSection}>
                             <div className={styles.previewSectionHeader}>
                                 <label htmlFor="previewCaption">Post Caption</label>
-                                <button onClick={() => handleGenerateCaption(formData)} className={styles.aiButton} disabled={isGeneratingCaption}>
-                                    <GenerateIcon />
-                                    {isGeneratingCaption ? 'Generating...' : 'Regenerate'}
-                                </button>
                             </div>
                             <textarea
                                 id="previewCaption"
@@ -235,12 +186,10 @@ export default function MatchDayAnnouncement() {
             <MatchDayForm
                 appData={appData}
                 initialData={formData}
-                onFormChange={handleFormChange} 
                 onSubmit={handleGeneratePreview}
                 onYoloSubmit={handleYoloPost}
-                onGenerateCaption={handleGenerateCaption}
                 isSubmitting={isSubmitting}
-                isGeneratingCaption={isGeneratingCaption}
+                authKey={authKey}
             />
             {generatedPreviews.length > 0 && (
                 <div className={styles.section}>
