@@ -64,7 +64,7 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
         if (!eventId) {
             setFormData(prev => ({
                 ...prev,
-                homeTeamBadge: '', awayTeamBadge: '', matchDate: '', kickOffTime: '', venue: '', selectedMatchData: null
+                homeTeamBadge: '', awayTeamBadge: '', matchDate: '', kickOffTime: '', venue: '', teamType: 'First Team', selectedMatchData: null
             }));
             return;
         }
@@ -76,6 +76,7 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
         const dateTime = new Date(selectedMatch.startDateTime);
         const matchDate = dateTime.toISOString().split('T')[0];
         const kickOffTime = dateTime.toTimeString().substring(0, 5);
+        const teamType = `${selectedMatch.team.charAt(0).toUpperCase()}${selectedMatch.team.slice(1)} Team`.replace('First-team', 'First Team');
 
         const [homeTeamName, awayTeamName] = selectedMatch.title.split(' vs ');
         const glannauBadge = badges.find(b => b.Name.toLowerCase().includes('glannau'))?.Link || '';
@@ -107,6 +108,7 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
             matchDate,
             kickOffTime,
             venue,
+            teamType,
             selectedMatchData: selectedMatch
         }));
     };
@@ -124,7 +126,7 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
             matchDate: formData.matchDate,
             kickOffTime: formData.kickOffTime,
             venue: formData.venue,
-            teamType: formData.teamType, // CORRECTED: Added teamType to the payload
+            teamType: formData.teamType,
             competition: formData.selectedMatchData?.competition || '',
             referee: formData.selectedMatchData?.referee || ''
         };
@@ -193,9 +195,16 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
                         <label htmlFor="kickOffTime">Kick-off Time</label>
                         <input type="time" id="kickOffTime" value={formData.kickOffTime || ''} onChange={handleChange} required />
                     </div>
-                    <div className={styles.formGroupFull}>
+                    <div className={styles.formGroup}>
                         <label htmlFor="venue">Venue</label>
                         <input type="text" id="venue" placeholder="e.g., Cae Llan" value={formData.venue || ''} onChange={handleChange} required />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="teamType">Team</label>
+                        <select id="teamType" value={formData.teamType || 'First Team'} onChange={handleChange}>
+                            <option value="First Team">First Team</option>
+                            <option value="Development Team">Development Team</option>
+                        </select>
                     </div>
                 </div>
             </div>
