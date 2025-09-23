@@ -36,3 +36,18 @@ export const PostNowIcon = () => (
         <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
     </svg>
 );
+
+// NEW: Added the missing GenerateIcon
+export const GenerateIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0L12 2.69z"></path>
+        <path d="M12 2v5"></path>
+        <path d="M12 17v5"></path>
+        <path d="M5.64 5.64l3.53 3.53"></path>
+        <path d="M14.83 14.83l3.53 3.53"></path>
+        <path d="M2 12h5"></path>
+        <path d="M17 12h5"></path>
+        <path d="M5.64 18.36l3.53-3.53"></path>
+        <path d="M14.83 9.17l3.53-3.53"></path>
+    </svg>
+);
