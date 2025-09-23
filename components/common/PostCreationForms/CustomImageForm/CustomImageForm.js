@@ -25,7 +25,7 @@ export default function CustomImageForm({
     selectedTime,
     onTimeChange,
     timeSlots,
-    authKey 
+    authKey
 }) {
     const [imageForSubmission, setImageForSubmission] = useState(null);
     const [imageForPreview, setImageForPreview] = useState('');
@@ -35,8 +35,8 @@ export default function CustomImageForm({
     const fileInputRef = useRef(null);
     const [viewMode, setViewMode] = useState('upload');
 
-    // New state for AI Assistant
-    const [showAiAssistant, setShowAiAssistant] = useState(false);
+    // State for the new tabbed caption component
+    const [captionTab, setCaptionTab] = useState('write'); // 'write' or 'ai'
     const [aiPrompt, setAiPrompt] = useState('');
     const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
 
@@ -104,8 +104,10 @@ export default function CustomImageForm({
             if (!response.ok) throw new Error('Failed to generate caption.');
             const result = await response.json();
             setCaption(result.caption || 'Sorry, could not generate a caption.');
+            setCaptionTab('write'); // Switch back to the write tab to show the result
         } catch (err) {
             setCaption(`Error: ${err.message}`);
+            setCaptionTab('write'); // Switch back even on error
         } finally {
             setIsGeneratingCaption(false);
         }
@@ -138,30 +140,34 @@ export default function CustomImageForm({
 
                 <div className={styles.controlsColumn}>
                     <div className={styles.controlSection}>
-                        <label htmlFor="caption" className={styles.sectionLabel}>Post Caption</label>
-                        <textarea id="caption" className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here, or generate one with AI..." rows={5} />
-                        
-                        <button type="button" className={styles.aiToggleButton} onClick={() => setShowAiAssistant(prev => !prev)}>
-                            {showAiAssistant ? 'Hide AI Assistant' : 'Generate with AI'}
-                        </button>
-
-                        {showAiAssistant && (
-                            <div className={styles.aiAssistantSection}>
-                                <label htmlFor="aiPrompt" className={styles.sectionLabel_Small}>Instructions for AI</label>
-                                <textarea
-                                    id="aiPrompt"
-                                    className={styles.promptTextarea}
-                                    value={aiPrompt}
-                                    onChange={(e) => setAiPrompt(e.target.value)}
-                                    placeholder="e.g., A happy birthday post for John Doe..."
-                                    rows={3}
-                                />
-                                <button type="button" className={styles.actionButton_FullWidth} onClick={handleGenerateCaption} disabled={isGeneratingCaption}>
-                                    <GenerateIcon />
-                                    {isGeneratingCaption ? 'Generating...' : 'Generate Caption'}
-                                </button>
+                        <label className={styles.sectionLabel}>Post Caption</label>
+                        <div className={styles.captionTabContainer}>
+                            <div className={styles.captionTabs}>
+                                <button type="button" className={`${styles.captionTab} ${captionTab === 'write' ? styles.activeTab : ''}`} onClick={() => setCaptionTab('write')}>Write</button>
+                                <button type="button" className={`${styles.captionTab} ${captionTab === 'ai' ? styles.activeTab : ''}`} onClick={() => setCaptionTab('ai')}>Generate with AI</button>
                             </div>
-                        )}
+                            <div className={styles.captionTabContent}>
+                                {captionTab === 'write' && (
+                                    <textarea id="caption" className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here..." rows={8} />
+                                )}
+                                {captionTab === 'ai' && (
+                                    <div className={styles.aiPromptContainer}>
+                                        <textarea
+                                            id="aiPrompt"
+                                            className={styles.promptTextarea}
+                                            value={aiPrompt}
+                                            onChange={(e) => setAiPrompt(e.target.value)}
+                                            placeholder="e.g., A happy birthday post for John Doe..."
+                                            rows={5}
+                                        />
+                                        <button type="button" className={styles.actionButton_FullWidth} onClick={handleGenerateCaption} disabled={isGeneratingCaption}>
+                                            <GenerateIcon />
+                                            {isGeneratingCaption ? 'Generating...' : 'Generate Caption'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {imageForPreview && (
