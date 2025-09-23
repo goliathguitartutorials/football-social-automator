@@ -10,14 +10,12 @@
     width: 100%;
 }
 
-/* NEW: Main two-column layout container */
 .unifiedLayout {
     display: flex;
     gap: 2rem;
     align-items: flex-start;
 }
 
-/* Left Column */
 .imageColumn {
     flex: 1 1 55%;
     min-width: 280px;
@@ -28,7 +26,6 @@
     overflow: hidden;
 }
 
-/* Right Column */
 .controlsColumn {
     flex: 1 1 45%;
     display: flex;
@@ -42,13 +39,13 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    aspect-ratio: 1 / 1; /* Makes it a square, good for a placeholder */
+    aspect-ratio: 1 / 1;
     border: 2px dashed var(--border-color);
     border-radius: 8px;
     padding: 2rem;
     text-align: center;
     cursor: pointer;
-    background-color: transparent; /* Changed to transparent */
+    background-color: transparent;
     transition: background-color 0.2s, border-color 0.2s;
 }
 .uploadArea:hover {
@@ -79,7 +76,6 @@
     height: auto;
 }
 
-/* Control Sections & Inputs */
 .controlSection {
     display: flex;
     flex-direction: column;
@@ -103,6 +99,50 @@
     resize: vertical;
     min-height: 120px;
 }
+
+/* --- NEW STYLES for AI Assistant --- */
+.aiToggleButton {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    align-self: flex-end; /* Pushes button to the right */
+}
+.aiToggleButton:hover {
+    background-color: var(--surface-dark);
+    color: var(--text-primary);
+}
+.aiAssistantSection {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background-color: var(--surface-dark);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+.sectionLabel_Small {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+.promptTextarea {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background-color: #374151;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 80px;
+}
+/* --- END NEW STYLES --- */
+
 
 .dateTimeInputs {
     display: flex;
@@ -128,7 +168,6 @@
     font-size: 1rem;
 }
 
-/* Action Button Styles */
 .imageActions {
     flex-direction: row;
 }
@@ -191,18 +230,6 @@
     cursor: not-allowed;
 }
 
-/* Mobile Adjustments */
-@media (max-width: 768px) {
-    .unifiedLayout {
-        flex-direction: column;
-    }
-}
-
-/* ==========================================================
- * NEW STYLES FOR CREATE PAGE LAYOUT
- * ==========================================================
- */
-
 .scheduleSection {
     border-top: 1px solid var(--border-color);
     padding-top: 1.5rem;
@@ -216,4 +243,10 @@
     font-size: 1.1rem;
     color: var(--text-primary);
     margin-bottom: 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .unifiedLayout {
+        flex-direction: column;
+    }
 }

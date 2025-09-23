@@ -45,21 +45,7 @@ export default function UpNextAnnouncement() {
     const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().split('T')[0]);
     const [scheduleTime, setScheduleTime] = useState('19:00');
 
-    const handleGenerateCaption = async (gameInfo) => {
-        setIsGeneratingCaption(true);
-        setFormData(prev => ({ ...prev, caption: '' }));
-        const payload = { page: 'upNext', gameInfo };
-        try {
-            const response = await fetch('/api/generate-caption', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
-            if (!response.ok) { throw new Error('Failed to generate caption.'); }
-            const result = await response.json();
-            setFormData(prev => ({ ...prev, caption: result.caption || 'Sorry, could not generate a caption.' }));
-        } catch (err) {
-            setFormData(prev => ({ ...prev, caption: `Error: ${err.message}` }));
-        } finally {
-            setIsGeneratingCaption(false);
-        }
-    };
+    // The handleGenerateCaption function is now removed from this component.
 
     const triggerWorkflow = async (action, data) => {
         if (!authKey || !data.selectedBackground) {
@@ -185,9 +171,10 @@ export default function UpNextAnnouncement() {
                         <div className={styles.previewSection}>
                             <div className={styles.previewSectionHeader}>
                                 <label htmlFor="previewCaption">Post Caption</label>
-                                <button onClick={() => handleGenerateCaption(formData)} className={styles.aiButton} disabled={isGeneratingCaption}>
+                                {/* This button is illustrative; caption regen in preview would need more context */}
+                                <button className={styles.aiButton} disabled={true}>
                                     <GenerateIcon />
-                                    {isGeneratingCaption ? 'Generating...' : 'Regenerate'}
+                                    Regenerate
                                 </button>
                             </div>
                             <textarea id="previewCaption" className={styles.previewCaptionTextarea} value={formData.caption} onChange={(e) => setFormData(prev => ({...prev, caption: e.target.value}))} rows={8} />
@@ -232,9 +219,8 @@ export default function UpNextAnnouncement() {
                 initialData={formData}
                 onSubmit={handleGeneratePreview}
                 onYoloSubmit={handleYoloPost}
-                onGenerateCaption={handleGenerateCaption}
                 isSubmitting={isSubmitting}
-                isGeneratingCaption={isGeneratingCaption}
+                authKey={authKey}
             />
             {generatedPreviews.length > 0 && (
                 <div className={styles.section}>

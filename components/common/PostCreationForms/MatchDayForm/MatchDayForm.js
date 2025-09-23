@@ -1,7 +1,7 @@
 /*
  * ==========================================================
  * COMPONENT: MatchDayForm
- * PAGE: Create Post, Schedule Post (Modal)
+ * PAGE: Create Post, Schedule Post
  * FILE: /components/common/PostCreationForms/MatchDayForm/MatchDayForm.js
  * ==========================================================
  */
@@ -9,7 +9,6 @@
 import { useState, useEffect } from 'react';
 import styles from './MatchDayForm.module.css';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
-// MODIFIED: The import path has been updated to the new location of the icons file.
 import { UploadIcon, GalleryIcon, GenerateIcon } from '@/components/CreatePage/MatchDayAnnouncement/MatchDayAnnouncementIcons';
 
 // Helper function to format the date as requested
@@ -32,15 +31,16 @@ const formatDateForWebhook = (dateString) => {
     return `${dayOfWeek} ${dayOfMonth}${suffix} ${month}`;
 };
 
-export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYoloSubmit, onGenerateCaption, isSubmitting, isGeneratingCaption }) {
+export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYoloSubmit, isSubmitting, authKey }) {
     const { backgrounds = [], badges = [], matches = [] } = appData;
 
     const [formData, setFormData] = useState(initialData || {});
     const [badgeMessage, setBadgeMessage] = useState('');
     const [backgroundSource, setBackgroundSource] = useState('gallery');
+    const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
 
     useEffect(() => {
-        setFormData(initialData || {});
+        setFormData(prev => ({ ...prev, ...initialData }));
     }, [initialData]);
 
     const handleChange = (e) => {
@@ -64,7 +64,7 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
         if (!eventId) {
             setFormData(prev => ({
                 ...prev,
-                homeTeamBadge: '', awayTeamBadge: '', matchDate: '', kickOffTime: '', venue: '', selectedMatchData: null
+                homeTeamBadge: '', awayTeamBadge: '', matchDate: '', kickOffTime: '', venue: '', teamType: 'First Team', selectedMatchData: null
             }));
             return;
         }
@@ -76,6 +76,7 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
         const dateTime = new Date(selectedMatch.startDateTime);
         const matchDate = dateTime.toISOString().split('T')[0];
         const kickOffTime = dateTime.toTimeString().substring(0, 5);
+        const teamType = `${selectedMatch.team.charAt(0).toUpperCase()}${selectedMatch.team.slice(1)} Team`.replace('First-team', 'First Team');
 
         const [homeTeamName, awayTeamName] = selectedMatch.title.split(' vs ');
         const glannauBadge = badges.find(b => b.Name.toLowerCase().includes('glannau'))?.Link || '';
@@ -107,11 +108,13 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
             matchDate,
             kickOffTime,
             venue,
+            teamType,
             selectedMatchData: selectedMatch
         }));
     };
     
-    const handleCaptionGeneration = () => {
+    const handleCaptionGeneration = async () => {
+        setIsGeneratingCaption(true);
         const getTeamNameFromBadge = (badgeUrl) => {
             const badge = badges.find(b => b.Link === badgeUrl);
             if (!badge) return 'Unknown Team';
@@ -122,13 +125,28 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
             awayTeam: getTeamNameFromBadge(formData.awayTeamBadge),
             matchDate: formData.matchDate,
             kickOffTime: formData.kickOffTime,
-            venue: formData.venue
+            venue: formData.venue,
+            teamType: formData.teamType,
+            competition: formData.selectedMatchData?.competition || '',
+            referee: formData.selectedMatchData?.referee || ''
         };
-        if (formData.selectedMatchData) {
-            gameInfo.competition = formData.selectedMatchData.competition || '';
-            gameInfo.referee = formData.selectedMatchData.referee || '';
+        
+        const payload = { page: 'matchDay', gameInfo };
+
+        try {
+            const response = await fetch('/api/generate-caption', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) { throw new Error('Failed to generate caption.'); }
+            const result = await response.json();
+            setFormData(prev => ({ ...prev, caption: result.caption || 'Sorry, could not generate a caption.' }));
+        } catch (err) {
+            setFormData(prev => ({ ...prev, caption: `Error: ${err.message}` }));
+        } finally {
+            setIsGeneratingCaption(false);
         }
-        onGenerateCaption(gameInfo);
     };
 
     const handleSubmit = (e) => {
@@ -177,9 +195,16 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
                         <label htmlFor="kickOffTime">Kick-off Time</label>
                         <input type="time" id="kickOffTime" value={formData.kickOffTime || ''} onChange={handleChange} required />
                     </div>
-                    <div className={styles.formGroupFull}>
+                    <div className={styles.formGroup}>
                         <label htmlFor="venue">Venue</label>
                         <input type="text" id="venue" placeholder="e.g., Cae Llan" value={formData.venue || ''} onChange={handleChange} required />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="teamType">Team</label>
+                        <select id="teamType" value={formData.teamType || 'First Team'} onChange={handleChange}>
+                            <option value="First Team">First Team</option>
+                            <option value="Development Team">Development Team</option>
+                        </select>
                     </div>
                 </div>
             </div>

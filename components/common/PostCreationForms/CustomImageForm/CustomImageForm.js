@@ -9,7 +9,7 @@
 import { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import styles from './CustomImageForm.module.css';
-import { UploadIcon, EditIcon, ScheduleIcon, PostNowIcon } from './CustomImageFormIcons';
+import { UploadIcon, EditIcon, ScheduleIcon, PostNowIcon, GenerateIcon } from './CustomImageFormIcons';
 
 const CanvasEditor = dynamic(() => import('../../CanvasEditor/CanvasEditor'), {
     ssr: false,
@@ -24,7 +24,8 @@ export default function CustomImageForm({
     onDateChange,
     selectedTime,
     onTimeChange,
-    timeSlots
+    timeSlots,
+    authKey 
 }) {
     const [imageForSubmission, setImageForSubmission] = useState(null);
     const [imageForPreview, setImageForPreview] = useState('');
@@ -33,6 +34,11 @@ export default function CustomImageForm({
     const [caption, setCaption] = useState('');
     const fileInputRef = useRef(null);
     const [viewMode, setViewMode] = useState('upload');
+
+    // New state for AI Assistant
+    const [showAiAssistant, setShowAiAssistant] = useState(false);
+    const [aiPrompt, setAiPrompt] = useState('');
+    const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
 
     const cleanupURLs = () => {
         if (originalImageForEditor) URL.revokeObjectURL(originalImageForEditor);
@@ -78,12 +84,39 @@ export default function CustomImageForm({
         setViewMode('upload');
     };
 
+    const handleGenerateCaption = async () => {
+        if (!aiPrompt.trim()) {
+            alert('Please enter a prompt for the AI.');
+            return;
+        }
+        setIsGeneratingCaption(true);
+        const payload = {
+            page: 'customImage',
+            gameInfo: { prompt: aiPrompt }
+        };
+
+        try {
+            const response = await fetch('/api/generate-caption', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error('Failed to generate caption.');
+            const result = await response.json();
+            setCaption(result.caption || 'Sorry, could not generate a caption.');
+        } catch (err) {
+            setCaption(`Error: ${err.message}`);
+        } finally {
+            setIsGeneratingCaption(false);
+        }
+    };
+
     if (viewMode === 'editor') {
-        return <CanvasEditor 
-                    imagePreview={originalImageForEditor} 
-                    onBack={() => setViewMode('upload')} 
+        return <CanvasEditor
+                    imagePreview={originalImageForEditor}
+                    onBack={() => setViewMode('upload')}
                     onConfirm={handleCropConfirm}
-                    initialState={editorState} 
+                    initialState={editorState}
                 />;
     }
 
@@ -106,7 +139,29 @@ export default function CustomImageForm({
                 <div className={styles.controlsColumn}>
                     <div className={styles.controlSection}>
                         <label htmlFor="caption" className={styles.sectionLabel}>Post Caption</label>
-                        <textarea id="caption" className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here..." rows={8} />
+                        <textarea id="caption" className={styles.captionTextarea} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Write your caption here, or generate one with AI..." rows={5} />
+                        
+                        <button type="button" className={styles.aiToggleButton} onClick={() => setShowAiAssistant(prev => !prev)}>
+                            {showAiAssistant ? 'Hide AI Assistant' : 'Generate with AI'}
+                        </button>
+
+                        {showAiAssistant && (
+                            <div className={styles.aiAssistantSection}>
+                                <label htmlFor="aiPrompt" className={styles.sectionLabel_Small}>Instructions for AI</label>
+                                <textarea
+                                    id="aiPrompt"
+                                    className={styles.promptTextarea}
+                                    value={aiPrompt}
+                                    onChange={(e) => setAiPrompt(e.target.value)}
+                                    placeholder="e.g., A happy birthday post for John Doe..."
+                                    rows={3}
+                                />
+                                <button type="button" className={styles.actionButton_FullWidth} onClick={handleGenerateCaption} disabled={isGeneratingCaption}>
+                                    <GenerateIcon />
+                                    {isGeneratingCaption ? 'Generating...' : 'Generate Caption'}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {imageForPreview && (
@@ -120,12 +175,7 @@ export default function CustomImageForm({
                         </div>
                     )}
                     
-                    {/* ========================================================== */}
-                    {/* MODIFIED: Conditionally render layout based on context     */}
-                    {/* ========================================================== */}
-                    
                     {context === 'create' ? (
-                        // NEW LAYOUT FOR THE CREATE PAGE
                         <>
                             <div className={styles.controlSection}>
                                 <button type="button" onClick={() => handleFormSubmit('post_now')} disabled={isSubmitting || !imageForSubmission} className={styles.actionButton_PostNow}>
@@ -137,16 +187,8 @@ export default function CustomImageForm({
                             <div className={styles.scheduleSection}>
                                 <h3 className={styles.scheduleHeader}>Schedule for Later</h3>
                                 <div className={styles.dateTimeInputs}>
-                                    <div className={styles.inputGroup}>
-                                        <label htmlFor="schedule-date-form">Date</label>
-                                        <input id="schedule-date-form" type="date" value={selectedDate} onChange={onDateChange} />
-                                    </div>
-                                    <div className={styles.inputGroup}>
-                                        <label htmlFor="schedule-time-form">Time</label>
-                                        <select id="schedule-time-form" value={selectedTime} onChange={onTimeChange}>
-                                            {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
-                                        </select>
-                                    </div>
+                                    <div className={styles.inputGroup}><label htmlFor="schedule-date-form">Date</label><input id="schedule-date-form" type="date" value={selectedDate} onChange={onDateChange} /></div>
+                                    <div className={styles.inputGroup}><label htmlFor="schedule-time-form">Time</label><select id="schedule-time-form" value={selectedTime} onChange={onTimeChange}>{timeSlots.map(time => <option key={time} value={time}>{time}</option>)}</select></div>
                                 </div>
                                 <button type="button" onClick={() => handleFormSubmit('schedule')} disabled={isSubmitting || !imageForSubmission} className={styles.actionButton_Schedule}>
                                     <ScheduleIcon />
@@ -155,21 +197,12 @@ export default function CustomImageForm({
                             </div>
                         </>
                     ) : (
-                        // ORIGINAL LAYOUT FOR THE SCHEDULE PAGE
                         <>
                             <div className={styles.controlSection}>
                                 <label className={styles.sectionLabel}>Schedule for...</label>
                                 <div className={styles.dateTimeInputs}>
-                                    <div className={styles.inputGroup}>
-                                        <label htmlFor="schedule-date-form">Date</label>
-                                        <input id="schedule-date-form" type="date" value={selectedDate} onChange={onDateChange} />
-                                    </div>
-                                    <div className={styles.inputGroup}>
-                                        <label htmlFor="schedule-time-form">Time</label>
-                                        <select id="schedule-time-form" value={selectedTime} onChange={onTimeChange}>
-                                            {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
-                                        </select>
-                                    </div>
+                                    <div className={styles.inputGroup}><label htmlFor="schedule-date-form">Date</label><input id="schedule-date-form" type="date" value={selectedDate} onChange={onDateChange} /></div>
+                                    <div className={styles.inputGroup}><label htmlFor="schedule-time-form">Time</label><select id="schedule-time-form" value={selectedTime} onChange={onTimeChange}>{timeSlots.map(time => <option key={time} value={time}>{time}</option>)}</select></div>
                                 </div>
                             </div>
                             <div className={`${styles.controlSection} ${styles.finalActions}`}>

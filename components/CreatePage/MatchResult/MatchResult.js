@@ -17,7 +17,12 @@ const initialFormData = {
     awayTeamBadge: '',
     homeTeamScore: '',
     awayTeamScore: '',
+    matchDate: '',
+    kickOffTime: '',
+    venue: '',
+    teamType: '',
     scorers: [{ id: 1, name: '', minute: '', isPenalty: false }],
+    oppositionScorers: [{ id: 1, name: '', minute: '', isPenalty: false }],
     caption: '',
     selectedBackground: '',
     saveCustomBackground: true,
@@ -32,52 +37,26 @@ export default function MatchResult() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [previewUrl, setPreviewUrl] = useState('');
     const [message, setMessage] = useState('');
-    const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
     const [editPrompt, setEditPrompt] = useState('');
     const [isEditingImage, setIsEditingImage] = useState(false);
     const [generatedPreviews, setGeneratedPreviews] = useState([]);
 
-    const handleGenerateCaption = async (data) => {
-        setIsGeneratingCaption(true);
-        setFormData(prev => ({ ...prev, caption: '' }));
-
-        const getTeamNameFromBadge = (badgeUrl) => {
-            const badge = badges.find(b => b.Link === badgeUrl);
-            if (!badge) return 'Unknown Team';
-            return badge.Name.replace(/.png/i, '').substring(14);
-        };
-
-        const homeBadgeObject = badges.find(b => b.Link === data.homeTeamBadge);
-        const isGlannauHome = homeBadgeObject && homeBadgeObject.Name.toLowerCase().includes('glannau');
-
-        const gameInfo = {
-            homeTeam: getTeamNameFromBadge(data.homeTeamBadge), awayTeam: getTeamNameFromBadge(data.awayTeamBadge),
-            homeTeamScore: data.homeTeamScore, awayTeamScore: data.awayTeamScore,
-            scorers: formatScorersForWebhook(data.scorers, isGlannauHome)
-        };
-
-        const payload = { page: 'matchResult', gameInfo };
-
-        try {
-            const response = await fetch('/api/generate-caption', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` }, body: JSON.stringify(payload) });
-            if (!response.ok) { throw new Error('Failed to generate caption.'); }
-            const result = await response.json();
-            setFormData(prev => ({ ...prev, caption: result.caption || 'Sorry, could not generate a caption.' }));
-        } catch (err) {
-            setFormData(prev => ({ ...prev, caption: `Error: ${err.message}` }));
-        } finally {
-            setIsGeneratingCaption(false);
-        }
-    };
+    // handleGenerateCaption and isGeneratingCaption state removed from this component.
 
     const triggerWorkflow = async (action, data) => {
         if (!authKey || !data.selectedBackground) { alert('Please ensure you have an Authorization Key and have selected a background.'); return; }
-        setIsSubmitting(true); setMessage('');
+        setIsSubmitting(true); 
+        setMessage('');
+        setFormData(data);
 
         const homeBadgeObject = badges.find(b => b.Link === data.homeTeamBadge);
         const isGlannauHome = homeBadgeObject && homeBadgeObject.Name.toLowerCase().includes('glannau');
         
-        const formattedScorers = formatScorersForWebhook(data.scorers, isGlannauHome);
+        const formattedScorers = formatScorersForWebhook({
+            glannauScorers: data.scorers,
+            oppositionScorers: data.oppositionScorers,
+            isGlannauHome
+        });
 
         const payload = {
             action,
@@ -167,10 +146,6 @@ export default function MatchResult() {
                         <div className={styles.previewSection}>
                             <div className={styles.previewSectionHeader}>
                                 <label htmlFor="previewCaption">Post Caption</label>
-                                <button onClick={() => handleGenerateCaption(formData)} className={styles.aiButton} disabled={isGeneratingCaption}>
-                                    <GenerateIcon />
-                                    {isGeneratingCaption ? 'Generating...' : 'Regenerate'}
-                                </button>
                             </div>
                             <textarea id="previewCaption" className={styles.previewCaptionTextarea} value={formData.caption} onChange={(e) => setFormData(prev => ({...prev, caption: e.target.value}))} rows={8} />
                         </div>
@@ -202,9 +177,8 @@ export default function MatchResult() {
                 initialData={formData}
                 onSubmit={handleGeneratePreview}
                 onYoloSubmit={handleYoloPost}
-                onGenerateCaption={handleGenerateCaption}
                 isSubmitting={isSubmitting}
-                isGeneratingCaption={isGeneratingCaption}
+                authKey={authKey}
             />
             {generatedPreviews.length > 0 && (
                 <div className={styles.section}>

@@ -34,7 +34,6 @@ export default function CustomImagePost() {
     
     const [feedback, setFeedback] = useState({ message: '', type: '' });
     
-    // MODIFIED: Added state for the form's key to trigger a reset
     const [formKey, setFormKey] = useState(Date.now());
 
     useEffect(() => {
@@ -96,7 +95,6 @@ export default function CustomImagePost() {
             
             showFeedback(result.message || 'Action completed successfully!', 'success');
             
-            // MODIFIED: Change the key to force the form component to re-mount and reset its state
             setFormKey(Date.now());
 
         } catch (error) {
@@ -115,8 +113,7 @@ export default function CustomImagePost() {
                 </div>
             )}
             <CustomImageForm
-                // MODIFIED: Added the key prop
-                key={formKey} 
+                key={formKey}
                 context="create"
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
@@ -125,6 +122,7 @@ export default function CustomImagePost() {
                 selectedTime={selectedTime}
                 onTimeChange={(e) => setSelectedTime(e.target.value)}
                 timeSlots={timeSlots}
+                authKey={authKey}
             />
         </div>
     );
