@@ -9,7 +9,7 @@
 
 import { useState, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import ImageEditor from '@/components/ImageEditor/ImageEditor';
+import AssetUploader from './AssetUploader'; // MODIFIED: Import path updated for sub-component
 import AssetDetailsModal from '@/components/AssetDetailsModal/AssetDetailsModal';
 import styles from './AssetsPage.module.css';
 import { ManageIcon, AddIcon, RefreshIcon, FolderIcon, HomeIcon } from './AssetsPageIcons';
@@ -27,8 +27,8 @@ const dataURLtoBlob = (dataurl) => {
 }
 
 const ASSET_TYPES = {
-    background: { label: 'Background', aspect: 1080 / 1350 },
-    badge: { label: 'Badge', aspect: 1 / 1 },
+    background: { label: 'Background', aspect: 1080 / 1350, width: 1080, height: 1350 },
+    badge: { label: 'Badge', aspect: 1 / 1, width: 1080, height: 1080 },
 };
 
 const assetTabs = [
@@ -49,7 +49,7 @@ export default function AssetsPage() {
 
     const [newAssetName, setNewAssetName] = useState('');
     const [uploadAssetType, setUploadAssetType] = useState('background');
-    const [croppedImage, setCroppedImage] = useState('');
+    const [processedImage, setProcessedImage] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [uploadPath, setUploadPath] = useState('');
     const [newFolderName, setNewFolderName] = useState('');
@@ -106,7 +106,7 @@ export default function AssetsPage() {
     const handleUpload = async (e) => {
         e.preventDefault();
         const finalDestination = destinationFolder || uploadPath;
-        if (!croppedImage || !newAssetName || !finalDestination) {
+        if (!processedImage || !newAssetName || !finalDestination) {
             setMessage('Please fill out all fields and select a folder.');
             return;
         }
@@ -114,7 +114,7 @@ export default function AssetsPage() {
         setMessage('');
 
         try {
-            const imageBlob = dataURLtoBlob(croppedImage);
+            const imageBlob = dataURLtoBlob(processedImage);
             const formData = new FormData();
             formData.append('assetName', newAssetName);
             formData.append('assetType', ASSET_TYPES[uploadAssetType].label);
@@ -129,7 +129,7 @@ export default function AssetsPage() {
             await refreshAppData();
             setMessage('Asset uploaded and data refreshed!');
             
-            setNewAssetName(''); setCroppedImage(''); setUploadPath(''); setDestinationFolder(''); setActiveTab('manage');
+            setNewAssetName(''); setProcessedImage(''); setUploadPath(''); setDestinationFolder(''); setActiveTab('manage');
         } catch (err) {
             setMessage(`Error: ${err.message}`);
         } finally {
@@ -141,7 +141,6 @@ export default function AssetsPage() {
         if (index < 0) { setCurrentPath(''); } else { setCurrentPath(manageView.breadcrumbs.slice(0, index + 1).join('/')); }
     };
 
-    // --- THIS FUNCTION IS NOW RESTORED ---
     const manageFolderClick = (folder) => {
         setCurrentPath(currentPath ? `${currentPath}/${folder}` : folder);
     };
@@ -217,18 +216,24 @@ export default function AssetsPage() {
                             <div className={styles.uploadStep}>
                                 <h3 className={styles.stepTitle}>Step 1: Choose Asset Type</h3>
                                 <div className={styles.assetTypeSelector}>
-                                    {Object.entries(ASSET_TYPES).map(([key, { label }]) => (
+                                    {Object.entries(ASSET_TYPES).map(([key, { label, width, height }]) => (
                                         <button key={key} className={`${styles.assetTypeButton} ${uploadAssetType === key ? styles.activeType : ''}`} onClick={() => setUploadAssetType(key)}>
-                                            {label} <span className={styles.aspectRatioLabel}>({key === 'background' ? '1080x1350' : '1080x1080'})</span>
+                                            {label} <span className={styles.aspectRatioLabel}>({width}x{height})</span>
                                         </button>
                                     ))}
                                 </div>
                             </div>
                             <div className={styles.uploadStep}>
-                                <h3 className={styles.stepTitle}>Step 2: Upload & Crop Image</h3>
-                                <ImageEditor onCropComplete={(dataUrl) => setCroppedImage(dataUrl)} aspectRatio={ASSET_TYPES[uploadAssetType].aspect} />
+                                <h3 className={styles.stepTitle}>Step 2: Upload & Process Image</h3>
+                                <AssetUploader
+                                    key={uploadAssetType}
+                                    onUploadComplete={(dataUrl) => setProcessedImage(dataUrl)}
+                                    aspectRatio={ASSET_TYPES[uploadAssetType].aspect}
+                                    outputWidth={ASSET_TYPES[uploadAssetType].width}
+                                    outputHeight={ASSET_TYPES[uploadAssetType].height}
+                                />
                             </div>
-                            {croppedImage && (
+                            {processedImage && (
                                 <form onSubmit={handleUpload}>
                                     <div className={styles.uploadStep}>
                                         <h3 className={styles.stepTitle}>Step 3: Name Your Asset</h3>
