@@ -100,7 +100,7 @@
     min-height: 180px; /* Set a fixed height */
 }
 
-/* --- NEW STYLES for Caption Tabs --- */
+/* --- STYLES for Caption Tabs --- */
 .captionTabContainer {
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -147,7 +147,7 @@
     resize: vertical;
     min-height: 124px; /* Adjust height to fill space */
 }
-/* --- END NEW STYLES --- */
+/* --- END STYLES --- */
 
 .dateTimeInputs {
     display: flex;
@@ -253,5 +253,6 @@
 @media (max-width: 768px) {
     .unifiedLayout {
         flex-direction: column;
+        align-items: stretch; /* CORRECTED: Ensures items fill the width */
     }
 }
