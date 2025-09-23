@@ -9,12 +9,12 @@
 
 import { useState, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import AssetUploader from './AssetUploader'; // MODIFIED: Import path updated for sub-component
+import AssetUploader from './AssetUploader';
+import Breadcrumbs from './Breadcrumbs'; // MODIFIED: Import the new Breadcrumbs component
 import AssetDetailsModal from '@/components/AssetDetailsModal/AssetDetailsModal';
 import styles from './AssetsPage.module.css';
 import { ManageIcon, AddIcon, RefreshIcon, FolderIcon, HomeIcon } from './AssetsPageIcons';
 
-// Helper function to convert Data URL to a Blob for file upload
 const dataURLtoBlob = (dataurl) => {
     const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1];
     const bstr = atob(arr[1]);
@@ -52,13 +52,16 @@ export default function AssetsPage() {
     const [processedImage, setProcessedImage] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [uploadPath, setUploadPath] = useState('');
-    const [newFolderName, setNewFolderName] = useState('');
+    
+    // MODIFIED: State for new in-line folder creation
     const [destinationFolder, setDestinationFolder] = useState('');
+    const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+    const [newFolderName, setNewFolderName] = useState('');
 
     const directoryTree = useMemo(() => {
         const tree = {};
         allAssets.forEach(asset => {
-            const pathParts = (asset.Folder || 'uncategorized').split('/').filter(p => p);
+            const pathParts = (asset.Folder || '').split('/').filter(p => p);
             let currentNode = tree;
             pathParts.forEach(part => { if (!currentNode[part]) { currentNode[part] = { '__assets': [] }; } currentNode = currentNode[part]; });
             currentNode['__assets'].push(asset);
@@ -72,7 +75,7 @@ export default function AssetsPage() {
         for (const part of pathParts) { currentNode = currentNode[part] || { '__assets': [] }; }
         const subfolders = Object.keys(currentNode).filter(key => key !== '__assets');
         const assets = currentNode['__assets'] || [];
-        return { subfolders, assets, breadcrumbs: pathParts };
+        return { subfolders, assets };
     };
 
     const manageView = useMemo(() => createViewFromPath(currentPath, directoryTree), [currentPath, directoryTree]);
@@ -96,18 +99,24 @@ export default function AssetsPage() {
         }
     };
     
-    const handleCreateNewFolder = () => {
-        if (!newFolderName.trim()) return;
+    // MODIFIED: Logic to handle creating and selecting a new folder
+    const handleCreateAndSelectFolder = () => {
+        if (!newFolderName.trim()) {
+            setIsCreatingFolder(false);
+            return;
+        }
         const finalPath = uploadPath ? `${uploadPath}/${newFolderName.trim()}` : newFolderName.trim();
         setDestinationFolder(finalPath);
+        setIsCreatingFolder(false);
         setNewFolderName('');
     };
 
     const handleUpload = async (e) => {
         e.preventDefault();
+        // MODIFIED: Use the explicitly selected destinationFolder or the current uploadPath
         const finalDestination = destinationFolder || uploadPath;
-        if (!processedImage || !newAssetName || !finalDestination) {
-            setMessage('Please fill out all fields and select a folder.');
+        if (!processedImage || !newAssetName || finalDestination === null) {
+            setMessage('Please select a destination folder.');
             return;
         }
         setIsUploading(true);
@@ -137,17 +146,16 @@ export default function AssetsPage() {
         }
     };
 
-    const manageBreadcrumbClick = (index) => {
-        if (index < 0) { setCurrentPath(''); } else { setCurrentPath(manageView.breadcrumbs.slice(0, index + 1).join('/')); }
+    // MODIFIED: Centralized navigation handlers
+    const handleManageNav = (index) => {
+        const pathParts = currentPath.split('/').filter(p => p);
+        if (index < 0) { setCurrentPath(''); } else { setCurrentPath(pathParts.slice(0, index + 1).join('/')); }
     };
-
-    const manageFolderClick = (folder) => {
-        setCurrentPath(currentPath ? `${currentPath}/${folder}` : folder);
-    };
-
-    const uploadBreadcrumbClick = (index) => {
-        if (index < 0) { setUploadPath(''); } else { setUploadPath(uploadFolderView.breadcrumbs.slice(0, index + 1).join('/')); }
-        setDestinationFolder('');
+    
+    const handleUploadNav = (index) => {
+        const pathParts = uploadPath.split('/').filter(p => p);
+        if (index < 0) { setUploadPath(''); } else { setUploadPath(pathParts.slice(0, index + 1).join('/')); }
+        setDestinationFolder(''); // Reset specific destination on navigation
     };
 
     return (
@@ -163,21 +171,14 @@ export default function AssetsPage() {
                     {activeTab === 'manage' && (
                         <section className={styles.section}>
                             <div className={styles.sectionHeader}>
-                                <nav className={styles.breadcrumbs}>
-                                    <button onClick={() => manageBreadcrumbClick(-1)} title="Go to root folder"><HomeIcon /></button>
-                                    {manageView.breadcrumbs.map((part, index) => (
-                                        <span key={index}>
-                                            <span className={styles.breadcrumbSeparator}>/</span>
-                                            <button onClick={() => manageBreadcrumbClick(index)}>{part}</button>
-                                        </span>
-                                    ))}
-                                </nav>
+                                {/* MODIFIED: Use the new Breadcrumbs component */}
+                                <Breadcrumbs path={currentPath} onNavigate={handleManageNav} />
                             </div>
 
                             {manageView.subfolders.length > 0 && (
                                 <div className={styles.folderGrid}>
                                     {manageView.subfolders.map(folder => (
-                                        <button key={folder} className={styles.folderItem} onClick={() => manageFolderClick(folder)}>
+                                        <button key={folder} className={styles.folderItem} onClick={() => setCurrentPath(currentPath ? `${currentPath}/${folder}` : folder)}>
                                             <FolderIcon />
                                             <span className={styles.folderName}>{folder}</span>
                                         </button>
@@ -244,24 +245,39 @@ export default function AssetsPage() {
                                     </div>
                                     <div className={styles.uploadStep}>
                                         <h3 className={styles.stepTitle}>Step 4: Choose Destination Folder</h3>
-                                        <div className={styles.folderBrowser}>
-                                            <nav className={styles.breadcrumbs}>
-                                                <button type="button" onClick={() => uploadBreadcrumbClick(-1)} title="Go to root"><HomeIcon /></button>
-                                                {uploadFolderView.breadcrumbs.map((part, index) => ( <span key={index}> <span className={styles.breadcrumbSeparator}>/</span> <button type="button" onClick={() => uploadBreadcrumbClick(index)}>{part}</button> </span> ))}
-                                            </nav>
-                                            <div className={styles.folderGrid}>
-                                                {uploadFolderView.subfolders.map(folder => ( <button type="button" key={folder} className={styles.folderItem} onClick={() => { setUploadPath(uploadPath ? `${uploadPath}/${folder}` : folder); setDestinationFolder(''); }}> <FolderIcon /> <span className={styles.folderName}>{folder}</span> </button> ))}
-                                            </div>
-                                            {uploadFolderView.subfolders.length === 0 && <p className={styles.emptyMessage}>No subfolders here.</p>}
+                                        <div className={styles.folderBrowserHeader}>
+                                            {/* MODIFIED: Use the new Breadcrumbs component */}
+                                            <Breadcrumbs path={uploadPath} onNavigate={handleUploadNav} />
+                                            <button type="button" onClick={() => setIsCreatingFolder(true)} className={styles.newFolderButton}>New Folder</button>
                                         </div>
-                                        <div className={styles.folderSelection}>
-                                            <div className={styles.newFolderCreator}>
-                                                <input type="text" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} placeholder="Create new subfolder..." />
-                                                <button type="button" onClick={handleCreateNewFolder} disabled={!newFolderName.trim()}>Create & Select</button>
-                                            </div>
-                                            <div className={styles.selectedFolderDisplay}>
-                                                <strong>Selected:</strong> <span>{destinationFolder || uploadPath || 'Root'}</span>
-                                            </div>
+                                        <div className={styles.folderGrid}>
+                                            {/* MODIFIED: In-line folder creation UI */}
+                                            {isCreatingFolder && (
+                                                <div className={styles.newFolderInputContainer}>
+                                                    <FolderIcon />
+                                                    <input 
+                                                        type="text"
+                                                        value={newFolderName}
+                                                        onChange={(e) => setNewFolderName(e.target.value)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && handleCreateAndSelectFolder()}
+                                                        onBlur={handleCreateAndSelectFolder} // Create folder when input loses focus
+                                                        placeholder="New folder name..."
+                                                        autoFocus
+                                                    />
+                                                </div>
+                                            )}
+                                            {uploadFolderView.subfolders.map(folder => (
+                                                <button type="button" key={folder} className={`${styles.folderItem} ${destinationFolder === (uploadPath ? `${uploadPath}/${folder}` : folder) ? styles.selected : ''}`} onClick={() => setDestinationFolder(uploadPath ? `${uploadPath}/${folder}` : folder)}>
+                                                    <FolderIcon />
+                                                    <span className={styles.folderName}>{folder}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {uploadFolderView.subfolders.length === 0 && !isCreatingFolder && <p className={styles.emptyMessage}>No subfolders here. Click 'New Folder' to create one.</p>}
+                                        <div className={styles.selectedFolderDisplay}>
+                                            <strong>Selected Destination:</strong>
+                                            {/* MODIFIED: Display logic is cleaner */}
+                                            <span>{destinationFolder || uploadPath || 'Root'}</span>
                                         </div>
                                     </div>
                                     <div className={styles.actionsContainer}>
