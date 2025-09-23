@@ -199,12 +199,6 @@
     }
 }
 
-@media (max-width: 768px) {
-    .contentArea {
-        padding: 1.5rem 0.75rem;
-    }
-}
-
 @media (max-width: 640px) {
     .topHeader {
         flex-direction: column;
@@ -212,10 +206,4 @@
         gap: 1rem;
     }
     .viewTitle { text-align: center; }
-}
-
-@media (max-width: 480px) {
-    .contentArea {
-        padding: 1rem 0.5rem;
-    }
 }
