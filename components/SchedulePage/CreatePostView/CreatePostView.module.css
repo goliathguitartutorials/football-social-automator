@@ -207,3 +207,10 @@
     }
     .viewTitle { text-align: center; }
 }
+
+/* ADDED: Responsive padding to match the Create Page */
+@media (max-width: 768px) {
+    .contentArea {
+        padding: 1rem;
+    }
+}
