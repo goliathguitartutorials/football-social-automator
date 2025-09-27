@@ -8,7 +8,7 @@
 'use client';
 import styles from './MobileScheduleView.module.css';
 import PostPreview from '../PostPreview/PostPreview';
-import MatchPreview from '../MatchPreview/MatchPreview';
+import MatchPreview from '../MatchPreview/MatchPreview'; // Import new component
 import { PlusIcon } from '../SchedulePageIcons';
 
 export default function MobileScheduleView({ events, onPostClick, onMatchClick, onNewEventClick, showDateHeaders = true }) {
