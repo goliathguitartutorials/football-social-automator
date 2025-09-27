@@ -23,22 +23,20 @@ export async function POST(request) {
         }
 
         // --- Process JSON Data from the Request Body ---
-        const { action, matchData } = await request.json();
+        const body = await request.json();
 
-        if (!action || !matchData) {
-            return NextResponse.json({ error: 'Missing required payload data (action or matchData).' }, { status: 400 });
+        // A more flexible check: as long as there's an 'action', we forward it.
+        if (!body.action) {
+            return NextResponse.json({ error: 'Missing required "action" in payload.' }, { status: 400 });
         }
 
-        // --- Forward Data to n8n Webhook ---
-        // The payload is already in the correct JSON format to be sent to n8n
-        const payload = { action, matchData };
-
+        // --- Forward the entire payload to n8n Webhook ---
         const n8nResponse = await fetch(N8N_MATCH_MANAGER_WEBHOOK_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify(body), // Send the entire body as received
         });
 
         if (!n8nResponse.ok) {
