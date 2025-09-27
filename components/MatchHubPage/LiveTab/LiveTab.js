@@ -20,8 +20,8 @@ export default function LiveTab() {
     const { appData, authKey } = useAppContext();
     const [liveMatch, setLiveMatch] = useState(null);
     const [nextMatch, setNextMatch] = useState(null);
-    const [view, setView] = useState('dashboard'); // dashboard | logEvent
-    const [activeTab, setActiveTab] = useState('overview'); // overview | squad
+    const [view, setView] = useState('dashboard');
+    const [activeTab, setActiveTab] = useState('overview');
     const [selectedEventType, setSelectedEventType] = useState(null);
     const [prepopulatedMinute, setPrepopulatedMinute] = useState('');
     const [events, setEvents] = useState([]);
@@ -30,20 +30,18 @@ export default function LiveTab() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [apiError, setApiError] = useState('');
     
-    // State to hold the definitive start times from logged events
     const [matchStartTime, setMatchStartTime] = useState(null);
     const [secondHalfStartTime, setSecondHalfStartTime] = useState(null);
 
-    // --- DATA FETCHING & STATE RECONSTRUCTION ---
     const reconstructStateFromEvents = useCallback((eventList) => {
         const sortedEvents = eventList.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setEvents(sortedEvents);
 
         const startEvent = sortedEvents.find(e => e.eventType === 'MATCH_START');
-        if (startEvent) setMatchStartTime(new Date(startEvent.timestamp));
+        if (startEvent && startEvent.timestamp) setMatchStartTime(new Date(startEvent.timestamp));
 
         const secondHalfEvent = sortedEvents.find(e => e.eventType === 'SECOND_HALF_START');
-        if (secondHalfEvent) setSecondHalfStartTime(new Date(secondHalfEvent.timestamp));
+        if (secondHalfEvent && secondHalfEvent.timestamp) setSecondHalfStartTime(new Date(secondHalfEvent.timestamp));
 
         const newHomeScore = sortedEvents.filter(e => e.eventType === 'Goal' && e.team === 'home').length;
         const newAwayScore = sortedEvents.filter(e => e.eventType === 'Goal' && e.team === 'away').length;
@@ -53,8 +51,7 @@ export default function LiveTab() {
     useEffect(() => {
         const findAndLoadMatch = async () => {
             const now = new Date();
-            // Extend window slightly to catch matches that just finished
-            const liveMatchWindowMs = 200 * 60 * 1000; 
+            const liveMatchWindowMs = 200 * 60 * 1000;
             if (!appData.matches || appData.matches.length === 0) {
                  setLiveMatch(null);
                  setNextMatch(null);
@@ -64,11 +61,11 @@ export default function LiveTab() {
             const foundLiveMatch = appData.matches.find(match => {
                 const matchScheduledTime = new Date(`${match.matchDate} ${match.matchTime}`);
                 const matchEndTime = new Date(matchScheduledTime.getTime() + liveMatchWindowMs);
-                return now > matchScheduledTime && now < matchEndTime;
+                return now >= matchScheduledTime && now <= matchEndTime;
             });
 
             if (foundLiveMatch) {
-                if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return; // Already loaded this match
+                if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
 
                 const homeTeamName = foundLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
                 const awayTeamName = foundLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
@@ -78,8 +75,8 @@ export default function LiveTab() {
                 };
                 setLiveMatch(processedMatch);
 
-                // Fetch existing events for this match
                 try {
+                    setApiError('');
                     const response = await fetch('/api/manage-match', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
@@ -89,12 +86,11 @@ export default function LiveTab() {
                     if (!response.ok) throw new Error('Failed to fetch existing match events.');
                     
                     const result = await response.json();
-                    const existingEvents = result.data || [];
+                    const existingEvents = result.data || result || [];
                     
-                    if (existingEvents && existingEvents.length > 0) {
+                    if (Array.isArray(existingEvents) && existingEvents.length > 0) {
                         reconstructStateFromEvents(existingEvents);
                     } else {
-                        // If no events, reset state for the new match
                         setEvents([]);
                         setScore({ home: 0, away: 0});
                         setMatchStartTime(null);
@@ -113,7 +109,6 @@ export default function LiveTab() {
         findAndLoadMatch();
     }, [appData.matches, authKey, reconstructStateFromEvents, liveMatch]);
 
-    // --- CLOCK LOGIC ---
     const calculateElapsedTime = useCallback(() => {
         if (!matchStartTime) return { minute: 0, display: "Not Started" };
 
@@ -151,7 +146,6 @@ export default function LiveTab() {
         return () => clearInterval(interval);
     }, [calculateElapsedTime]);
 
-    // --- EVENT HANDLING ---
     const handleEventClick = (eventType) => {
         const { minute } = calculateElapsedTime();
         setPrepopulatedMinute(minute);
@@ -177,12 +171,8 @@ export default function LiveTab() {
         const eventId = `event_${eventTimestamp.getTime()}`;
         
         const apiPayload = {
-            eventId,
-            matchId: liveMatch.matchId,
-            eventType: eventData.eventType,
-            minute: eventData.minute,
-            timestamp: eventTimestamp.toISOString(),
-            team: eventData.team || '',
+            eventId, matchId: liveMatch.matchId, eventType: eventData.eventType,
+            minute: eventData.minute, timestamp: eventTimestamp.toISOString(), team: eventData.team || '',
             playerFullName: eventData.scorer || eventData.player || eventData.playerOff || '',
             assistByFullName: eventData.assist || eventData.playerOn || '',
         };
@@ -201,7 +191,7 @@ export default function LiveTab() {
                 body: JSON.stringify({ action: 'get_match_events', matchData: { matchId: liveMatch.matchId } })
             });
             const result = await refetchResponse.json();
-            reconstructStateFromEvents(result.data || []);
+            reconstructStateFromEvents(result.data || result || []);
             
             handleFormCancel();
         } catch (error) {
@@ -211,26 +201,25 @@ export default function LiveTab() {
         }
     };
     
-    // --- AUTO-END LOGIC ---
     useEffect(() => {
         if (!matchStartTime || events.some(e => e.eventType === 'MATCH_END' || e.eventType === 'AUTO_MATCH_END')) return;
-
+        const autoEndMinute = 105;
         const checkAutoEnd = () => {
             const { minute } = calculateElapsedTime();
-            // Trigger if match is still going after 105 minutes (90 + 15 grace)
-            if (minute > 105) {
+            if (minute > autoEndMinute) {
                 handleControlClick('AUTO_MATCH_END');
             }
         };
 
-        // Set a timer relative to the match start time
-        const msUntilCheck = (106 * 60 * 1000) - (new Date() - matchStartTime);
-        if (msUntilCheck < 0) return; // Don't set a timer in the past
+        const msUntilCheck = ( (autoEndMinute + 1) * 60 * 1000) - (new Date() - matchStartTime);
+        if (msUntilCheck < 0) {
+            checkAutoEnd();
+            return;
+        }
 
         const timer = setTimeout(checkAutoEnd, msUntilCheck);
         return () => clearTimeout(timer);
     }, [matchStartTime, events, calculateElapsedTime]);
-
 
     if (view === 'logEvent') {
         return <EventForm eventType={selectedEventType} match={liveMatch} onCancel={handleFormCancel} onSubmit={handleEventSubmit} initialMinute={prepopulatedMinute} isSubmitting={isSubmitting} apiError={apiError} />;
