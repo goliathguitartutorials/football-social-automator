@@ -12,9 +12,10 @@ import { useAppContext } from '@/app/context/AppContext';
 import styles from './LiveTab.module.css';
 import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from './LiveTabIcons';
 import CountdownTimer from './CountdownTimer';
-import { EventForm } from './EventForm/EventForm';
-import { MatchEventsPanel } from './MatchEventsPanel/MatchEventsPanel';
-import { SquadPanel } from './SquadPanel/SquadPanel';
+// FIXED: Changed component imports to default to match their export style.
+import EventForm from './EventForm/EventForm';
+import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
+import SquadPanel from './SquadPanel/SquadPanel';
 
 export default function LiveTab() {
     const { appData, authKey } = useAppContext();
