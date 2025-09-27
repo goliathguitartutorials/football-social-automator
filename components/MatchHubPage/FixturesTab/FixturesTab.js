@@ -6,9 +6,9 @@
  ==========================================================
  */
 import styles from './FixturesTab.module.css';
+import { EditIcon } from '../MatchHubIcons'; // Assuming you have an EditIcon
 
-const MatchCard = ({ match }) => {
-    // Helper to format date and time
+const MatchCard = ({ match, onEditClick }) => {
     const formatDateTime = (dateStr, timeStr) => {
         const date = new Date(`${dateStr}T${timeStr}`);
         const formattedDate = date.toLocaleDateString('en-GB', {
@@ -21,11 +21,15 @@ const MatchCard = ({ match }) => {
     };
 
     const { formattedDate, formattedTime } = formatDateTime(match.matchDate, match.matchTime);
+    const teamType = match.team === 'first-team' ? 'First Team' : 'Development';
 
     return (
         <div className={styles.matchCard}>
             <div className={styles.matchInfo}>
-                <p className={styles.competition}>{match.competition}</p>
+                <div className={styles.metaLine}>
+                    <p className={styles.competition}>{match.competition}</p>
+                    <span className={`${styles.teamBadge} ${styles[match.team]}`}>{teamType}</span>
+                </div>
                 <h3 className={styles.teams}>
                     {match.homeOrAway === 'Home' ? 'Y Glannau' : match.opponent}
                     <span>vs</span>
@@ -37,27 +41,24 @@ const MatchCard = ({ match }) => {
                 <p className={styles.date}>{formattedDate}</p>
                 <p className={styles.time}>{formattedTime}</p>
             </div>
+            <div className={styles.actions}>
+                <button onClick={() => onEditClick(match)} className={styles.editButton}>
+                    <EditIcon /> Edit
+                </button>
+            </div>
         </div>
     );
 };
 
-export default function FixturesTab({ matches, isLoading, error }) {
-    if (isLoading) {
-        return <p className={styles.notice}>Loading fixtures...</p>;
-    }
-
-    if (error) {
-        return <p className={`${styles.notice} ${styles.error}`}>{error}</p>;
-    }
-
-    if (matches.length === 0) {
+export default function FixturesTab({ matches, onEditClick }) {
+    if (!matches || matches.length === 0) {
         return <p className={styles.notice}>No upcoming matches found.</p>;
     }
 
     return (
         <div className={styles.fixturesList}>
             {matches.map(match => (
-                <MatchCard key={match.matchId} match={match} />
+                <MatchCard key={match.matchId} match={match} onEditClick={onEditClick} />
             ))}
         </div>
     );
