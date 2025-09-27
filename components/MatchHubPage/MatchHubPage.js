@@ -9,12 +9,10 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './MatchHubPage.module.css';
-// MODIFIED: Imported new ArchiveIcon
 import { FixturesIcon, LiveIcon, ArchiveIcon } from './MatchHubIcons';
 import FixturesTab from './FixturesTab/FixturesTab';
 import LiveTab from './LiveTab/LiveTab';
 import AddMatchForm from './AddMatchForm/AddMatchForm';
-// MODIFIED: Imported new ArchiveTab component
 import ArchiveTab from './ArchiveTab/ArchiveTab';
 
 export default function MatchHubPage() {
@@ -47,6 +45,13 @@ export default function MatchHubPage() {
         setEditingMatch(match);
         setView('add_form');
     };
+    
+    // NEW: Function to handle the "Add New Match" action, to be passed to FixturesTab
+    const handleAddNewMatch = () => {
+        setEditingMatch(null);
+        setNewMatchData(null);
+        setView('add_form');
+    };
 
     const handleFormClose = () => {
         setEditingMatch(null);
@@ -66,12 +71,12 @@ export default function MatchHubPage() {
             );
         }
         if (view === 'fixtures') {
-            return <FixturesTab matches={appData.matches} onEditClick={handleEditClick} />;
+            // MODIFIED: Passed the onAddNewMatch handler to the FixturesTab
+            return <FixturesTab matches={appData.matches} onEditClick={handleEditClick} onAddNewMatch={handleAddNewMatch} />;
         }
         if (view === 'live') {
             return <LiveTab />;
         }
-        // MODIFIED: Added render logic for the new ArchiveTab
         if (view === 'archive') {
             return <ArchiveTab matches={appData.matches} />;
         }
@@ -84,10 +89,9 @@ export default function MatchHubPage() {
                 <nav className={styles.tabNav}>
                     <button className={`${styles.navButton} ${view === 'fixtures' ? styles.active : ''}`} onClick={() => setView('fixtures')}><span className={styles.navIcon}><FixturesIcon /></span><span className={styles.navLabel}>Fixtures</span></button>
                     <button className={`${styles.navButton} ${view === 'live' ? styles.active : ''}`} onClick={() => setView('live')}><span className={styles.navIcon}><LiveIcon /></span><span className={styles.navLabel}>Live</span></button>
-                    {/* MODIFIED: Added the new Archive tab button */}
                     <button className={`${styles.navButton} ${view === 'archive' ? styles.active : ''}`} onClick={() => setView('archive')}><span className={styles.navIcon}><ArchiveIcon /></span><span className={styles.navLabel}>Archive</span></button>
                 </nav>
-                {view !== 'add_form' && (<button className={styles.addMatchButton} onClick={() => setView('add_form')}>+ Add New Match</button>)}
+                {/* MODIFIED: The "+ Add New Match" button has been removed from the header */}
             </header>
             <main className={styles.contentContainer}>
                 {renderContent()}
