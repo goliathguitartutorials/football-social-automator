@@ -5,25 +5,129 @@
  * FILE: /components/MatchHubPage/LiveTab/EventForm/EventForm.module.css
  * ==========================================================
  */
-.formContainer { width: 100%; max-width: 600px; margin: 0 auto; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; }
-.formHeader { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); }
-.formHeader h3 { margin: 0; font-size: 1.25rem; color: var(--text-primary); }
-.formBody { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
-.apiError { background-color: #5c2c2c; color: #ffb8b8; border: 1px solid #d85a5a; padding: 0.75rem 1rem; border-radius: 6px; text-align: center; margin: 0 0 1rem 0; }
-.formGroup { display: flex; flex-direction: column; }
-.formGroup label { margin-bottom: 0.5rem; font-weight: 500; color: var(--text-secondary); }
-.formGroup input, .formGroup select { padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); background-color: #374151; color: var(--text-primary); font-size: 1rem; }
-.teamSelector { display: flex; gap: 0.25rem; background-color: #2d3748; padding: 0.25rem; border-radius: 8px; border: 1px solid var(--border-color); }
-.teamSelector button { flex: 1; padding: 0.6rem 1rem; border: none; background-color: transparent; border-radius: 6px; cursor: pointer; font-weight: 500; color: var(--text-secondary); transition: background-color 0.2s ease, color 0.2s ease; }
-.teamSelector button.active { background-color: var(--accent-color); color: #fff; font-weight: bold; }
-.teamNotice { font-size: 0.9rem; color: var(--text-secondary); font-style: italic; margin: 0; padding: 0.5rem; background-color: #2d3748; border-radius: 6px; text-align: center; }
+.formContainer {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+}
 
-/* NEW: Styles for the inputs in the start match form */
-.startTypeInputs { margin-top: 0.75rem; }
-.startTypeInputs input { width: 100%; }
+.formHeader {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.formHeader h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
 
-.formFooter { padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.75rem; }
-.cancelButton, .submitButton { padding: 0.7rem 1.5rem; font-size: 1rem; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; }
-.cancelButton { background-color: #4a5568; color: var(--text-primary); }
-.submitButton { background-color: var(--accent-color); color: #fff; }
-.submitButton:disabled, .cancelButton:disabled { background-color: #374151; cursor: not-allowed; opacity: 0.7; }
+.formBody {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+}
+.formGroup label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+.formGroup input,
+.formGroup select {
+    padding: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: #374151; /* Dark input background */
+    color: var(--text-primary); /* White text */
+    font-size: 1rem;
+}
+
+.teamSelector {
+    display: flex;
+    gap: 0.25rem;
+    background-color: #2d3748;
+    padding: 0.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+.teamSelector button {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    border: none;
+    background-color: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.teamSelector button.active {
+    background-color: var(--accent-color);
+    color: #fff;
+    font-weight: bold;
+}
+.teamNotice {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin: 0;
+    padding: 0.5rem;
+    background-color: #2d3748;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.formFooter {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+.cancelButton, .submitButton {
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.cancelButton {
+    background-color: #4a5568;
+    color: var(--text-primary);
+}
+.submitButton {
+    background-color: var(--accent-color);
+    color: #fff;
+}
+
+.apiError {
+    color: #ef4444;
+    background-color: #ef444420;
+    border: 1px solid #ef4444;
+    padding: 0.75rem;
+    border-radius: 6px;
+    text-align: center;
+}
+
+/* NEW: Styles specifically for the Start Match options */
+.startMatchOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.timeInput {
+    margin-top: 0.5rem;
+}
