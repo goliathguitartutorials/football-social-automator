@@ -29,7 +29,6 @@
     gap: 10px;
 }
 
-/* ADDED: Styles for the new post placeholder button */
 .newPostButton {
     background: none;
     border: 1px dashed var(--border-color);
@@ -54,4 +53,12 @@
 .newPostButton svg {
     width: 20px;
     height: 20px;
+}
+
+/* ADDED: Style for the "no events" message */
+.noEventsMessage {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
+    color: var(--text-secondary);
 }
