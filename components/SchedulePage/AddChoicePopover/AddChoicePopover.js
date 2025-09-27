@@ -8,7 +8,7 @@
 'use client';
 import styles from './AddChoicePopover.module.css';
 import { FootballIcon } from '@/components/MatchHubPage/MatchHubIcons';
-import { CalendarIcon } from '../SchedulePageIcons'; // Assuming CalendarIcon is here
+import { CalendarIcon } from '../SchedulePageIcons';
 
 export default function AddChoicePopover({ onChoice, onDismiss }) {
     return (
