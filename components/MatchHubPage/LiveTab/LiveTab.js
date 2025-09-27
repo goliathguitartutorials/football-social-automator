@@ -34,6 +34,10 @@ export default function LiveTab() {
     const [secondHalfStartTime, setSecondHalfStartTime] = useState(null);
 
     const reconstructStateFromEvents = useCallback((eventList) => {
+        if (!Array.isArray(eventList)) {
+            setEvents([]);
+            return;
+        }
         const sortedEvents = eventList.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setEvents(sortedEvents);
 
@@ -67,6 +71,7 @@ export default function LiveTab() {
             if (foundLiveMatch) {
                 if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
 
+                setApiError('');
                 const homeTeamName = foundLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
                 const awayTeamName = foundLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
                 const processedMatch = {
@@ -76,14 +81,16 @@ export default function LiveTab() {
                 setLiveMatch(processedMatch);
 
                 try {
-                    setApiError('');
                     const response = await fetch('/api/manage-match', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
                         body: JSON.stringify({ action: 'get_match_events', matchData: { matchId: foundLiveMatch.matchId } })
                     });
 
-                    if (!response.ok) throw new Error('Failed to fetch existing match events.');
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error || 'Failed to fetch existing match events.');
+                    }
                     
                     const result = await response.json();
                     const existingEvents = result.data || result || [];
@@ -190,6 +197,8 @@ export default function LiveTab() {
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
                 body: JSON.stringify({ action: 'get_match_events', matchData: { matchId: liveMatch.matchId } })
             });
+            if (!refetchResponse.ok) throw new Error((await refetchResponse.json()).error || 'Failed to refetch events.');
+            
             const result = await refetchResponse.json();
             reconstructStateFromEvents(result.data || result || []);
             
@@ -205,6 +214,7 @@ export default function LiveTab() {
         if (!matchStartTime || events.some(e => e.eventType === 'MATCH_END' || e.eventType === 'AUTO_MATCH_END')) return;
         const autoEndMinute = 105;
         const checkAutoEnd = () => {
+            if (events.some(e => e.eventType === 'MATCH_END' || e.eventType === 'AUTO_MATCH_END')) return;
             const { minute } = calculateElapsedTime();
             if (minute > autoEndMinute) {
                 handleControlClick('AUTO_MATCH_END');
