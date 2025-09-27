@@ -1,11 +1,50 @@
 /* FixturesTab.module.css */
+
+/* NEW: Styles for the new container and header */
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.fixturesHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fixturesHeader h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+/* NEW: Copied button style from MatchHubPage.module.css */
+.addMatchButton {
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: var(--accent-color);
+    color: #fff;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+}
+
+.addMatchButton:hover {
+    background-color: var(--accent-color-hover);
+}
+
+
 .fixturesList {
     display: grid;
     gap: 1.5rem;
 }
 
 .matchCard {
-    display: grid; /* Switched to grid for more control */
+    display: grid;
     grid-template-columns: 1fr auto auto;
     align-items: center;
     background-color: var(--surface-dark, #1a1d2e);
@@ -35,7 +74,6 @@
     margin: 0;
 }
 
-/* Team Type Badge */
 .teamBadge {
     font-size: 0.8rem;
     font-weight: bold;
@@ -49,7 +87,6 @@
 .teamBadge.development {
     background-color: #38a169; /* Green */
 }
-
 
 .teams {
     font-size: 1.5rem;
@@ -88,7 +125,6 @@
     margin: 0;
 }
 
-/* Edit Button */
 .actions {
     border-left: 1px solid var(--border-color);
     padding-left: 1.5rem;
