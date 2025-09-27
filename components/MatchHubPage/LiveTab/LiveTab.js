@@ -12,7 +12,6 @@ import { useAppContext } from '@/app/context/AppContext';
 import styles from './LiveTab.module.css';
 import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from './LiveTabIcons';
 import CountdownTimer from './CountdownTimer';
-// FIXED: Changed component imports to default to match their export style.
 import EventForm from './EventForm/EventForm';
 import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
 import SquadPanel from './SquadPanel/SquadPanel';
@@ -35,9 +34,6 @@ export default function LiveTab() {
     const [secondHalfStartTime, setSecondHalfStartTime] = useState(null);
 
     const reconstructStateFromEvents = useCallback((eventList) => {
-        // LOGGING: See what data is being passed into the state reconstruction function.
-        console.log('[LiveTab] reconstructStateFromEvents received:', eventList);
-
         if (!Array.isArray(eventList)) {
             setEvents([]);
             return;
@@ -75,7 +71,6 @@ export default function LiveTab() {
             if (foundLiveMatch) {
                 if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
 
-                console.log('[LiveTab] Found a live match:', foundLiveMatch.matchId);
                 setApiError('');
                 const homeTeamName = foundLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
                 const awayTeamName = foundLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
@@ -98,15 +93,11 @@ export default function LiveTab() {
                     }
                     
                     const result = await response.json();
-                    // LOGGING: See the raw data returned from the API.
-                    console.log('[LiveTab] Raw API response for get_match_events:', result);
-                    
                     const existingEvents = result.data || result || [];
                     
                     if (Array.isArray(existingEvents) && existingEvents.length > 0) {
                         reconstructStateFromEvents(existingEvents);
                     } else {
-                        console.log('[LiveTab] No existing events found. Resetting state.');
                         setEvents([]);
                         setScore({ home: 0, away: 0});
                         setMatchStartTime(null);
@@ -137,10 +128,14 @@ export default function LiveTab() {
         const now = new Date();
         let totalSeconds;
 
-        if (secondHalfStartTime && now > secondHalfStartTime) {
-            const firstHalfDurationSeconds = (secondHalfStartTime - matchStartTime) / 1000 - (15 * 60);
+        if (secondHalfStartTime && now >= secondHalfStartTime) {
+            const firstHalfDurationSeconds = (secondHalfStartTime - matchStartTime) / 1000;
+            const pausedTime = events.find(e => e.eventType === 'HALF_TIME')?.timestamp;
+            const firstHalfOfficialEnd = pausedTime ? new Date(pausedTime) : new Date(matchStartTime.getTime() + 45 * 60000);
+            const actualFirstHalfDuration = (firstHalfOfficialEnd - matchStartTime) / 1000;
+            
             const secondHalfSeconds = (now - secondHalfStartTime) / 1000;
-            totalSeconds = firstHalfDurationSeconds + secondHalfSeconds;
+            totalSeconds = actualFirstHalfDuration + secondHalfSeconds;
         } else {
             totalSeconds = (now - matchStartTime) / 1000;
         }
@@ -164,14 +159,21 @@ export default function LiveTab() {
 
     const handleEventClick = (eventType) => {
         const { minute } = calculateElapsedTime();
-        setPrepopulatedMinute(minute);
+        setPrepopulatedMinute(String(minute));
         setSelectedEventType(eventType);
         setView('logEvent');
         setApiError('');
     };
     
     const handleControlClick = async (eventType) => {
-        await handleEventSubmit({ eventType, minute: calculateElapsedTime().minute });
+        setIsSubmitting(true);
+        try {
+            await handleEventSubmit({ eventType, minute: calculateElapsedTime().minute });
+        } catch (error) {
+            setApiError(error.message);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleFormCancel = () => {
@@ -185,6 +187,14 @@ export default function LiveTab() {
 
         const eventTimestamp = (eventData.eventType === 'MATCH_START' && eventData.startTime) ? new Date(eventData.startTime) : new Date();
         const eventId = `event_${eventTimestamp.getTime()}`;
+
+        // MODIFIED: Optimistic UI updates for instant timer feedback
+        if (eventData.eventType === 'MATCH_START') {
+            setMatchStartTime(eventTimestamp);
+        }
+        if (eventData.eventType === 'SECOND_HALF_START') {
+            setSecondHalfStartTime(eventTimestamp);
+        }
         
         const apiPayload = {
             eventId, matchId: liveMatch.matchId, eventType: eventData.eventType,
@@ -215,12 +225,13 @@ export default function LiveTab() {
         } catch (error) {
             setApiError(error.message);
         } finally {
-            setIsSubmitting(false);
+            // Only set isSubmitting to false if it's not a control click
+            // Control clicks manage their own state to avoid flicker
+            if (!['HALF_TIME', 'SECOND_HALF_START', 'MATCH_END'].includes(eventData.eventType)) {
+                setIsSubmitting(false);
+            }
         }
     };
-
-    // LOGGING: See the final state of 'events' before the component tries to render its children.
-    console.log('[LiveTab] State before render:', { liveMatch: !!liveMatch, events });
     
     if (view === 'logEvent') {
         return <EventForm eventType={selectedEventType} match={liveMatch} onCancel={handleFormCancel} onSubmit={handleEventSubmit} initialMinute={prepopulatedMinute} isSubmitting={isSubmitting} apiError={apiError} />;
@@ -247,10 +258,11 @@ export default function LiveTab() {
                 <div className={styles.controlsSection}>
                     {!hasEnded && (
                         <div className={styles.matchControls}>
-                            {!hasStarted && <button className={styles.controlButton} onClick={() => handleEventClick('MATCH_START')}><PlayIcon/>Start Match</button>}
-                            {hasStarted && !isHalfTime && <button className={styles.controlButton} onClick={() => handleControlClick('HALF_TIME')}><PauseIcon/>Half-Time</button>}
-                            {isHalfTime && !hasSecondHalfStarted && <button className={styles.controlButton} onClick={() => handleControlClick('SECOND_HALF_START')}><PlayIcon/>Start 2nd Half</button>}
-                            {hasStarted && <button className={styles.controlButton} onClick={() => handleControlClick('MATCH_END')}><StopIcon/>Finish Match</button>}
+                            {/* MODIFIED: Added disabled={isSubmitting} for user feedback */}
+                            {!hasStarted && <button className={styles.controlButton} onClick={() => handleEventClick('MATCH_START')} disabled={isSubmitting}><PlayIcon/>Start Match</button>}
+                            {hasStarted && !isHalfTime && <button className={styles.controlButton} onClick={() => handleControlClick('HALF_TIME')} disabled={isSubmitting}><PauseIcon/>Half-Time</button>}
+                            {isHalfTime && !hasSecondHalfStarted && <button className={styles.controlButton} onClick={() => handleControlClick('SECOND_HALF_START')} disabled={isSubmitting}><PlayIcon/>Start 2nd Half</button>}
+                            {hasStarted && <button className={styles.controlButton} onClick={() => handleControlClick('MATCH_END')} disabled={isSubmitting}><StopIcon/>Finish Match</button>}
                         </div>
                     )}
                      <div className={styles.eventGrid}>
