@@ -52,6 +52,24 @@ export default function LiveTab() {
         setScore({ home: newHomeScore, away: newAwayScore });
     }, []);
 
+    // NEW: Load from session storage on initial mount for instant UI
+    useEffect(() => {
+        try {
+            const savedState = sessionStorage.getItem('liveMatchState');
+            if (savedState) {
+                const { match, events: savedEvents } = JSON.parse(savedState);
+                if (match && Array.isArray(savedEvents)) {
+                    setLiveMatch(match);
+                    reconstructStateFromEvents(savedEvents);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to parse live match state from session storage:", error);
+            sessionStorage.removeItem('liveMatchState');
+        }
+    }, [reconstructStateFromEvents]);
+
+
     useEffect(() => {
         const findAndLoadMatch = async () => {
             const now = new Date();
@@ -69,6 +87,7 @@ export default function LiveTab() {
             });
 
             if (foundLiveMatch) {
+                // If the live match in state is already the correct one, don't re-fetch
                 if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
 
                 setApiError('');
@@ -78,7 +97,6 @@ export default function LiveTab() {
                     ...foundLiveMatch, homeTeamName, awayTeamName,
                     squadList: foundLiveMatch.squad ? foundLiveMatch.squad.split(',').map(name => name.trim()) : []
                 };
-                setLiveMatch(processedMatch);
 
                 try {
                     const response = await fetch('/api/manage-match', {
@@ -95,20 +113,19 @@ export default function LiveTab() {
                     const result = await response.json();
                     const existingEvents = result.data || result || [];
                     
-                    if (Array.isArray(existingEvents) && existingEvents.length > 0) {
-                        reconstructStateFromEvents(existingEvents);
-                    } else {
-                        setEvents([]);
-                        setScore({ home: 0, away: 0});
-                        setMatchStartTime(null);
-                        setSecondHalfStartTime(null);
-                    }
+                    setLiveMatch(processedMatch); // Set the match details
+                    reconstructStateFromEvents(existingEvents); // Set the events
+
+                    // NEW: Save the successful state to session storage
+                    sessionStorage.setItem('liveMatchState', JSON.stringify({ match: processedMatch, events: existingEvents }));
+                    
                 } catch (error) {
                     setApiError(error.message);
                 }
 
             } else {
                 setLiveMatch(null);
+                sessionStorage.removeItem('liveMatchState'); // Clean up session if no match is live
                 const upcomingMatches = appData.matches.filter(match => new Date(`${match.matchDate} ${match.matchTime}`) > now);
                 setNextMatch(upcomingMatches[0] || null);
             }
@@ -143,7 +160,6 @@ export default function LiveTab() {
         const seconds = Math.floor(totalSeconds % 60);
         
         const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        // FIXED: The minute for logging should be the actual minute, not minute + 1
         return { minute: minutes, display };
     }, [matchStartTime, secondHalfStartTime, events]);
     
@@ -163,9 +179,8 @@ export default function LiveTab() {
         setApiError('');
     };
     
-    // NEW: Wrapper for control clicks to provide instant UI feedback
     const handleControlClick = async (eventType) => {
-        if (isSubmitting) return; // Prevent multiple clicks
+        if (isSubmitting) return;
         setIsSubmitting(true);
         setApiError('');
         try {
@@ -184,34 +199,23 @@ export default function LiveTab() {
     };
 
     const handleEventSubmit = async (eventData) => {
-        // For forms, we manage the submitting state inside the form itself.
-        // For control clicks, it's managed by handleControlClick.
-        if (eventData.eventType !== 'MATCH_START' && !isSubmitting) {
-             setIsSubmitting(true);
+        if (!['MATCH_START'].includes(eventData.eventType)) {
+            setIsSubmitting(true);
         }
         setApiError('');
 
         const eventTimestamp = (eventData.startTime) ? new Date(eventData.startTime) : new Date();
         const eventId = `event_${eventTimestamp.getTime()}`;
-
-        // Optimistic UI updates for instant timer feedback
-        if (eventData.eventType === 'MATCH_START') {
-            setMatchStartTime(eventTimestamp);
-        }
-        if (eventData.eventType === 'SECOND_HALF_START') {
-            setSecondHalfStartTime(eventTimestamp);
-        }
+        
+        if (eventData.eventType === 'MATCH_START') setMatchStartTime(eventTimestamp);
+        if (eventData.eventType === 'SECOND_HALF_START') setSecondHalfStartTime(eventTimestamp);
+        if (eventData.eventType === 'MATCH_END') sessionStorage.removeItem('liveMatchState');
         
         const apiPayload = {
-            eventId,
-            matchId: liveMatch.matchId,
-            eventType: eventData.eventType,
-            minute: eventData.minute,
-            timestamp: eventTimestamp.toISOString(),
-            team: eventData.team || '',
-            // FIXED: Corrected typo from `plaerFullName` to `playerFullName`
-            playerFullName: eventData.scorer || eventData.player || eventData.playerOff || '',
-            assistByFullName: eventData.assist || eventData.playerOn || '',
+            eventId, matchId: liveMatch.matchId, eventType: eventData.eventType,
+            minute: eventData.minute, timestamp: eventTimestamp.toISOString(), team: eventData.team,
+            playerFullName: eventData.scorer || eventData.player || eventData.playerOff,
+            assistByFullName: eventData.assist || eventData.playerOn,
         };
 
         try {
@@ -230,40 +234,34 @@ export default function LiveTab() {
             if (!refetchResponse.ok) throw new Error((await refetchResponse.json()).error || 'Failed to refetch events.');
             
             const result = await refetchResponse.json();
-            reconstructStateFromEvents(result.data || result || []);
-            
+            const freshEvents = result.data || result || [];
+            reconstructStateFromEvents(freshEvents);
+            sessionStorage.setItem('liveMatchState', JSON.stringify({ match: liveMatch, events: freshEvents }));
+
             handleFormCancel();
         } catch (error) {
             setApiError(error.message);
         } finally {
-             if (eventData.eventType !== 'MATCH_START' && isSubmitting) {
-                // Let the control click wrapper handle this
-             } else {
+             if (!['MATCH_START'].includes(eventData.eventType)) {
                 setIsSubmitting(false);
              }
         }
     };
     
-    // Renders the main dashboard, the form, or the pre-game confirmation screen
     const renderContent = () => {
-        if (!liveMatch) return null; // Should not happen if this component is rendered
+        if (!liveMatch) return null;
 
         const hasStarted = events.some(e => e.eventType === 'MATCH_START');
 
-        // NEW: Pre-Game Confirmation Screen
         if (!hasStarted) {
             return (
                 <div className={styles.preGameContainer}>
                     <h3>Confirm Match Start Time</h3>
-                    <p>The match is scheduled to be live. Please confirm when it started.</p>
+                    <p>This match is now live. Please confirm when it started.</p>
                     <div className={styles.preGameButtons}>
                         <button 
                             className={styles.controlButton} 
-                            onClick={() => handleEventSubmit({
-                                eventType: 'MATCH_START',
-                                startTime: `${liveMatch.matchDate} ${liveMatch.matchTime}`,
-                                minute: 0
-                            })}
+                            onClick={() => handleControlClick('MATCH_START', { startTime: `${liveMatch.matchDate} ${liveMatch.matchTime}` })}
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? 'Starting...' : 'Start on Schedule'}
@@ -276,12 +274,10 @@ export default function LiveTab() {
                             Set Custom Start Time
                         </button>
                     </div>
-                    {apiError && <p className={styles.apiErrorBar}>{apiError}</p>}
                 </div>
             );
         }
 
-        // Standard Dashboard View
         const isHalfTime = events.some(e => e.eventType === 'HALF_TIME') && !events.some(e => e.eventType === 'SECOND_HALF_START');
         const hasSecondHalfStarted = events.some(e => e.eventType === 'SECOND_HALF_START');
         const hasEnded = events.some(e => e.eventType === 'MATCH_END');
@@ -327,9 +323,8 @@ export default function LiveTab() {
         );
     };
     
-    // Main component return logic
     if (view === 'logEvent') {
-        return <EventForm eventType={selectedEventType} match={liveMatch} onCancel={handleFormCancel} onSubmit={handleEventSubmit} initialMinute={prepopulatedMinute} isSubmitting={isSubmitting} setApiError={setApiError} />;
+        return <EventForm eventType={selectedEventType} match={liveMatch} onCancel={handleFormCancel} onSubmit={handleEventSubmit} initialMinute={prepopulatedMinute} isSubmitting={isSubmitting} apiError={apiError} />;
     }
 
     if (liveMatch) {
