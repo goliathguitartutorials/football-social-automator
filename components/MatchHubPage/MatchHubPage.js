@@ -6,7 +6,8 @@
  ==========================================================
  */
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react'; // Import Suspense
+import { useSearchParams } from 'next/navigation'; // Import useSearchParams
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './MatchHubPage.module.css';
 import { FixturesIcon, LiveIcon } from './MatchHubIcons';
@@ -14,74 +15,84 @@ import FixturesTab from './FixturesTab/FixturesTab';
 import LiveTab from './LiveTab/LiveTab';
 import AddMatchForm from './AddMatchForm/AddMatchForm';
 
-export default function MatchHubPage() {
+// Create a new component to handle the logic, so we can wrap it in Suspense
+function MatchHubContent() {
     const { appData } = useAppContext();
+    const searchParams = useSearchParams();
+    
     const [view, setView] = useState('fixtures');
-    const [editingMatch, setEditingMatch] = useState(null); // State to hold the match being edited
+    const [editingMatch, setEditingMatch] = useState(null);
+    const [newMatchDate, setNewMatchDate] = useState(null);
+
+    useEffect(() => {
+        const matchIdToEdit = searchParams.get('editMatchId');
+        const dateForNewMatch = searchParams.get('newMatchDate');
+
+        if (matchIdToEdit) {
+            const match = appData.matches.find(m => m.matchId === matchIdToEdit);
+            if (match) {
+                setEditingMatch(match);
+                setView('add_form');
+            }
+        } else if (dateForNewMatch) {
+            setNewMatchDate(dateForNewMatch);
+            setView('add_form');
+        }
+    }, [searchParams, appData.matches]);
 
     const handleEditClick = (match) => {
-        setEditingMatch(match); // Set the match to edit
-        setView('add_form');    // Switch to the form view
+        setEditingMatch(match);
+        setView('add_form');
     };
 
     const handleFormClose = () => {
-        setEditingMatch(null); // Clear the editing match
-        setView('fixtures');     // Switch back to fixtures
+        setEditingMatch(null);
+        setNewMatchDate(null);
+        setView('fixtures');
     };
 
     const renderContent = () => {
         if (view === 'add_form') {
+            // If newMatchDate exists, create a new initialData object
+            const formInitialData = editingMatch || (newMatchDate ? { matchDate: newMatchDate } : null);
             return (
                 <AddMatchForm 
-                    // Pass the match data to the form if we are editing, otherwise pass null
-                    initialData={editingMatch} 
+                    initialData={formInitialData} 
                     onCancel={handleFormClose} 
                     onMatchAdded={handleFormClose} 
                 />
             );
         }
         if (view === 'fixtures') {
-            return (
-                <FixturesTab 
-                    matches={appData.matches} 
-                    onEditClick={handleEditClick} // Pass the handler to the fixtures tab
-                />
-            );
+            return <FixturesTab matches={appData.matches} onEditClick={handleEditClick} />;
         }
         if (view === 'live') {
             return <LiveTab />;
         }
         return null;
     };
-
+    
     return (
         <div className={styles.container}>
             <header className={styles.header}>
                 <nav className={styles.tabNav}>
-                    <button
-                        className={`${styles.navButton} ${view === 'fixtures' ? styles.active : ''}`}
-                        onClick={() => setView('fixtures')}
-                    >
-                        <span className={styles.navIcon}><FixturesIcon /></span>
-                        <span className={styles.navLabel}>Fixtures</span>
-                    </button>
-                    <button
-                        className={`${styles.navButton} ${view === 'live' ? styles.active : ''}`}
-                        onClick={() => setView('live')}
-                    >
-                        <span className={styles.navIcon}><LiveIcon /></span>
-                        <span className={styles.navLabel}>Live</span>
-                    </button>
+                    <button className={`${styles.navButton} ${view === 'fixtures' ? styles.active : ''}`} onClick={() => setView('fixtures')}><FixturesIcon /><span>Fixtures</span></button>
+                    <button className={`${styles.navButton} ${view === 'live' ? styles.active : ''}`} onClick={() => setView('live')}><LiveIcon /><span>Live</span></button>
                 </nav>
-                {view !== 'add_form' && (
-                    <button className={styles.addMatchButton} onClick={() => setView('add_form')}>
-                        + Add New Match
-                    </button>
-                )}
+                {view !== 'add_form' && (<button className={styles.addMatchButton} onClick={() => setView('add_form')}>+ Add New Match</button>)}
             </header>
             <main className={styles.contentContainer}>
                 {renderContent()}
             </main>
         </div>
+    );
+}
+
+// Wrap the main content in a Suspense boundary as required by useSearchParams
+export default function MatchHubPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <MatchHubContent />
+        </Suspense>
     );
 }
