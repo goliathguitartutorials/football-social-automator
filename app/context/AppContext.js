@@ -67,11 +67,8 @@ export function AppProvider({ children }) {
         const scheduledPosts = dataArray.filter((item) => item.class === 'scheduledPost');
         const backgrounds = assets.filter((asset) => asset.Type === 'background');
         const badges = assets.filter((asset) => asset.Type === 'badge');
-        
-        // MODIFIED: Changed filter to correctly identify match objects by the 'matchId' property.
         const matches = dataArray.filter((item) => item.hasOwnProperty('matchId'));
 
-        // Sorting logic remains the same
         matches.sort((a, b) => new Date(a.matchDate + ' ' + a.matchTime) - new Date(b.matchDate + ' ' + b.matchTime));
         badges.sort((a, b) => a.Name.localeCompare(b.Name));
         scheduledPosts.sort((a, b) => new Date(a.scheduled_time_utc) - new Date(b.scheduled_time_utc));
@@ -79,9 +76,23 @@ export function AppProvider({ children }) {
         setAppData({ players, backgrounds, badges, matches, scheduledPosts });
     };
 
-    const addNewMatch = (newMatch) => {
+    // MODIFIED: Renamed and updated logic to handle both adding and updating a match.
+    const addOrUpdateMatch = (matchData) => {
         setAppData(prevData => {
-            const updatedMatches = [...prevData.matches, newMatch];
+            const existingMatchIndex = prevData.matches.findIndex(m => m.matchId === matchData.matchId);
+            let updatedMatches;
+
+            if (existingMatchIndex > -1) {
+                // This is an update. Replace the existing match.
+                updatedMatches = prevData.matches.map((match, index) => 
+                    index === existingMatchIndex ? matchData : match
+                );
+            } else {
+                // This is a new match. Add it to the list.
+                updatedMatches = [...prevData.matches, matchData];
+            }
+
+            // Re-sort matches by date after the add/update
             updatedMatches.sort((a, b) => new Date(a.matchDate + ' ' + a.matchTime) - new Date(b.matchDate + ' ' + b.matchTime));
             return { ...prevData, matches: updatedMatches };
         });
@@ -112,7 +123,7 @@ export function AppProvider({ children }) {
         authStatus,
         authorizeAndFetchData,
         refreshAppData,
-        addNewMatch,
+        addOrUpdateMatch, // MODIFIED: Expose the new function
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
