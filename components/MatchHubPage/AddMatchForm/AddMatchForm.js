@@ -11,7 +11,8 @@ import { useAppContext } from '@/app/context/AppContext';
 import styles from './AddMatchForm.module.css';
 import PlayerMultiSelect from './PlayerMultiSelect';
 
-export default function AddMatchForm({ onCancel, onSave }) {
+// MODIFIED: Changed onSave prop to onMatchAdded for clarity
+export default function AddMatchForm({ onCancel, onMatchAdded }) {
     const { authKey } = useAppContext();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState('');
@@ -19,7 +20,7 @@ export default function AddMatchForm({ onCancel, onSave }) {
     const [formData, setFormData] = useState({
         team: 'first-team',
         matchDate: '',
-        matchTime: '14:30', // Default kick-off time
+        matchTime: '14:30',
         homeOrAway: 'Home',
         opponent: '',
         competition: '',
@@ -50,12 +51,11 @@ export default function AddMatchForm({ onCancel, onSave }) {
             action: 'add_match',
             matchData: {
                 ...formData,
-                squad: formData.squad.join(', '), // Send squad as a comma-separated string
+                squad: formData.squad.join(', '),
             },
         };
 
         try {
-            // NOTE: We will need to create this new API route to handle match management.
             const response = await fetch('/api/manage-match', {
                 method: 'POST',
                 headers: {
@@ -65,19 +65,23 @@ export default function AddMatchForm({ onCancel, onSave }) {
                 body: JSON.stringify(payload),
             });
 
-            const result = await response.json();
-
             if (!response.ok) {
+                const result = await response.json();
                 throw new Error(result.error || 'Failed to save the match.');
             }
-
-            setMessage('Match saved successfully!');
-            onSave(); // Notify parent component to refresh data
+            
+            // MODIFIED: Call the onMatchAdded function passed in props.
+            // This will trigger the parent to refresh the match list.
+            if (onMatchAdded) {
+                onMatchAdded();
+            }
 
         } catch (err) {
             setMessage(`Error: ${err.message}`);
             console.error('Failed to submit new match:', err);
         } finally {
+            // We keep the user on the form in case of an error,
+            // but the parent will handle hiding the form on success.
             setIsSubmitting(false);
         }
     };
@@ -88,6 +92,7 @@ export default function AddMatchForm({ onCancel, onSave }) {
                 <div className={styles.section}>
                     <h3 className={styles.sectionTitle}>Fixture Details</h3>
                     <div className={styles.formGrid}>
+                        {/* Form grid content remains the same... */}
                         <div className={styles.formGroup}>
                             <label htmlFor="team">Team</label>
                             <select id="team" name="team" value={formData.team} onChange={handleChange} required>
