@@ -17,11 +17,19 @@
     flex-shrink: 0;
 }
 
+/* MODIFIED: This is a new wrapper for the top row */
+.topHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
 /* Sub-navigation container */
 .subNav {
     display: flex;
-    justify-content: space-around;
-    border-bottom: 1px solid var(--border-color);
+    justify-content: flex-start; /* MODIFIED: Aligned to match Create page */
+    gap: 0.5rem;
 }
 
 /* Default mobile styles for the navigation button */
@@ -30,12 +38,12 @@
     border: none;
     color: var(--text-secondary);
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* MODIFIED: Changed from column */
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    flex-grow: 1;
-    padding: 8px 4px;
+    flex-grow: 0; /* MODIFIED: Changed from 1 */
+    padding: 0.75rem 1.5rem; /* MODIFIED: Changed padding */
     border-bottom: 3px solid transparent;
     transform: translateY(1px);
     transition: all 0.2s ease-in-out;
@@ -51,21 +59,52 @@
 }
 
 .navIcon {
-    margin-bottom: 4px;
+    margin-bottom: 0; /* MODIFIED: Removed bottom margin */
+    margin-right: 0.5rem; /* MODIFIED: Added right margin */
 }
 
 .navIcon svg {
     fill: none;
-    width: 24px;
-    height: 24px;
+    width: 20px; /* MODIFIED: Adjusted size */
+    height: 20px;
 }
 
 .navLabel {
-    font-size: 0.75rem;
-    font-weight: 500;
+    font-size: 1rem; /* MODIFIED: Adjusted size */
+    font-weight: 600; /* MODIFIED: Adjusted weight */
     line-height: 1.2;
     text-align: center;
 }
+
+.navButton.active .navLabel,
+.navButton:hover .navLabel {
+    color: var(--text-primary);
+}
+
+/* NEW: Styles for the 'All / Posts / Matches' filter */
+.filterNav {
+    display: flex;
+    align-items: center;
+    background-color: var(--background-dark);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    margin-right: 1rem;
+}
+.filterNav button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+}
+.filterNav button.activeFilter {
+    background-color: var(--accent-color);
+    color: #fff;
+}
+
 
 /* Secondary Header (Date Nav etc.) */
 .secondaryHeader {
@@ -79,16 +118,16 @@
 .dateNav {
     display: flex;
     align-items: center;
-    gap: 10px;
-    justify-content: center;
-    flex-grow: 1;
+    gap: 1rem; /* MODIFIED: Changed from 10px */
+    justify-content: flex-start; /* MODIFIED: Changed from center */
+    flex-grow: 0; /* MODIFIED: Changed from 1 */
 }
 
 .dateNav h2 {
     margin: 0;
     color: var(--text-primary);
-    font-size: 1.1rem;
-    min-width: 150px;
+    font-size: 1.25rem; /* MODIFIED: Adjusted size */
+    min-width: 280px; /* MODIFIED: Set width */
     text-align: center;
 }
 
@@ -97,8 +136,8 @@
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    width: 35px; /* MODIFIED: Adjusted size */
+    height: 35px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -134,50 +173,13 @@
     flex-direction: column;
 }
 
-/* DESKTOP STYLES */
-@media (min-width: 768px) {
-    .subNav {
-        justify-content: flex-start;
-        gap: 0.5rem;
-    }
-
-    .navButton {
-        flex-direction: row;
-        flex-grow: 0;
-        padding: 0.75rem 1.5rem;
-    }
-
-    .navIcon {
-        margin-bottom: 0;
-        margin-right: 0.5rem;
-    }
-
-    .navLabel {
-        font-size: 1rem;
-        font-weight: 600;
-    }
-
-    .navButton.active .navLabel,
-    .navButton:hover .navLabel {
-        color: var(--text-primary);
-    }
-    
-    .navButton.active {
-        color: var(--accent-color);
-    }
-
-    .dateNav {
-        justify-content: flex-start;
-        flex-grow: 0;
-    }
-
-    .dateNav h2 {
-        font-size: 1.25rem;
-        min-width: 280px;
-    }
-
-    .dateNav button {
-        width: 35px;
-        height: 35px;
-    }
+/* DESKTOP STYLES - Merged mobile-first */
+@media (max-width: 768px) {
+    .topHeader { flex-direction: column; }
+    .subNav { width: 100%; justify-content: space-around; }
+    .filterNav { margin: 1rem 0 0.5rem; }
+    .dateNav h2 { font-size: 1.1rem; min-width: 200px; }
+    .navButton { flex-direction: column; padding: 8px 4px; }
+    .navIcon { margin-right: 0; margin-bottom: 4px; }
+    .navLabel { font-size: 0.75rem; font-weight: 500; }
 }
