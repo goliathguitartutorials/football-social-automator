@@ -11,20 +11,24 @@ import { useState, useEffect } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './LiveTab.module.css';
 import { GoalIcon, YellowCardIcon, RedCardIcon, SubIcon } from './LiveTabIcons';
-import CountdownTimer from './CountdownTimer'; // NEW: Import the countdown component
+import CountdownTimer from './CountdownTimer';
+import EventModal from './EventModal/EventModal'; // NEW: Import the modal component
 
 export default function LiveTab() {
     const { appData } = useAppContext();
     const [liveMatch, setLiveMatch] = useState(null);
-    const [nextMatch, setNextMatch] = useState(null); // NEW: State for the next upcoming match
+    const [nextMatch, setNextMatch] = useState(null);
 
-    // TODO: State for future event logging modal
-    // const [isModalOpen, setIsModalOpen] = useState(false);
-    // const [selectedEventType, setSelectedEventType] = useState(null);
+    // NEW: State for the event logging modal
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedEventType, setSelectedEventType] = useState(null);
+
+    // NEW: State for managing the score
+    const [score, setScore] = useState({ home: 0, away: 0 });
 
     useEffect(() => {
         const now = new Date();
-        const liveMatchWindowMs = 150 * 60 * 1000; // 150 minutes in milliseconds
+        const liveMatchWindowMs = 150 * 60 * 1000;
 
         const findMatches = () => {
             if (!appData.matches || appData.matches.length === 0) {
@@ -33,60 +37,104 @@ export default function LiveTab() {
                 return;
             }
 
-            // FIX: The original logic was missing the matchTime.
-            // This now correctly combines date and time to get the exact start time.
             const foundLiveMatch = appData.matches.find(match => {
                 const matchStartTime = new Date(`${match.matchDate} ${match.matchTime}`);
                 const matchEndTime = new Date(matchStartTime.getTime() + liveMatchWindowMs);
                 return now > matchStartTime && now < matchEndTime;
             });
 
-            setLiveMatch(foundLiveMatch || null);
+            if (foundLiveMatch) {
+                // FIX: Derive team names correctly from the match object
+                const homeTeamName = foundLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
+                const awayTeamName = foundLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
 
-            // NEW: If no match is live, find the next upcoming one.
-            if (!foundLiveMatch) {
-                const upcomingMatches = appData.matches.filter(match => {
-                    const matchStartTime = new Date(`${match.matchDate} ${match.matchTime}`);
-                    return matchStartTime > now;
+                // NEW: Populate the liveMatch object with correct team names
+                const processedMatch = {
+                    ...foundLiveMatch,
+                    homeTeamName,
+                    awayTeamName,
+                    // NEW: Parse the squad string into an array of player names
+                    squadList: foundLiveMatch.squad ? foundLiveMatch.squad.split(',').map(name => name.trim()) : []
+                };
+
+                setLiveMatch(processedMatch);
+                
+                // NEW: Set initial score from match data, defaulting to 0
+                setScore({
+                    home: parseInt(foundLiveMatch.homeScore, 10) || 0,
+                    away: parseInt(foundLiveMatch.awayScore, 10) || 0,
                 });
-                // Matches are already sorted by date in context, so the first one is the next one.
-                setNextMatch(upcomingMatches[0] || null);
+
             } else {
-                setNextMatch(null); // Ensure no 'next match' is shown when one is live
+                setLiveMatch(null);
+                const upcomingMatches = appData.matches.filter(match => new Date(`${match.matchDate} ${match.matchTime}`) > now);
+                setNextMatch(upcomingMatches[0] || null);
             }
         };
 
         findMatches();
-
     }, [appData.matches]);
+
+    // NEW: Handler to open the event logging modal
+    const handleEventClick = (eventType) => {
+        setSelectedEventType(eventType);
+        setIsModalOpen(true);
+    };
+
+    const handleModalClose = () => {
+        setIsModalOpen(false);
+        setSelectedEventType(null);
+    };
     
-    // TODO: Handler for future event logging modal
-    // const handleEventClick = (eventType) => {
-    //     setSelectedEventType(eventType);
-    //     setIsModalOpen(true);
-    // };
+    // NEW: Handler to process the event data from the modal
+    const handleEventSubmit = (eventData) => {
+        console.log("Event Logged:", eventData);
+        // TODO: Add API call to /api/manage-match here
+        
+        // Example of updating score locally after a goal is logged
+        if (eventData.eventType === 'Goal') {
+            if (eventData.team === liveMatch.homeTeamName) {
+                setScore(prevScore => ({ ...prevScore, home: prevScore.home + 1 }));
+            } else {
+                setScore(prevScore => ({ ...prevScore, away: prevScore.away + 1 }));
+            }
+        }
+        
+        handleModalClose(); // Close modal on submit
+    };
+
 
     const renderContent = () => {
         if (liveMatch) {
             return (
                 <div className={styles.liveContainer}>
-                    <h2 className={styles.liveHeader}>
-                        LIVE: {liveMatch.homeTeamName} vs {liveMatch.awayTeamName}
-                    </h2>
+                    <div className={styles.matchHeader}>
+                        <div className={styles.teamInfo}>
+                            <span className={styles.teamName}>{liveMatch.homeTeamName}</span>
+                        </div>
+                        <div className={styles.scoreContainer}>
+                            <span className={styles.score}>{score.home} - {score.away}</span>
+                            <span className={styles.matchTime}>{liveMatch.matchTime} K.O. @ {liveMatch.venue}</span>
+                        </div>
+                        <div className={styles.teamInfo}>
+                            <span className={styles.teamName}>{liveMatch.awayTeamName}</span>
+                        </div>
+                    </div>
+
                     <div className={styles.eventGrid}>
-                        <button className={styles.eventButton}>
+                        <button className={styles.eventButton} onClick={() => handleEventClick('Goal')}>
                             <GoalIcon />
                             <span>Goal</span>
                         </button>
-                        <button className={styles.eventButton}>
+                        <button className={styles.eventButton} onClick={() => handleEventClick('Yellow Card')}>
                             <YellowCardIcon />
                             <span>Yellow Card</span>
                         </button>
-                        <button className={styles.eventButton}>
+                        <button className={styles.eventButton} onClick={() => handleEventClick('Red Card')}>
                             <RedCardIcon />
                             <span>Red Card</span>
                         </button>
-                        <button className={styles.eventButton}>
+                        <button className={styles.eventButton} onClick={() => handleEventClick('Substitution')}>
                             <SubIcon />
                             <span>Substitution</span>
                         </button>
@@ -100,7 +148,7 @@ export default function LiveTab() {
             return (
                 <div className={styles.placeholder}>
                     <h3>Next Match</h3>
-                    <p className={styles.nextMatchTeams}>{nextMatch.homeTeamName} vs {nextMatch.awayTeamName}</p>
+                    <p className={styles.nextMatchTeams}>{nextMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : nextMatch.opponent} vs {nextMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : nextMatch.opponent}</p>
                     <CountdownTimer targetDate={targetDate} />
                 </div>
             );
@@ -114,5 +162,17 @@ export default function LiveTab() {
         );
     };
 
-    return <div className={styles.container}>{renderContent()}</div>;
+    return (
+        <div className={styles.container}>
+            {renderContent()}
+            {isModalOpen && (
+                <EventModal 
+                    eventType={selectedEventType}
+                    match={liveMatch}
+                    onClose={handleModalClose}
+                    onSubmit={handleEventSubmit}
+                />
+            )}
+        </div>
+    );
 }
