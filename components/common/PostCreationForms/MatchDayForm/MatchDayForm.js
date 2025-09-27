@@ -59,9 +59,9 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
         setFormData(prev => ({ ...prev, selectedBackground: dataUrl }));
     };
 
-    const handleMatchSelect = (eventId) => {
+    const handleMatchSelect = (matchId) => {
         setBadgeMessage('');
-        if (!eventId) {
+        if (!matchId) {
             setFormData(prev => ({
                 ...prev,
                 homeTeamBadge: '', awayTeamBadge: '', matchDate: '', kickOffTime: '', venue: '', teamType: 'First Team', selectedMatchData: null
@@ -69,23 +69,24 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
             return;
         }
 
-        const selectedMatch = matches.find(m => m.eventId === eventId);
+        const selectedMatch = matches.find(m => m.matchId === matchId);
         if (!selectedMatch) return;
 
         const venue = selectedMatch.venue;
-        const dateTime = new Date(selectedMatch.startDateTime);
-        const matchDate = dateTime.toISOString().split('T')[0];
-        const kickOffTime = dateTime.toTimeString().substring(0, 5);
-        const teamType = `${selectedMatch.team.charAt(0).toUpperCase()}${selectedMatch.team.slice(1)} Team`.replace('First-team', 'First Team');
+        const matchDate = selectedMatch.matchDate;
+        const kickOffTime = selectedMatch.matchTime;
+        const teamType = selectedMatch.team === 'first-team' ? 'First Team' : 'Development Team';
 
-        const [homeTeamName, awayTeamName] = selectedMatch.title.split(' vs ');
+        const homeTeamName = selectedMatch.homeOrAway === 'Home' ? 'Y Glannau' : selectedMatch.opponent;
+        const awayTeamName = selectedMatch.homeOrAway === 'Away' ? 'Y Glannau' : selectedMatch.opponent;
+
         const glannauBadge = badges.find(b => b.Name.toLowerCase().includes('glannau'))?.Link || '';
         let foundHomeBadge = '', foundAwayBadge = '';
 
         if (homeTeamName.toLowerCase().includes('glannau')) { foundHomeBadge = glannauBadge; }
         if (awayTeamName.toLowerCase().includes('glannau')) { foundAwayBadge = glannauBadge; }
 
-        const oppositionName = homeTeamName.toLowerCase().includes('glannau') ? awayTeamName : homeTeamName;
+        const oppositionName = selectedMatch.opponent;
         const normalizedOppositionName = oppositionName.toLowerCase().replace(/ fc| afc| town| city| dev| development| u19s| pheonix/g, '').trim();
         const oppositionBadge = badges.find(badge => {
             if (badge.Name.toLowerCase().includes('glannau')) return false;
@@ -95,8 +96,6 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
 
         if (oppositionBadge) {
             if (homeTeamName.toLowerCase().includes('glannau')) { foundAwayBadge = oppositionBadge; } else { foundHomeBadge = oppositionBadge; }
-        } else if (!homeTeamName.toLowerCase().includes('glannau') && !awayTeamName.toLowerCase().includes('glannau')) {
-            setBadgeMessage("Could not automatically match badges. Please select manually.");
         } else {
             setBadgeMessage("Opposition badge not matched. Please select manually.");
         }
@@ -169,7 +168,12 @@ export default function MatchDayForm({ appData = {}, initialData, onSubmit, onYo
                         <label htmlFor="matchSelector">Select a Match (Optional)</label>
                         <select id="matchSelector" onChange={(e) => handleMatchSelect(e.target.value)} defaultValue="">
                             <option value="">-- Select an upcoming match --</option>
-                            {matches.map((match) => (<option key={match.eventId} value={match.eventId}>{match.title}</option>))}
+                            {matches.map((match) => {
+                                const title = match.homeOrAway === 'Home' 
+                                    ? `Y Glannau vs ${match.opponent}` 
+                                    : `${match.opponent} vs Y Glannau`;
+                                return (<option key={match.matchId} value={match.matchId}>{title}</option>);
+                            })}
                         </select>
                     </div>
                     {badgeMessage && <p className={styles.badgeNotice}>{badgeMessage}</p>}
