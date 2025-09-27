@@ -8,7 +8,7 @@
 'use client';
 import styles from './WeekView.module.css';
 import PostPreview from '../PostPreview/PostPreview';
-import MatchPreview from '../MatchPreview/MatchPreview'; // Import the new component
+import MatchPreview from '../MatchPreview/MatchPreview';
 
 export default function WeekView({ currentDate, events, onPostClick, onMatchClick, onNewEventClick }) {
 
