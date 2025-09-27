@@ -23,7 +23,8 @@ const BLANK_FORM_STATE = {
 };
 
 export default function AddMatchForm({ initialData, onCancel, onMatchAdded }) {
-    const { authKey, addNewMatch } = useAppContext();
+    // MODIFIED: Use the new addOrUpdateMatch function from the context
+    const { authKey, addOrUpdateMatch } = useAppContext();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState('');
     const [formData, setFormData] = useState(BLANK_FORM_STATE);
@@ -32,13 +33,11 @@ export default function AddMatchForm({ initialData, onCancel, onMatchAdded }) {
 
     useEffect(() => {
         if (isEditMode) {
-            // If we are editing, populate the form with the existing match data
             setFormData({
                 ...initialData,
                 squad: initialData.squad ? initialData.squad.split(',').map(s => s.trim()) : []
             });
         } else {
-            // Otherwise, ensure the form is blank
             setFormData(BLANK_FORM_STATE);
         }
     }, [initialData, isEditMode]);
@@ -63,7 +62,6 @@ export default function AddMatchForm({ initialData, onCancel, onMatchAdded }) {
         setMessage('');
 
         const payload = {
-            // Use 'update_match' action if in edit mode, otherwise 'add_match'
             action: isEditMode ? 'update_match' : 'add_match',
             matchData: {
                 ...formData,
@@ -87,8 +85,10 @@ export default function AddMatchForm({ initialData, onCancel, onMatchAdded }) {
                 throw new Error(result.error || 'Failed to save the match.');
             }
             
-            // This will refresh the global state in AppContext
-            addNewMatch(result[0]); 
+            // MODIFIED: Call the new function to update the global state
+            if (Array.isArray(result) && result.length > 0) {
+                addOrUpdateMatch(result[0]);
+            }
             
             if (onMatchAdded) {
                 onMatchAdded();
@@ -105,10 +105,8 @@ export default function AddMatchForm({ initialData, onCancel, onMatchAdded }) {
         <div className={styles.pageContainer}>
             <form onSubmit={handleSubmit} className={styles.formContainer}>
                 <div className={styles.section}>
-                    {/* Change title based on mode */}
                     <h3 className={styles.sectionTitle}>{isEditMode ? 'Edit Match' : 'Add New Match'}</h3>
                     <div className={styles.formGrid}>
-                        {/* Form grid remains the same */}
                         <div className={styles.formGroup}>
                             <label htmlFor="team">Team</label>
                             <select id="team" name="team" value={formData.team} onChange={handleChange} required>
