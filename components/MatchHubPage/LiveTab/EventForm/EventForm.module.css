@@ -33,6 +33,17 @@
     gap: 1.25rem;
 }
 
+/* NEW: Style for displaying API errors */
+.apiError {
+    background-color: #5c2c2c;
+    color: #ffb8b8;
+    border: 1px solid #d85a5a;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    text-align: center;
+    margin: 0 0 1rem 0;
+}
+
 .formGroup {
     display: flex;
     flex-direction: column;
@@ -42,18 +53,16 @@
     font-weight: 500;
     color: var(--text-secondary);
 }
-/* FIX: Added proper background and text color for inputs and selects */
 .formGroup input,
 .formGroup select {
     padding: 0.75rem;
     border-radius: 6px;
     border: 1px solid var(--border-color);
-    background-color: #374151; /* Dark input background */
-    color: var(--text-primary); /* White text */
+    background-color: #374151;
+    color: var(--text-primary);
     font-size: 1rem;
 }
 
-/* NEW: Styles for the home/away team selector */
 .teamSelector {
     display: flex;
     gap: 0.25rem;
@@ -113,4 +122,9 @@
 .submitButton {
     background-color: var(--accent-color);
     color: #fff;
+}
+.submitButton:disabled, .cancelButton:disabled {
+    background-color: #374151;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
