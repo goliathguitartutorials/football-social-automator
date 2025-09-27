@@ -83,7 +83,7 @@ export default function LiveTab() {
                 const matchScheduledTime = new Date(`${match.matchDate} ${match.matchTime}`);
                 const matchEndTime = new Date(matchScheduledTime.getTime() + liveMatchWindowMs);
                 // MODIFIED: Check against status column instead of isArchived
-                return now >= matchScheduledTime && now <= matchEndTime && match.status !== 'Archived';
+                return now >= matchScheduledTime && now <= matchEndTime && match.status !== 'archived';
             });
 
             if (foundLiveMatch) {
@@ -125,7 +125,7 @@ export default function LiveTab() {
                 setLiveMatch(null);
                 sessionStorage.removeItem('liveMatchState');
                 const upcomingMatches = appData.matches.filter(match => {
-                    return new Date(`${match.matchDate} ${match.matchTime}`) > now && match.status !== 'Archived';
+                    return new Date(`${match.matchDate} ${match.matchTime}`) > now && match.status !== 'archived';
                 });
                 setNextMatch(upcomingMatches[0] || null);
             }
