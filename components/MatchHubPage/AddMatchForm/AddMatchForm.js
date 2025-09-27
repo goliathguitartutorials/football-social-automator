@@ -7,10 +7,15 @@
  */
 'use client';
 import { useState } from 'react';
+import { useAppContext } from '@/app/context/AppContext';
 import styles from './AddMatchForm.module.css';
 import PlayerMultiSelect from './PlayerMultiSelect';
 
-export default function AddMatchForm({ onCancel }) {
+export default function AddMatchForm({ onCancel, onSave }) {
+    const { authKey } = useAppContext();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [message, setMessage] = useState('');
+
     const [formData, setFormData] = useState({
         team: 'first-team',
         matchDate: '',
@@ -19,7 +24,7 @@ export default function AddMatchForm({ onCancel }) {
         opponent: '',
         competition: '',
         venue: '',
-        squad: [], // Squad is now an array
+        squad: [],
     });
 
     const handleChange = (e) => {
@@ -31,20 +36,55 @@ export default function AddMatchForm({ onCancel }) {
         setFormData(prev => ({ ...prev, squad: newSquad }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Convert array to comma-separated string if needed by the backend, or send as is.
-        const submissionData = {
-            ...formData,
-            squad: formData.squad.join(', ')
+        if (!authKey) {
+            setMessage('Authorization Key is missing.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setMessage('');
+
+        const payload = {
+            action: 'add_match',
+            matchData: {
+                ...formData,
+                squad: formData.squad.join(', '), // Send squad as a comma-separated string
+            },
         };
-        console.log("Submitting New Match:", submissionData);
-        onCancel();
+
+        try {
+            // NOTE: We will need to create this new API route to handle match management.
+            const response = await fetch('/api/manage-match', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authKey}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to save the match.');
+            }
+
+            setMessage('Match saved successfully!');
+            onSave(); // Notify parent component to refresh data
+
+        } catch (err) {
+            setMessage(`Error: ${err.message}`);
+            console.error('Failed to submit new match:', err);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
-        <div className={styles.formContainer}>
-            <form onSubmit={handleSubmit}>
+        <div className={styles.pageContainer}>
+            <form onSubmit={handleSubmit} className={styles.formContainer}>
                 <div className={styles.section}>
                     <h3 className={styles.sectionTitle}>Fixture Details</h3>
                     <div className={styles.formGrid}>
@@ -78,10 +118,10 @@ export default function AddMatchForm({ onCancel }) {
                             <label htmlFor="venue">Venue</label>
                             <input type="text" id="venue" name="venue" value={formData.venue} onChange={handleChange} placeholder="e.g. Morfa Glannau" required />
                         </div>
-                    </div>
-                     <div className={styles.formGroupFull}>
-                        <label htmlFor="competition">Competition</label>
-                        <input type="text" id="competition" name="competition" value={formData.competition} onChange={handleChange} placeholder="e.g. League Match" required />
+                        <div className={styles.formGroupFull}>
+                            <label htmlFor="competition">Competition</label>
+                            <input type="text" id="competition" name="competition" value={formData.competition} onChange={handleChange} placeholder="e.g. League Match" required />
+                        </div>
                     </div>
                 </div>
 
@@ -89,11 +129,15 @@ export default function AddMatchForm({ onCancel }) {
                     <h3 className={styles.sectionTitle}>Select Squad</h3>
                     <PlayerMultiSelect selectedPlayers={formData.squad} onChange={handleSquadChange} />
                 </div>
-                
+
                 <div className={styles.actionsContainer}>
-                    <button type="button" className={`${styles.actionButton} ${styles.cancelButton}`} onClick={onCancel}>Cancel</button>
-                    <button type="submit" className={styles.actionButton}>Save Match</button>
+                    <button type="button" className={`${styles.actionButton} ${styles.cancelButton}`} onClick={onCancel} disabled={isSubmitting}>Cancel</button>
+                    <button type="submit" className={styles.actionButton} disabled={isSubmitting}>
+                        {isSubmitting ? 'Saving...' : 'Save Match'}
+                    </button>
                 </div>
+
+                {message && <p className={styles.message}>{message}</p>}
             </form>
         </div>
     );
