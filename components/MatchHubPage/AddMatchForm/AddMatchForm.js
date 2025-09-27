@@ -23,7 +23,6 @@ const BLANK_FORM_STATE = {
 };
 
 export default function AddMatchForm({ initialData, onCancel, onMatchAdded }) {
-    // MODIFIED: Use the new addOrUpdateMatch function from the context
     const { authKey, addOrUpdateMatch } = useAppContext();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState('');
@@ -33,11 +32,19 @@ export default function AddMatchForm({ initialData, onCancel, onMatchAdded }) {
 
     useEffect(() => {
         if (isEditMode) {
+            // If we are editing, populate the form with the existing match data
             setFormData({
                 ...initialData,
                 squad: initialData.squad ? initialData.squad.split(',').map(s => s.trim()) : []
             });
+        } else if (initialData && initialData.matchDate) {
+            // If we are creating with a pre-populated date from the schedule
+            setFormData({
+                ...BLANK_FORM_STATE,
+                matchDate: initialData.matchDate
+            });
         } else {
+            // Otherwise, ensure the form is blank
             setFormData(BLANK_FORM_STATE);
         }
     }, [initialData, isEditMode]);
@@ -85,7 +92,6 @@ export default function AddMatchForm({ initialData, onCancel, onMatchAdded }) {
                 throw new Error(result.error || 'Failed to save the match.');
             }
             
-            // MODIFIED: Call the new function to update the global state
             if (Array.isArray(result) && result.length > 0) {
                 addOrUpdateMatch(result[0]);
             }
@@ -146,7 +152,7 @@ export default function AddMatchForm({ initialData, onCancel, onMatchAdded }) {
 
                 <div className={styles.section}>
                     <h3 className={styles.sectionTitle}>Select Squad</h3>
-                    <PlayerMultiSelect selectedPlayers={formData.squad} onChange={handleSquadChange} />
+                    <PlayerMultiSelect selectedPlayers={formData.squad || []} onChange={handleSquadChange} />
                 </div>
 
                 <div className={styles.actionsContainer}>
