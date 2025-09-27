@@ -17,8 +17,6 @@ import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
 import SquadPanel from './SquadPanel/SquadPanel';
 
 export default function LiveTab() {
-    console.log("LOG: LiveTab component render/re-render."); // 1. Log every render
-
     const { appData, authKey } = useAppContext();
     const [liveMatch, setLiveMatch] = useState(null);
     const [nextMatch, setNextMatch] = useState(null);
@@ -36,9 +34,7 @@ export default function LiveTab() {
     const [secondHalfStartTime, setSecondHalfStartTime] = useState(null);
 
     const reconstructStateFromEvents = useCallback((eventList) => {
-        console.log("LOG: reconstructStateFromEvents called with:", eventList); // 4. Log received events
         if (!Array.isArray(eventList)) {
-            console.warn("WARN: eventList was not an array. Resetting events.");
             setEvents([]);
             return;
         }
@@ -60,15 +56,17 @@ export default function LiveTab() {
         const newHomeScore = sortedEvents.filter(e => e.eventType === 'Goal' && e.team === 'home').length;
         const newAwayScore = sortedEvents.filter(e => e.eventType === 'Goal' && e.team === 'away').length;
         setScore({ home: newHomeScore, away: newAwayScore });
-        console.log("LOG: State reconstruction complete.");
     }, []);
 
     useEffect(() => {
         const findAndLoadMatch = async () => {
-            console.log("LOG: useEffect findAndLoadMatch running..."); // 2. Log effect start
             const now = new Date();
             const liveMatchWindowMs = 200 * 60 * 1000;
-            if (!appData.matches || appData.matches.length === 0) return;
+            if (!appData.matches || appData.matches.length === 0) {
+                 setLiveMatch(null);
+                 setNextMatch(null);
+                 return;
+            }
 
             const foundLiveMatch = appData.matches.find(match => {
                 const matchScheduledTime = new Date(`${match.matchDate} ${match.matchTime}`);
@@ -78,8 +76,7 @@ export default function LiveTab() {
 
             if (foundLiveMatch) {
                 if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
-                
-                console.log("LOG: Found a live match:", foundLiveMatch); // 3. Log the found match
+
                 setApiError('');
                 const homeTeamName = foundLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
                 const awayTeamName = foundLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
@@ -90,7 +87,6 @@ export default function LiveTab() {
                 setLiveMatch(processedMatch);
 
                 try {
-                    console.log(`LOG: Fetching events for matchId: ${foundLiveMatch.matchId}`);
                     const response = await fetch('/api/manage-match', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
@@ -103,24 +99,20 @@ export default function LiveTab() {
                     }
                     
                     const existingEvents = await response.json();
-                    console.log("LOG: Successfully fetched events from API:", existingEvents);
                     
                     if (Array.isArray(existingEvents) && existingEvents.length > 0) {
                         reconstructStateFromEvents(existingEvents);
                     } else {
-                        console.log("LOG: No existing events found. Initializing empty state.");
                         setEvents([]);
                         setScore({ home: 0, away: 0});
                         setMatchStartTime(null);
                         setSecondHalfStartTime(null);
                     }
                 } catch (error) {
-                    console.error("FRONTEND CATCH: Error during event fetch:", error); // 5. Log fetch error
                     setApiError(error.message);
                 }
 
             } else {
-                console.log("LOG: No live match found. Looking for next match.");
                 setLiveMatch(null);
                 const upcomingMatches = appData.matches.filter(match => new Date(`${match.matchDate} ${match.matchTime}`) > now);
                 setNextMatch(upcomingMatches[0] || null);
@@ -187,8 +179,6 @@ export default function LiveTab() {
         return () => clearTimeout(timer);
     }, [matchStartTime, events, calculateElapsedTime]);
 
-    // The component's render logic starts here
-    console.log("LOG: Rendering with state:", { liveMatch: !!liveMatch, eventsCount: events.length, apiError, view });
     if (view === 'logEvent') {
         return <EventForm eventType={selectedEventType} match={liveMatch} onCancel={handleFormCancel} onSubmit={handleEventSubmit} initialMinute={prepopulatedMinute} isSubmitting={isSubmitting} apiError={apiError} />;
     }
