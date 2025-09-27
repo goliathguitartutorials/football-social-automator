@@ -3,7 +3,7 @@
  * COMPONENT: LiveTab
  * PAGE: Match Hub
  * FILE: /components/MatchHubPage/LiveTab/LiveTab.module.css
- ==========================================================
+ * ==========================================================
  */
 .container {
     width: 100%;
@@ -25,4 +25,63 @@
     font-size: 1.25rem;
     color: var(--text-primary);
     margin-bottom: 0.5rem;
+}
+
+/* NEW: Styles for the active live match interface */
+.liveContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 800px; /* Constrain width for better layout on large screens */
+    margin: 0 auto;
+}
+
+.liveHeader {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2rem;
+    text-align: center;
+    padding: 1rem;
+    background-color: var(--background-light);
+    border-radius: 8px;
+    width: 100%;
+    border: 1px solid var(--border-color);
+}
+
+.eventGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    width: 100%;
+}
+
+.eventButton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    text-align: center;
+}
+
+.eventButton:hover {
+    background-color: var(--background-lighter);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.eventButton svg {
+    width: 40px;
+    height: 40px;
 }
