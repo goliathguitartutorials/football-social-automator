@@ -6,6 +6,36 @@
  * ==========================================================
  */
 .dashboardContainer { width: 100%; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* NEW: Styles for the pre-game confirmation screen */
+.preGameContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem 1rem;
+    gap: 1rem;
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+.preGameContainer h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+.preGameContainer p {
+    margin: 0;
+    color: var(--text-secondary);
+    max-width: 400px;
+}
+.preGameButtons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
 .apiErrorBar { background-color: #5c2c2c; color: #ffb8b8; border: 1px solid #d85a5a; padding: 0.75rem 1rem; border-radius: 8px; text-align: center; width: 100%; }
 .placeholder { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 4rem; border: 2px dashed var(--border-color); border-radius: 8px; text-align: center; color: var(--text-secondary); }
 .placeholder h3 { font-size: 1.25rem; color: var(--text-primary); margin-bottom: 0.5rem; }
