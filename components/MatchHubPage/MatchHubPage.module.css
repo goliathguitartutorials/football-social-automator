@@ -13,15 +13,20 @@
 }
 
 .header {
+    /* MODIFIED: Added flex properties to align tabs and button */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 1.5rem;
     flex-shrink: 0;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .tabNav {
     display: flex;
     justify-content: flex-start;
     gap: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
+    /* MODIFIED: Removed the bottom border as it's now on the header */
 }
 
 .navButton {
@@ -64,6 +69,27 @@
 .navLabel {
     font-size: 1rem;
     font-weight: 600;
+}
+
+/* ADDED: Styles for the new Add Match button */
+.addMatchButton {
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: var(--accent-color);
+    color: #fff;
+    transition: background-color 0.2s;
+    /* Ensures it doesn't get squished */
+    flex-shrink: 0;
+    /* Aligns with the bottom of the tabs */
+    margin-bottom: -1px;
+}
+
+.addMatchButton:hover {
+    background-color: var(--accent-color-hover);
 }
 
 .contentContainer {
