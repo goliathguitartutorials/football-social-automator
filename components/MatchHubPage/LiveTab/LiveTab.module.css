@@ -11,139 +11,53 @@
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
+}
+
+.apiErrorBar {
+    background-color: #5c2c2c;
+    color: #ffb8b8;
+    border: 1px solid #d85a5a;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    text-align: center;
+    width: 100%;
 }
 
 /* --- Placeholder Styles --- */
-.placeholder {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 4rem;
-    border: 2px dashed var(--border-color);
-    border-radius: 8px;
-    text-align: center;
-    color: var(--text-secondary);
-}
-.placeholder h3 {
-    font-size: 1.25rem;
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-}
+.placeholder { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 4rem; border: 2px dashed var(--border-color); border-radius: 8px; text-align: center; color: var(--text-secondary); }
+.placeholder h3 { font-size: 1.25rem; color: var(--text-primary); margin-bottom: 0.5rem; }
 
 /* --- Match Header (Scoreboard) --- */
-.matchHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    background-color: var(--background-light);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1rem 1.5rem;
-}
-.teamName {
-    flex: 1;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    text-align: center;
-}
-.scoreContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 0 1rem;
-}
-.score {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: var(--text-primary);
-    line-height: 1;
-}
-.elapsedTime {
-    font-size: 1rem;
-    color: var(--accent-color);
-    font-weight: 700;
-    margin-top: 0.5rem;
-}
+.matchHeader { display: flex; justify-content: space-between; align-items: center; width: 100%; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem 1.5rem; }
+.teamName { flex: 1; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); text-align: center; }
+.scoreContainer { display: flex; flex-direction: column; align-items: center; margin: 0 1rem; }
+.score { font-size: 2.5rem; font-weight: bold; color: var(--text-primary); line-height: 1; }
+.elapsedTime { font-size: 1rem; color: var(--accent-color); font-weight: 700; margin-top: 0.5rem; }
+
+/* --- Controls Section --- */
+.controlsSection { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; }
+.matchControls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+.controlButton { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; font-size: 1rem; font-weight: bold; color: #fff; background-color: var(--accent-color); border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; }
+.controlButton:hover { background-color: var(--accent-color-hover); }
+.controlButton svg { width: 20px; height: 20px; }
 
 /* --- Event Button Grid --- */
-.eventGrid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    width: 100%;
-}
-.eventButton {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 1.25rem 0.5rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    background-color: var(--background-light);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-}
-.eventButton:hover {
-    background-color: var(--background-lighter);
-    border-color: var(--accent-color);
-    color: var(--accent-color);
-}
-.eventButton svg {
-    width: 32px;
-    height: 32px;
-}
+.eventGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; width: 100%; }
+.eventButton { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; padding: 1.25rem 0.5rem; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); background-color: #374151; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: all 0.2s ease-in-out; }
+.eventButton:hover { background-color: #4a5568; border-color: var(--accent-color); color: var(--accent-color); }
+.eventButton:disabled { background-color: var(--background-lighter); color: #666; cursor: not-allowed; border-color: #444; }
+.eventButton:disabled:hover { color: #666; }
+.eventButton svg { width: 32px; height: 32px; }
 
 /* --- Details Container (Tabs & Panels) --- */
-.detailsContainer {
-    background-color: var(--background-light);
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    overflow: hidden;
-}
-.tabBar {
-    display: flex;
-    border-bottom: 1px solid var(--border-color);
-}
-.tabButton {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.85rem 1rem;
-    background-color: transparent;
-    border: none;
-    border-bottom: 3px solid transparent;
-    color: var(--text-secondary);
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-}
-.tabButton:hover {
-    color: var(--text-primary);
-}
-.tabButton.active {
-    color: var(--accent-color);
-    background-color: var(--background-lighter);
-    border-bottom-color: var(--accent-color);
-}
-.tabButton svg {
-    width: 20px;
-    height: 20px;
-}
-.panelContainer {
-    padding: 1.5rem;
-}
+.detailsContainer { background-color: var(--background-light); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; }
+.tabBar { display: flex; border-bottom: 1px solid var(--border-color); }
+.tabButton { flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.85rem 1rem; background-color: transparent; border: none; border-bottom: 3px solid transparent; color: var(--text-secondary); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease-in-out; }
+.tabButton:hover { color: var(--text-primary); }
+.tabButton.active { color: var(--accent-color); background-color: var(--background-lighter); border-bottom-color: var(--accent-color); }
+.tabButton svg { width: 20px; height: 20px; }
+.panelContainer { padding: 1.5rem; }
 
 /* --- Countdown Timer --- */
 .countdownContainer { display: flex; gap: 1rem; margin-top: 1rem; }
