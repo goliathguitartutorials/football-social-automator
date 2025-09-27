@@ -82,9 +82,8 @@ export default function LiveTab() {
             const foundLiveMatch = appData.matches.find(match => {
                 const matchScheduledTime = new Date(`${match.matchDate} ${match.matchTime}`);
                 const matchEndTime = new Date(matchScheduledTime.getTime() + liveMatchWindowMs);
-                // Treat empty or "FALSE" as not archived
-                const isArchived = match.isArchived === 'TRUE' || match.isArchived === true;
-                return now >= matchScheduledTime && now <= matchEndTime && !isArchived;
+                // MODIFIED: Check against status column instead of isArchived
+                return now >= matchScheduledTime && now <= matchEndTime && match.status !== 'Archived';
             });
 
             if (foundLiveMatch) {
@@ -126,8 +125,7 @@ export default function LiveTab() {
                 setLiveMatch(null);
                 sessionStorage.removeItem('liveMatchState');
                 const upcomingMatches = appData.matches.filter(match => {
-                    const isArchived = match.isArchived === 'TRUE' || match.isArchived === true;
-                    return new Date(`${match.matchDate} ${match.matchTime}`) > now && !isArchived;
+                    return new Date(`${match.matchDate} ${match.matchTime}`) > now && match.status !== 'Archived';
                 });
                 setNextMatch(upcomingMatches[0] || null);
             }
@@ -148,7 +146,7 @@ export default function LiveTab() {
         let totalSeconds;
 
         if (secondHalfStartTime && now >= secondHalfStartTime) {
-            const firstHalfDurationSeconds = 45 * 60; // A standard 45-minute first half
+            const firstHalfDurationSeconds = 45 * 60;
             const secondHalfSeconds = (now - secondHalfStartTime) / 1000;
             totalSeconds = firstHalfDurationSeconds + secondHalfSeconds;
         } else {
@@ -237,7 +235,7 @@ export default function LiveTab() {
             const freshEvents = result.data || result || [];
             reconstructStateFromEvents(freshEvents);
             
-            if (eventData.eventType === 'MATCH_END') {
+            if (freshEvents.some(e => e.eventType === 'MATCH_END')) {
                 sessionStorage.removeItem('liveMatchState');
             } else {
                 sessionStorage.setItem('liveMatchState', JSON.stringify({ match: liveMatch, events: freshEvents }));
@@ -253,6 +251,7 @@ export default function LiveTab() {
         }
     };
 
+    // MODIFIED: This is now fully functional
     const handleArchiveMatch = async () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
@@ -261,11 +260,18 @@ export default function LiveTab() {
             const response = await fetch('/api/manage-match', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
-                body: JSON.stringify({ action: 'archive_match', matchData: { matchId: liveMatch.matchId } })
+                // MODIFIED: Payload now includes final score
+                body: JSON.stringify({ 
+                    action: 'archive_match', 
+                    matchData: { 
+                        matchId: liveMatch.matchId,
+                        homeScore: score.home,
+                        awayScore: score.away
+                    } 
+                })
             });
              if (!response.ok) throw new Error((await response.json()).error || 'Failed to archive match.');
 
-             // Success, clear state and refresh all app data
              sessionStorage.removeItem('liveMatchState');
              setLiveMatch(null);
              await refreshAppData();
@@ -311,6 +317,7 @@ export default function LiveTab() {
         const hasSecondHalfStarted = events.some(e => e.eventType === 'SECOND_HALF_START');
         const hasEnded = events.some(e => e.eventType === 'MATCH_END');
 
+        // MODIFIED: Upgraded "Match Finished" screen
         if (hasEnded) {
             return (
                 <>
