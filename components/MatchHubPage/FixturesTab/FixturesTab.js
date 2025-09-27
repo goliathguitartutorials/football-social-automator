@@ -5,7 +5,8 @@
  * FILE: /components/MatchHubPage/FixturesTab/FixturesTab.js
  ==========================================================
  */
-// MODIFIED: Import the new EditIcon from the correct file
+// MODIFIED: Imported useMemo for performance
+import { useMemo } from 'react';
 import { EditIcon } from '../MatchHubIcons';
 import styles from './FixturesTab.module.css';
 
@@ -52,13 +53,19 @@ const MatchCard = ({ match, onEditClick }) => {
 };
 
 export default function FixturesTab({ matches, onEditClick }) {
-    if (!matches || matches.length === 0) {
+    // MODIFIED: Filter out archived matches before rendering the list.
+    const unarchivedMatches = useMemo(() => {
+        if (!matches) return [];
+        return matches.filter(match => match.status !== 'Archived');
+    }, [matches]);
+
+    if (unarchivedMatches.length === 0) {
         return <p className={styles.notice}>No upcoming matches found.</p>;
     }
 
     return (
         <div className={styles.fixturesList}>
-            {matches.map(match => (
+            {unarchivedMatches.map(match => (
                 <MatchCard key={match.matchId} match={match} onEditClick={onEditClick} />
             ))}
         </div>
