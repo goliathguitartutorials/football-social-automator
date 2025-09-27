@@ -38,7 +38,14 @@ export default function LiveTab() {
             setEvents([]);
             return;
         }
-        const sortedEvents = eventList.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        // FIX: Handle inconsistent casing from API response ("MatchId" vs "matchId")
+        const normalizedEvents = eventList.map(event => ({
+            ...event,
+            matchId: event.MatchId || event.matchId,
+            playerFullName: event.plaerFullName || event.playerFullName, // Handle typo "plaer"
+        }));
+
+        const sortedEvents = normalizedEvents.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setEvents(sortedEvents);
 
         const startEvent = sortedEvents.find(e => e.eventType === 'MATCH_START');
@@ -92,8 +99,7 @@ export default function LiveTab() {
                         throw new Error(err.error || 'Failed to fetch existing match events.');
                     }
                     
-                    const result = await response.json();
-                    const existingEvents = result.data || result || [];
+                    const existingEvents = await response.json();
                     
                     if (Array.isArray(existingEvents) && existingEvents.length > 0) {
                         reconstructStateFromEvents(existingEvents);
