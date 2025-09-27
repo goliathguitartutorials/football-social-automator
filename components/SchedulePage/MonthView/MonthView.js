@@ -6,9 +6,10 @@
  * ==========================================================
  */
 'use client';
+
 import styles from './MonthView.module.css';
 import PostPreview from '../PostPreview/PostPreview';
-import MatchPreview from '../MatchPreview/MatchPreview';
+import MatchPreview from '../MatchPreview/MatchPreview'; // Import the new component
 import { MoreIcon, PlusIcon } from '../SchedulePageIcons';
 
 export default function MonthView({ currentDate, events, onPostClick, onMatchClick, onMoreClick, onDayClick, onNewEventClick, isMobile = false }) {
