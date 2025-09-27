@@ -12,9 +12,10 @@ import { useAppContext } from '@/app/context/AppContext';
 import styles from './LiveTab.module.css';
 import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from './LiveTabIcons';
 import CountdownTimer from './CountdownTimer';
-import EventForm from './EventForm/EventForm';
-import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
-import SquadPanel from './SquadPanel/SquadPanel';
+// CHANGED: Corrected component imports from default to named.
+import { EventForm } from './EventForm/EventForm';
+import { MatchEventsPanel } from './MatchEventsPanel/MatchEventsPanel';
+import { SquadPanel } from './SquadPanel/SquadPanel';
 
 export default function LiveTab() {
     const { appData, authKey } = useAppContext();
@@ -119,7 +120,6 @@ export default function LiveTab() {
     const calculateElapsedTime = useCallback(() => {
         if (!matchStartTime) return { minute: 0, display: "Not Started" };
 
-        // MODIFIED: Removed 'AUTO_MATCH_END' from this check
         const hasEnded = events.some(e => e.eventType === 'MATCH_END');
         if (hasEnded) return { minute: 90, display: "Finished" };
         
@@ -211,8 +211,6 @@ export default function LiveTab() {
         }
     };
     
-    // MODIFIED: The entire useEffect hook for auto-ending the match has been removed.
-
     if (view === 'logEvent') {
         return <EventForm eventType={selectedEventType} match={liveMatch} onCancel={handleFormCancel} onSubmit={handleEventSubmit} initialMinute={prepopulatedMinute} isSubmitting={isSubmitting} apiError={apiError} />;
     }
@@ -221,7 +219,6 @@ export default function LiveTab() {
         const hasStarted = events.some(e => e.eventType === 'MATCH_START');
         const isHalfTime = events.some(e => e.eventType === 'HALF_TIME') && !events.some(e => e.eventType === 'SECOND_HALF_START');
         const hasSecondHalfStarted = events.some(e => e.eventType === 'SECOND_HALF_START');
-        // MODIFIED: Removed 'AUTO_MATCH_END' from this check
         const hasEnded = events.some(e => e.eventType === 'MATCH_END');
 
         return (
@@ -246,10 +243,10 @@ export default function LiveTab() {
                         </div>
                     )}
                      <div className={styles.eventGrid}>
-                        <button className={styles.eventButton} onClick={() => handleEventClick('Goal')} disabled={!hasStarted || hasEnded}><GoalIcon /><span>Goal</span></button>
-                        <button className={styles.eventButton} onClick={() => handleEventClick('Yellow Card')} disabled={!hasStarted || hasEnded}><YellowCardIcon /><span>Yellow Card</span></button>
-                        <button className={styles.eventButton} onClick={() => handleEventClick('Red Card')} disabled={!hasStarted || hasEnded}><RedCardIcon /><span>Red Card</span></button>
-                        <button className={styles.eventButton} onClick={() => handleEventClick('Substitution')} disabled={!hasStarted || hasEnded}><SubIcon /><span>Substitution</span></button>
+                         <button className={styles.eventButton} onClick={() => handleEventClick('Goal')} disabled={!hasStarted || hasEnded}><GoalIcon /><span>Goal</span></button>
+                         <button className={styles.eventButton} onClick={() => handleEventClick('Yellow Card')} disabled={!hasStarted || hasEnded}><YellowCardIcon /><span>Yellow Card</span></button>
+                         <button className={styles.eventButton} onClick={() => handleEventClick('Red Card')} disabled={!hasStarted || hasEnded}><RedCardIcon /><span>Red Card</span></button>
+                         <button className={styles.eventButton} onClick={() => handleEventClick('Substitution')} disabled={!hasStarted || hasEnded}><SubIcon /><span>Substitution</span></button>
                     </div>
                 </div>
 
