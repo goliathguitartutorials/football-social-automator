@@ -12,7 +12,6 @@ import { useAppContext } from '@/app/context/AppContext';
 import styles from './LiveTab.module.css';
 import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from './LiveTabIcons';
 import CountdownTimer from './CountdownTimer';
-// CHANGED: Corrected component imports from default to named.
 import { EventForm } from './EventForm/EventForm';
 import { MatchEventsPanel } from './MatchEventsPanel/MatchEventsPanel';
 import { SquadPanel } from './SquadPanel/SquadPanel';
@@ -35,6 +34,9 @@ export default function LiveTab() {
     const [secondHalfStartTime, setSecondHalfStartTime] = useState(null);
 
     const reconstructStateFromEvents = useCallback((eventList) => {
+        // LOGGING: See what data is being passed into the state reconstruction function.
+        console.log('[LiveTab] reconstructStateFromEvents received:', eventList);
+
         if (!Array.isArray(eventList)) {
             setEvents([]);
             return;
@@ -72,6 +74,7 @@ export default function LiveTab() {
             if (foundLiveMatch) {
                 if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
 
+                console.log('[LiveTab] Found a live match:', foundLiveMatch.matchId);
                 setApiError('');
                 const homeTeamName = foundLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
                 const awayTeamName = foundLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
@@ -94,11 +97,15 @@ export default function LiveTab() {
                     }
                     
                     const result = await response.json();
+                    // LOGGING: See the raw data returned from the API.
+                    console.log('[LiveTab] Raw API response for get_match_events:', result);
+                    
                     const existingEvents = result.data || result || [];
                     
                     if (Array.isArray(existingEvents) && existingEvents.length > 0) {
                         reconstructStateFromEvents(existingEvents);
                     } else {
+                        console.log('[LiveTab] No existing events found. Resetting state.');
                         setEvents([]);
                         setScore({ home: 0, away: 0});
                         setMatchStartTime(null);
@@ -210,6 +217,9 @@ export default function LiveTab() {
             setIsSubmitting(false);
         }
     };
+
+    // LOGGING: See the final state of 'events' before the component tries to render its children.
+    console.log('[LiveTab] State before render:', { liveMatch: !!liveMatch, events });
     
     if (view === 'logEvent') {
         return <EventForm eventType={selectedEventType} match={liveMatch} onCancel={handleFormCancel} onSubmit={handleEventSubmit} initialMinute={prepopulatedMinute} isSubmitting={isSubmitting} apiError={apiError} />;
