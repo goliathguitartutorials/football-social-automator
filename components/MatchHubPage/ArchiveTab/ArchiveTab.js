@@ -9,7 +9,8 @@
 
 import { useState, useMemo } from 'react';
 import styles from './ArchiveTab.module.css';
-import { EditIcon, FootballIcon } from '../MatchHubIcons';
+// MODIFIED: Added the missing ArchiveIcon to the import list.
+import { EditIcon, FootballIcon, ArchiveIcon } from '../MatchHubIcons';
 
 export default function ArchiveTab({ matches }) {
     const [selectedMatch, setSelectedMatch] = useState(null);
