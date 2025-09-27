@@ -11,21 +11,34 @@
     gap: 8px;
     padding: 5px;
     border-radius: 4px;
-    background-color: #38a169; /* Green for matches */
-    color: #fff;
+    /* MODIFIED: Changed from solid background to a subtle one */
+    background-color: var(--surface-dark); 
+    color: var(--text-secondary);
     cursor: pointer;
     overflow: hidden;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+    border: 1px solid var(--border-color);
 }
 
 .preview:hover {
-    background-color: #2f855a;
+    background-color: var(--background-dark);
+    color: var(--text-primary);
 }
+
+/* NEW: Team-specific border styles */
+.firstTeam {
+    border-left: 3px solid #00b359; /* Green for first team */
+}
+.developmentTeam {
+    border-left: 3px solid #ff4d4d; /* Red for development */
+}
+
 
 .icon svg {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
+    stroke: var(--accent-color); /* Make icon stand out */
 }
 
 .details {
@@ -42,11 +55,6 @@
     text-overflow: ellipsis;
 }
 
-.teamType {
-    font-size: 0.7rem;
-    opacity: 0.8;
-}
-
 /* List View variant */
 .listView {
     padding: 10px;
@@ -54,8 +62,4 @@
 
 .listView .title {
     font-size: 1rem;
-}
-
-.listView .teamType {
-    font-size: 0.8rem;
 }
