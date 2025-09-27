@@ -67,21 +67,22 @@ export function AppProvider({ children }) {
         const scheduledPosts = dataArray.filter((item) => item.class === 'scheduledPost');
         const backgrounds = assets.filter((asset) => asset.Type === 'background');
         const badges = assets.filter((asset) => asset.Type === 'badge');
-        const matches = dataArray.filter((item) => item.type === 'Match');
+        
+        // MODIFIED: Changed filter to correctly identify match objects by the 'matchId' property.
+        const matches = dataArray.filter((item) => item.hasOwnProperty('matchId'));
 
-        matches.sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+        // Sorting logic remains the same
+        matches.sort((a, b) => new Date(a.matchDate + ' ' + a.matchTime) - new Date(b.matchDate + ' ' + b.matchTime));
         badges.sort((a, b) => a.Name.localeCompare(b.Name));
         scheduledPosts.sort((a, b) => new Date(a.scheduled_time_utc) - new Date(b.scheduled_time_utc));
 
         setAppData({ players, backgrounds, badges, matches, scheduledPosts });
     };
 
-    // ADDED: Function to add a new match to the global state
     const addNewMatch = (newMatch) => {
         setAppData(prevData => {
             const updatedMatches = [...prevData.matches, newMatch];
-            // Re-sort matches by date after adding the new one
-            updatedMatches.sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+            updatedMatches.sort((a, b) => new Date(a.matchDate + ' ' + a.matchTime) - new Date(b.matchDate + ' ' + b.matchTime));
             return { ...prevData, matches: updatedMatches };
         });
     };
@@ -111,7 +112,7 @@ export function AppProvider({ children }) {
         authStatus,
         authorizeAndFetchData,
         refreshAppData,
-        addNewMatch, // ADDED: Expose the new function to the context
+        addNewMatch,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
