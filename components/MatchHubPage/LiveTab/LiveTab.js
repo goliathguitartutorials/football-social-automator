@@ -10,14 +10,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './LiveTab.module.css';
-import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon } from './LiveTabIcons';
+import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from './LiveTabIcons';
 import CountdownTimer from './CountdownTimer';
 import EventForm from './EventForm/EventForm';
 import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
 import SquadPanel from './SquadPanel/SquadPanel';
 
 export default function LiveTab() {
-    // MODIFIED: Added authKey for API calls and isSubmitting for user feedback
     const { appData, authKey } = useAppContext();
     const [liveMatch, setLiveMatch] = useState(null);
     const [nextMatch, setNextMatch] = useState(null);
@@ -28,83 +27,141 @@ export default function LiveTab() {
     const [events, setEvents] = useState([]);
     const [score, setScore] = useState({ home: 0, away: 0 });
     const [elapsedTimeDisplay, setElapsedTimeDisplay] = useState("00:00");
-    const [isSubmitting, setIsSubmitting] = useState(false); // New state
-    const [apiError, setApiError] = useState(''); // New state for errors
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [apiError, setApiError] = useState('');
+    
+    // State to hold the definitive start times from logged events
+    const [matchStartTime, setMatchStartTime] = useState(null);
+    const [secondHalfStartTime, setSecondHalfStartTime] = useState(null);
 
-    const calculateElapsedTime = useCallback(() => {
-        if (!liveMatch) return { minute: 0, display: "00:00" };
-        const kickOffTime = new Date(`${liveMatch.matchDate} ${liveMatch.matchTime}`);
-        const now = new Date();
-        const totalSeconds = Math.floor((now - kickOffTime) / 1000);
-        if (totalSeconds < 0) return { minute: 0, display: "00:00" };
+    // --- DATA FETCHING & STATE RECONSTRUCTION ---
+    const reconstructStateFromEvents = useCallback((eventList) => {
+        const sortedEvents = eventList.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        setEvents(sortedEvents);
 
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        let displayMinute = 0;
-        let gameMinute = 0;
+        const startEvent = sortedEvents.find(e => e.eventType === 'MATCH_START');
+        if (startEvent) setMatchStartTime(new Date(startEvent.timestamp));
 
-        if (minutes < 45) {
-            displayMinute = minutes;
-            gameMinute = minutes + 1;
-        } else if (minutes < 60) {
-            return { minute: 45, display: "HT" };
-        } else if (minutes < 105) {
-            displayMinute = minutes - 15;
-            gameMinute = minutes - 14;
-        } else {
-            return { minute: 90, display: "FT" };
-        }
+        const secondHalfEvent = sortedEvents.find(e => e.eventType === 'SECOND_HALF_START');
+        if (secondHalfEvent) setSecondHalfStartTime(new Date(secondHalfEvent.timestamp));
 
-        const display = `${String(displayMinute).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        return { minute: gameMinute, display };
-    }, [liveMatch]);
+        const newHomeScore = sortedEvents.filter(e => e.eventType === 'Goal' && e.team === 'home').length;
+        const newAwayScore = sortedEvents.filter(e => e.eventType === 'Goal' && e.team === 'away').length;
+        setScore({ home: newHomeScore, away: newAwayScore });
+    }, []);
 
     useEffect(() => {
-        // This effect for finding matches remains the same
-        const now = new Date();
-        const liveMatchWindowMs = 150 * 60 * 1000;
-        const findMatches = () => {
-            if (!appData.matches || appData.matches.length === 0) return;
+        const findAndLoadMatch = async () => {
+            const now = new Date();
+            // Extend window slightly to catch matches that just finished
+            const liveMatchWindowMs = 200 * 60 * 1000; 
+            if (!appData.matches || appData.matches.length === 0) {
+                 setLiveMatch(null);
+                 setNextMatch(null);
+                 return;
+            }
+
             const foundLiveMatch = appData.matches.find(match => {
-                const matchStartTime = new Date(`${match.matchDate} ${match.matchTime}`);
-                const matchEndTime = new Date(matchStartTime.getTime() + liveMatchWindowMs);
-                return now > matchStartTime && now < matchEndTime;
+                const matchScheduledTime = new Date(`${match.matchDate} ${match.matchTime}`);
+                const matchEndTime = new Date(matchScheduledTime.getTime() + liveMatchWindowMs);
+                return now > matchScheduledTime && now < matchEndTime;
             });
 
             if (foundLiveMatch) {
+                if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return; // Already loaded this match
+
                 const homeTeamName = foundLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
                 const awayTeamName = foundLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
-                setLiveMatch({
+                const processedMatch = {
                     ...foundLiveMatch, homeTeamName, awayTeamName,
                     squadList: foundLiveMatch.squad ? foundLiveMatch.squad.split(',').map(name => name.trim()) : []
-                });
-                setScore({ home: parseInt(foundLiveMatch.homeScore, 10) || 0, away: parseInt(foundLiveMatch.awayScore, 10) || 0 });
+                };
+                setLiveMatch(processedMatch);
+
+                // Fetch existing events for this match
+                try {
+                    const response = await fetch('/api/manage-match', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
+                        body: JSON.stringify({ action: 'get_match_events', matchData: { matchId: foundLiveMatch.matchId } })
+                    });
+
+                    if (!response.ok) throw new Error('Failed to fetch existing match events.');
+                    
+                    const result = await response.json();
+                    const existingEvents = result.data || [];
+                    
+                    if (existingEvents && existingEvents.length > 0) {
+                        reconstructStateFromEvents(existingEvents);
+                    } else {
+                        // If no events, reset state for the new match
+                        setEvents([]);
+                        setScore({ home: 0, away: 0});
+                        setMatchStartTime(null);
+                        setSecondHalfStartTime(null);
+                    }
+                } catch (error) {
+                    setApiError(error.message);
+                }
+
             } else {
                 setLiveMatch(null);
                 const upcomingMatches = appData.matches.filter(match => new Date(`${match.matchDate} ${match.matchTime}`) > now);
                 setNextMatch(upcomingMatches[0] || null);
             }
         };
-        findMatches();
-    }, [appData.matches]);
+        findAndLoadMatch();
+    }, [appData.matches, authKey, reconstructStateFromEvents, liveMatch]);
 
-    useEffect(() => {
-        // This effect for the clock remains the same
-        if (liveMatch) {
-            const interval = setInterval(() => {
-                const { display } = calculateElapsedTime();
-                setElapsedTimeDisplay(display);
-            }, 1000);
-            return () => clearInterval(interval);
+    // --- CLOCK LOGIC ---
+    const calculateElapsedTime = useCallback(() => {
+        if (!matchStartTime) return { minute: 0, display: "Not Started" };
+
+        const hasEnded = events.some(e => e.eventType === 'MATCH_END' || e.eventType === 'AUTO_MATCH_END');
+        if (hasEnded) return { minute: 90, display: "Finished" };
+        
+        const isHalfTime = events.some(e => e.eventType === 'HALF_TIME') && !events.some(e => e.eventType === 'SECOND_HALF_START');
+        if(isHalfTime) return { minute: 45, display: "HT" };
+
+        const now = new Date();
+        let totalSeconds;
+
+        if (secondHalfStartTime && now > secondHalfStartTime) {
+            const firstHalfDurationSeconds = (secondHalfStartTime - matchStartTime) / 1000 - (15 * 60);
+            const secondHalfSeconds = (now - secondHalfStartTime) / 1000;
+            totalSeconds = firstHalfDurationSeconds + secondHalfSeconds;
+        } else {
+            totalSeconds = (now - matchStartTime) / 1000;
         }
-    }, [liveMatch, calculateElapsedTime]);
+        
+        if (totalSeconds < 0) return { minute: 0, display: "00:00" };
 
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = Math.floor(totalSeconds % 60);
+        
+        const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        return { minute: minutes + 1, display };
+    }, [matchStartTime, secondHalfStartTime, events]);
+    
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const { display } = calculateElapsedTime();
+            setElapsedTimeDisplay(display);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [calculateElapsedTime]);
+
+    // --- EVENT HANDLING ---
     const handleEventClick = (eventType) => {
         const { minute } = calculateElapsedTime();
         setPrepopulatedMinute(minute);
         setSelectedEventType(eventType);
         setView('logEvent');
-        setApiError(''); // Clear previous errors
+        setApiError('');
+    };
+    
+    const handleControlClick = async (eventType) => {
+        await handleEventSubmit({ eventType, minute: calculateElapsedTime().minute });
     };
 
     const handleFormCancel = () => {
@@ -112,81 +169,82 @@ export default function LiveTab() {
         setSelectedEventType(null);
     };
 
-    // MODIFIED: This function now handles the API call
     const handleEventSubmit = async (eventData) => {
         setIsSubmitting(true);
         setApiError('');
 
-        // 1. Prepare the data for the API
-        const eventId = `event_${Date.now()}`;
+        const eventTimestamp = (eventData.eventType === 'MATCH_START' && eventData.startTime) ? new Date(eventData.startTime) : new Date();
+        const eventId = `event_${eventTimestamp.getTime()}`;
+        
         const apiPayload = {
-            eventId: eventId,
-            matchId: eventData.matchId,
+            eventId,
+            matchId: liveMatch.matchId,
             eventType: eventData.eventType,
             minute: eventData.minute,
-            team: eventData.team, // 'home' or 'away'
+            timestamp: eventTimestamp.toISOString(),
+            team: eventData.team || '',
             playerFullName: eventData.scorer || eventData.player || eventData.playerOff || '',
             assistByFullName: eventData.assist || eventData.playerOn || '',
         };
 
         try {
-            // 2. Send data to the manage-match API route
             const response = await fetch('/api/manage-match', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authKey}`
-                },
-                body: JSON.stringify({
-                    action: 'log_event',
-                    matchData: apiPayload 
-                })
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
+                body: JSON.stringify({ action: 'log_event', matchData: apiPayload })
             });
-
-            if (!response.ok) {
-                const errorResult = await response.json();
-                throw new Error(errorResult.error || 'Failed to log event.');
-            }
-
-            // 3. Update local state on success
-            const newEvent = { ...eventData, id: eventId };
-            const newEvents = [...events, newEvent].sort((a, b) => a.minute - b.minute);
-            setEvents(newEvents);
+            if (!response.ok) throw new Error((await response.json()).error || 'Failed to log event.');
             
-            const newHomeScore = newEvents.filter(e => e.eventType === 'Goal' && e.team === 'home').length;
-            const newAwayScore = newEvents.filter(e => e.eventType === 'Goal' && e.team === 'away').length;
-            setScore({ home: newHomeScore, away: newAwayScore });
+            const refetchResponse = await fetch('/api/manage-match', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
+                body: JSON.stringify({ action: 'get_match_events', matchData: { matchId: liveMatch.matchId } })
+            });
+            const result = await refetchResponse.json();
+            reconstructStateFromEvents(result.data || []);
             
             handleFormCancel();
-
         } catch (error) {
-            console.error("API Error:", error);
             setApiError(error.message);
         } finally {
             setIsSubmitting(false);
         }
     };
+    
+    // --- AUTO-END LOGIC ---
+    useEffect(() => {
+        if (!matchStartTime || events.some(e => e.eventType === 'MATCH_END' || e.eventType === 'AUTO_MATCH_END')) return;
 
-    // --- RENDER LOGIC ---
+        const checkAutoEnd = () => {
+            const { minute } = calculateElapsedTime();
+            // Trigger if match is still going after 105 minutes (90 + 15 grace)
+            if (minute > 105) {
+                handleControlClick('AUTO_MATCH_END');
+            }
+        };
+
+        // Set a timer relative to the match start time
+        const msUntilCheck = (106 * 60 * 1000) - (new Date() - matchStartTime);
+        if (msUntilCheck < 0) return; // Don't set a timer in the past
+
+        const timer = setTimeout(checkAutoEnd, msUntilCheck);
+        return () => clearTimeout(timer);
+    }, [matchStartTime, events, calculateElapsedTime]);
+
 
     if (view === 'logEvent') {
-        return (
-            <EventForm
-                eventType={selectedEventType}
-                match={liveMatch}
-                onCancel={handleFormCancel}
-                onSubmit={handleEventSubmit}
-                initialMinute={prepopulatedMinute}
-                isSubmitting={isSubmitting} /* Pass submitting state */
-                apiError={apiError} /* Pass error message */
-            />
-        );
+        return <EventForm eventType={selectedEventType} match={liveMatch} onCancel={handleFormCancel} onSubmit={handleEventSubmit} initialMinute={prepopulatedMinute} isSubmitting={isSubmitting} apiError={apiError} />;
     }
-    
-    // The rest of the render logic remains unchanged...
+
     if (liveMatch) {
+        const hasStarted = events.some(e => e.eventType === 'MATCH_START');
+        const isHalfTime = events.some(e => e.eventType === 'HALF_TIME') && !events.some(e => e.eventType === 'SECOND_HALF_START');
+        const hasSecondHalfStarted = events.some(e => e.eventType === 'SECOND_HALF_START');
+        const hasEnded = events.some(e => e.eventType === 'MATCH_END' || e.eventType === 'AUTO_MATCH_END');
+
         return (
             <div className={styles.dashboardContainer}>
+                {apiError && <p className={styles.apiErrorBar}>{apiError}</p>}
                 <div className={styles.matchHeader}>
                     <span className={styles.teamName}>{liveMatch.homeTeamName}</span>
                     <div className={styles.scoreContainer}>
@@ -196,11 +254,21 @@ export default function LiveTab() {
                     <span className={styles.teamName}>{liveMatch.awayTeamName}</span>
                 </div>
 
-                <div className={styles.eventGrid}>
-                    <button className={styles.eventButton} onClick={() => handleEventClick('Goal')}><GoalIcon /><span>Goal</span></button>
-                    <button className={styles.eventButton} onClick={() => handleEventClick('Yellow Card')}><YellowCardIcon /><span>Yellow Card</span></button>
-                    <button className={styles.eventButton} onClick={() => handleEventClick('Red Card')}><RedCardIcon /><span>Red Card</span></button>
-                    <button className={styles.eventButton} onClick={() => handleEventClick('Substitution')}><SubIcon /><span>Substitution</span></button>
+                <div className={styles.controlsSection}>
+                    {!hasEnded && (
+                        <div className={styles.matchControls}>
+                            {!hasStarted && <button className={styles.controlButton} onClick={() => handleEventClick('MATCH_START')}><PlayIcon/>Start Match</button>}
+                            {hasStarted && !isHalfTime && <button className={styles.controlButton} onClick={() => handleControlClick('HALF_TIME')}><PauseIcon/>Half-Time</button>}
+                            {isHalfTime && !hasSecondHalfStarted && <button className={styles.controlButton} onClick={() => handleControlClick('SECOND_HALF_START')}><PlayIcon/>Start 2nd Half</button>}
+                            {hasStarted && <button className={styles.controlButton} onClick={() => handleControlClick('MATCH_END')}><StopIcon/>Finish Match</button>}
+                        </div>
+                    )}
+                     <div className={styles.eventGrid}>
+                        <button className={styles.eventButton} onClick={() => handleEventClick('Goal')} disabled={!hasStarted || hasEnded}><GoalIcon /><span>Goal</span></button>
+                        <button className={styles.eventButton} onClick={() => handleEventClick('Yellow Card')} disabled={!hasStarted || hasEnded}><YellowCardIcon /><span>Yellow Card</span></button>
+                        <button className={styles.eventButton} onClick={() => handleEventClick('Red Card')} disabled={!hasStarted || hasEnded}><RedCardIcon /><span>Red Card</span></button>
+                        <button className={styles.eventButton} onClick={() => handleEventClick('Substitution')} disabled={!hasStarted || hasEnded}><SubIcon /><span>Substitution</span></button>
+                    </div>
                 </div>
 
                 <div className={styles.detailsContainer}>
