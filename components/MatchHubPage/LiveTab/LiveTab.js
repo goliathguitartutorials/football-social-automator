@@ -129,11 +129,8 @@ export default function LiveTab() {
         let totalSeconds;
 
         if (secondHalfStartTime && now >= secondHalfStartTime) {
-            const firstHalfDurationSeconds = (secondHalfStartTime - matchStartTime) / 1000;
-            const pausedTime = events.find(e => e.eventType === 'HALF_TIME')?.timestamp;
-            const firstHalfOfficialEnd = pausedTime ? new Date(pausedTime) : new Date(matchStartTime.getTime() + 45 * 60000);
+            const firstHalfOfficialEnd = new Date(events.find(e => e.eventType === 'HALF_TIME').timestamp);
             const actualFirstHalfDuration = (firstHalfOfficialEnd - matchStartTime) / 1000;
-            
             const secondHalfSeconds = (now - secondHalfStartTime) / 1000;
             totalSeconds = actualFirstHalfDuration + secondHalfSeconds;
         } else {
@@ -146,7 +143,8 @@ export default function LiveTab() {
         const seconds = Math.floor(totalSeconds % 60);
         
         const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        return { minute: minutes + 1, display };
+        // FIXED: The minute for logging should be the actual minute, not minute + 1
+        return { minute: minutes, display };
     }, [matchStartTime, secondHalfStartTime, events]);
     
     useEffect(() => {
@@ -165,10 +163,14 @@ export default function LiveTab() {
         setApiError('');
     };
     
+    // NEW: Wrapper for control clicks to provide instant UI feedback
     const handleControlClick = async (eventType) => {
+        if (isSubmitting) return; // Prevent multiple clicks
         setIsSubmitting(true);
+        setApiError('');
         try {
-            await handleEventSubmit({ eventType, minute: calculateElapsedTime().minute });
+            const { minute } = calculateElapsedTime();
+            await handleEventSubmit({ eventType, minute });
         } catch (error) {
             setApiError(error.message);
         } finally {
@@ -182,13 +184,17 @@ export default function LiveTab() {
     };
 
     const handleEventSubmit = async (eventData) => {
-        setIsSubmitting(true);
+        // For forms, we manage the submitting state inside the form itself.
+        // For control clicks, it's managed by handleControlClick.
+        if (eventData.eventType !== 'MATCH_START' && !isSubmitting) {
+             setIsSubmitting(true);
+        }
         setApiError('');
 
-        const eventTimestamp = (eventData.eventType === 'MATCH_START' && eventData.startTime) ? new Date(eventData.startTime) : new Date();
+        const eventTimestamp = (eventData.startTime) ? new Date(eventData.startTime) : new Date();
         const eventId = `event_${eventTimestamp.getTime()}`;
 
-        // MODIFIED: Optimistic UI updates for instant timer feedback
+        // Optimistic UI updates for instant timer feedback
         if (eventData.eventType === 'MATCH_START') {
             setMatchStartTime(eventTimestamp);
         }
@@ -197,8 +203,13 @@ export default function LiveTab() {
         }
         
         const apiPayload = {
-            eventId, matchId: liveMatch.matchId, eventType: eventData.eventType,
-            minute: eventData.minute, timestamp: eventTimestamp.toISOString(), team: eventData.team || '',
+            eventId,
+            matchId: liveMatch.matchId,
+            eventType: eventData.eventType,
+            minute: eventData.minute,
+            timestamp: eventTimestamp.toISOString(),
+            team: eventData.team || '',
+            // FIXED: Corrected typo from `plaerFullName` to `playerFullName`
             playerFullName: eventData.scorer || eventData.player || eventData.playerOff || '',
             assistByFullName: eventData.assist || eventData.playerOn || '',
         };
@@ -225,27 +236,58 @@ export default function LiveTab() {
         } catch (error) {
             setApiError(error.message);
         } finally {
-            // Only set isSubmitting to false if it's not a control click
-            // Control clicks manage their own state to avoid flicker
-            if (!['HALF_TIME', 'SECOND_HALF_START', 'MATCH_END'].includes(eventData.eventType)) {
+             if (eventData.eventType !== 'MATCH_START' && isSubmitting) {
+                // Let the control click wrapper handle this
+             } else {
                 setIsSubmitting(false);
-            }
+             }
         }
     };
     
-    if (view === 'logEvent') {
-        return <EventForm eventType={selectedEventType} match={liveMatch} onCancel={handleFormCancel} onSubmit={handleEventSubmit} initialMinute={prepopulatedMinute} isSubmitting={isSubmitting} apiError={apiError} />;
-    }
+    // Renders the main dashboard, the form, or the pre-game confirmation screen
+    const renderContent = () => {
+        if (!liveMatch) return null; // Should not happen if this component is rendered
 
-    if (liveMatch) {
         const hasStarted = events.some(e => e.eventType === 'MATCH_START');
+
+        // NEW: Pre-Game Confirmation Screen
+        if (!hasStarted) {
+            return (
+                <div className={styles.preGameContainer}>
+                    <h3>Confirm Match Start Time</h3>
+                    <p>The match is scheduled to be live. Please confirm when it started.</p>
+                    <div className={styles.preGameButtons}>
+                        <button 
+                            className={styles.controlButton} 
+                            onClick={() => handleEventSubmit({
+                                eventType: 'MATCH_START',
+                                startTime: `${liveMatch.matchDate} ${liveMatch.matchTime}`,
+                                minute: 0
+                            })}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? 'Starting...' : 'Start on Schedule'}
+                        </button>
+                        <button 
+                            className={styles.controlButton} 
+                            onClick={() => handleEventClick('MATCH_START')}
+                            disabled={isSubmitting}
+                        >
+                            Set Custom Start Time
+                        </button>
+                    </div>
+                    {apiError && <p className={styles.apiErrorBar}>{apiError}</p>}
+                </div>
+            );
+        }
+
+        // Standard Dashboard View
         const isHalfTime = events.some(e => e.eventType === 'HALF_TIME') && !events.some(e => e.eventType === 'SECOND_HALF_START');
         const hasSecondHalfStarted = events.some(e => e.eventType === 'SECOND_HALF_START');
         const hasEnded = events.some(e => e.eventType === 'MATCH_END');
 
         return (
-            <div className={styles.dashboardContainer}>
-                {apiError && <p className={styles.apiErrorBar}>{apiError}</p>}
+            <>
                 <div className={styles.matchHeader}>
                     <span className={styles.teamName}>{liveMatch.homeTeamName}</span>
                     <div className={styles.scoreContainer}>
@@ -258,11 +300,9 @@ export default function LiveTab() {
                 <div className={styles.controlsSection}>
                     {!hasEnded && (
                         <div className={styles.matchControls}>
-                            {/* MODIFIED: Added disabled={isSubmitting} for user feedback */}
-                            {!hasStarted && <button className={styles.controlButton} onClick={() => handleEventClick('MATCH_START')} disabled={isSubmitting}><PlayIcon/>Start Match</button>}
-                            {hasStarted && !isHalfTime && <button className={styles.controlButton} onClick={() => handleControlClick('HALF_TIME')} disabled={isSubmitting}><PauseIcon/>Half-Time</button>}
-                            {isHalfTime && !hasSecondHalfStarted && <button className={styles.controlButton} onClick={() => handleControlClick('SECOND_HALF_START')} disabled={isSubmitting}><PlayIcon/>Start 2nd Half</button>}
-                            {hasStarted && <button className={styles.controlButton} onClick={() => handleControlClick('MATCH_END')} disabled={isSubmitting}><StopIcon/>Finish Match</button>}
+                            {hasStarted && !isHalfTime && <button className={styles.controlButton} onClick={() => handleControlClick('HALF_TIME')} disabled={isSubmitting}>{isSubmitting ? 'Logging...' : <><PauseIcon/>Half-Time</>}</button>}
+                            {isHalfTime && !hasSecondHalfStarted && <button className={styles.controlButton} onClick={() => handleControlClick('SECOND_HALF_START')} disabled={isSubmitting}>{isSubmitting ? 'Starting...' : <><PlayIcon/>Start 2nd Half</>}</button>}
+                            {hasStarted && <button className={styles.controlButton} onClick={() => handleControlClick('MATCH_END')} disabled={isSubmitting}>{isSubmitting ? 'Finishing...' : <><StopIcon/>Finish Match</>}</button>}
                         </div>
                     )}
                      <div className={styles.eventGrid}>
@@ -283,6 +323,20 @@ export default function LiveTab() {
                         {activeTab === 'squad' && <SquadPanel squadList={liveMatch.squadList} />}
                     </div>
                 </div>
+            </>
+        );
+    };
+    
+    // Main component return logic
+    if (view === 'logEvent') {
+        return <EventForm eventType={selectedEventType} match={liveMatch} onCancel={handleFormCancel} onSubmit={handleEventSubmit} initialMinute={prepopulatedMinute} isSubmitting={isSubmitting} setApiError={setApiError} />;
+    }
+
+    if (liveMatch) {
+        return (
+            <div className={styles.dashboardContainer}>
+                {apiError && <p className={styles.apiErrorBar}>{apiError}</p>}
+                {renderContent()}
             </div>
         );
     }
