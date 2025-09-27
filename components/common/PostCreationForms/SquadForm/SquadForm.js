@@ -10,7 +10,6 @@ import { useState, useEffect } from 'react';
 import styles from './SquadForm.module.css';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
 import { UploadIcon, GalleryIcon, GenerateIcon } from '@/components/CreatePage/SquadAnnouncement/SquadAnnouncementIcons';
-// MODIFIED: Import the new PlayerMultiSelect component
 import PlayerMultiSelect from '@/components/MatchHubPage/AddMatchForm/PlayerMultiSelect';
 
 export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloSubmit, isSubmitting, authKey }) {
@@ -23,7 +22,7 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
 
     useEffect(() => {
         setFormData({
-            // MODIFIED: Start with an empty array for multi-select, not a fixed array of 16
+            // MODIFIED: This is the key fix. Initialize with an empty array.
             selectedPlayers: [], 
             saveCustomBackground: true,
             ...initialData,
@@ -38,7 +37,6 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
         }));
     };
     
-    // MODIFIED: This function now handles the array from PlayerMultiSelect
     const handleSquadChange = (newSquad) => {
         setFormData(prev => ({ ...prev, selectedPlayers: newSquad }));
     };
@@ -51,7 +49,6 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
         setFormData(prev => ({ ...prev, selectedBackground: dataUrl }));
     };
 
-    // MODIFIED: This entire function is updated to work with the new match data structure.
     const handleMatchSelect = (matchId) => {
         setBadgeMessage('');
         if (!matchId) {
@@ -64,7 +61,7 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
                 venue: '',
                 teamType: 'First Team',
                 selectedMatchData: null,
-                selectedPlayers: [] // Reset squad on deselection
+                selectedPlayers: [] // Also ensure deselection clears the squad
             }));
             return;
         }
@@ -76,7 +73,6 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
         const kickOffTime = selectedMatch.matchTime;
         const teamType = selectedMatch.team === 'first-team' ? 'First Team' : 'Development Team';
 
-        // Pre-populate squad if it exists in the match data
         const squad = selectedMatch.squad && selectedMatch.squad.length > 0
             ? selectedMatch.squad.split(',').map(name => name.trim())
             : [];
@@ -114,7 +110,7 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
             venue,
             teamType,
             selectedMatchData: selectedMatch,
-            selectedPlayers: squad // Set the pre-populated squad
+            selectedPlayers: squad
         }));
     };
 
@@ -230,7 +226,6 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
                 </div>
             </div>
 
-            {/* MODIFIED: Replaced the old player grid with the new PlayerMultiSelect component */}
             <div className={styles.section}>
                 <h3 className={styles.sectionTitle}>Select Squad</h3>
                 <PlayerMultiSelect 
