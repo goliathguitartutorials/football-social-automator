@@ -36,7 +36,6 @@
     margin: 0 auto;
 }
 
-/* MODIFIED: Replaced .liveHeader with .matchHeader for the score display */
 .matchHeader {
     display: flex;
     justify-content: space-between;
@@ -73,10 +72,15 @@
     color: var(--text-primary);
 }
 
-.matchTime {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    font-weight: 500;
+/* MODIFIED: Replaced matchTime with elapsedTime */
+.elapsedTime {
+    font-size: 1.1rem;
+    color: var(--accent-color);
+    font-weight: 700;
+    background-color: var(--accent-color-faded);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin-top: 0.25rem;
 }
 
 .eventGrid {
