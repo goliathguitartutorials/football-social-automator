@@ -63,10 +63,10 @@ export function AppProvider({ children }) {
     };
 
     const processData = (dataArray) => {
-        const players = dataArray.filter((item) => item.class === 'player');
+        // MODIFIED: Changed filter to correctly identify player objects by the 'playerId' property.
+        const players = dataArray.filter((item) => item.hasOwnProperty('playerId'));
         const assets = dataArray.filter((item) => item.class === 'asset');
         
-        // MODIFIED: Changed 'scheduled_post' to 'scheduledPost' to match new data format
         const scheduledPosts = dataArray.filter((item) => item.class === 'scheduledPost');
         scheduledPosts.sort((a, b) => new Date(a.scheduled_time_utc) - new Date(b.scheduled_time_utc));
 
