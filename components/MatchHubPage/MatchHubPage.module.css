@@ -1,0 +1,73 @@
+/*
+ * ==========================================================
+ * COMPONENT: MatchHubPage
+ * PAGE: Match Hub
+ * FILE: /components/MatchHubPage/MatchHubPage.module.css
+ ==========================================================
+ */
+.container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    margin-bottom: 1.5rem;
+    flex-shrink: 0;
+}
+
+.tabNav {
+    display: flex;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.navButton {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 3px solid transparent;
+    transform: translateY(1px);
+    transition: all 0.2s ease-in-out;
+}
+
+.navButton:hover .navLabel {
+    color: var(--text-primary);
+}
+
+.navButton.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+}
+
+.navButton.active .navLabel {
+    color: var(--text-primary);
+}
+
+.navIcon {
+    margin-right: 0.5rem;
+}
+
+.navIcon svg {
+    fill: none;
+    width: 20px;
+    height: 20px;
+}
+
+.navLabel {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.contentContainer {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
