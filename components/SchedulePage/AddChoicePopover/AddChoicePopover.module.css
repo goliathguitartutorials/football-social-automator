@@ -1,4 +1,10 @@
-/* AddChoicePopover.module.css */
+/*
+ * ==========================================================
+ * COMPONENT: AddChoicePopover
+ * PAGE: Schedule Page
+ * FILE: /components/SchedulePage/AddChoicePopover/AddChoicePopover.module.css
+ * ==========================================================
+ */
 .overlay {
     position: fixed;
     inset: 0;
