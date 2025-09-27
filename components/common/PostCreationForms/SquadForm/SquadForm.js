@@ -21,11 +21,13 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
     const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
 
     useEffect(() => {
+        // CORRECTED: Spread initialData first, then overwrite the selectedPlayers
+        // property. This ensures the form starts with a clean, empty squad
+        // regardless of the data passed from the parent component.
         setFormData({
-            // MODIFIED: This is the key fix. Initialize with an empty array.
+            ...initialData,
             selectedPlayers: [], 
             saveCustomBackground: true,
-            ...initialData,
         });
     }, [initialData]);
 
