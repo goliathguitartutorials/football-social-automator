@@ -1,0 +1,28 @@
+/*
+ * ==========================================================
+ * COMPONENT: SquadPanel
+ * PAGE: Match Hub
+ * FILE: /components/MatchHubPage/LiveTab/SquadPanel/SquadPanel.module.css
+ * ==========================================================
+ */
+.squadGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+}
+
+.playerItem {
+    background-color: var(--background-lighter);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    border: 1px solid var(--border-color);
+}
+
+.noSquad {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 2rem;
+}
