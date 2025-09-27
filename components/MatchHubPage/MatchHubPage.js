@@ -15,22 +15,38 @@ import LiveTab from './LiveTab/LiveTab';
 import AddMatchForm from './AddMatchForm/AddMatchForm';
 
 export default function MatchHubPage() {
-    // MODIFIED: We now get appData (which includes matches) directly from the context
     const { appData } = useAppContext();
-    const [view, setView] = useState('fixtures'); // 'fixtures', 'live', or 'add_form'
+    const [view, setView] = useState('fixtures');
+    const [editingMatch, setEditingMatch] = useState(null); // State to hold the match being edited
 
-    // This function is now simpler: it just switches the view back.
-    const handleMatchAdded = () => {
-        setView('fixtures');
+    const handleEditClick = (match) => {
+        setEditingMatch(match); // Set the match to edit
+        setView('add_form');    // Switch to the form view
+    };
+
+    const handleFormClose = () => {
+        setEditingMatch(null); // Clear the editing match
+        setView('fixtures');     // Switch back to fixtures
     };
 
     const renderContent = () => {
         if (view === 'add_form') {
-            return <AddMatchForm onCancel={() => setView('fixtures')} onMatchAdded={handleMatchAdded} />;
+            return (
+                <AddMatchForm 
+                    // Pass the match data to the form if we are editing, otherwise pass null
+                    initialData={editingMatch} 
+                    onCancel={handleFormClose} 
+                    onMatchAdded={handleFormClose} 
+                />
+            );
         }
         if (view === 'fixtures') {
-            // MODIFIED: We pass the matches directly from the global appData state
-            return <FixturesTab matches={appData.matches} isLoading={false} error={null} />;
+            return (
+                <FixturesTab 
+                    matches={appData.matches} 
+                    onEditClick={handleEditClick} // Pass the handler to the fixtures tab
+                />
+            );
         }
         if (view === 'live') {
             return <LiveTab />;
