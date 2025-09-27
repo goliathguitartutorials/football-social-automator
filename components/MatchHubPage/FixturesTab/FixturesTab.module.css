@@ -1,46 +1,79 @@
-/*
- * ==========================================================
- * COMPONENT: FixturesTab
- * PAGE: Match Hub
- * FILE: /components/MatchHubPage/FixturesTab/FixturesTab.module.css
- ==========================================================
- */
-.toolbar {
+/* FixturesTab.module.css */
+.fixturesList {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.matchCard {
     display: flex;
-    justify-content: flex-end;
-    margin-bottom: 1.5rem;
-}
-
-.addMatchButton {
-    display: inline-flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 0.5rem;
-    background-color: var(--accent-color);
-    color: var(--background-dark);
-    border: none;
-    border-radius: 6px;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.addMatchButton:hover {
-    background-color: var(--accent-color-hover);
-}
-
-.addMatchButton svg {
-    width: 20px;
-    height: 20px;
-}
-
-.placeholder {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 4rem;
-    border: 2px dashed var(--border-color);
+    background-color: var(--surface-dark, #1a1d2e);
+    padding: 1.5rem;
     border-radius: 8px;
+    border: 1px solid var(--border-color, #4a5568);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.matchCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.matchInfo .competition {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary, #a0aec0);
+    margin: 0 0 0.5rem;
+}
+
+.matchInfo .teams {
+    font-size: 1.5rem;
+    color: var(--text-primary, #fff);
+    margin: 0 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.matchInfo .teams span {
+    font-size: 1rem;
+    color: var(--accent-color);
+}
+
+.matchInfo .venue {
+    font-size: 1rem;
+    color: var(--text-secondary, #a0aec0);
+    margin: 0;
+}
+
+.matchTime {
+    text-align: right;
+}
+
+.matchTime .date {
+    font-size: 1rem;
+    color: var(--text-primary, #fff);
+    margin: 0 0 0.5rem;
+}
+
+.matchTime .time {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent-color);
+    margin: 0;
+}
+
+.notice {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
     color: var(--text-secondary);
+}
+
+.error {
+    color: #fca5a5;
+    background-color: rgba(252, 165, 165, 0.1);
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
 }
