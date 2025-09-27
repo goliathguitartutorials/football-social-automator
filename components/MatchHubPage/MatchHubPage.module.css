@@ -1,0 +1,95 @@
+/*
+ * ==========================================================
+ * COMPONENT: MatchHubPage
+ * PAGE: Match Hub
+ * FILE: /components/MatchHubPage/MatchHubPage.module.css
+ ==========================================================
+ */
+.container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem; /* Increased margin to match CreatePage */
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tabNav {
+    display: flex;
+    justify-content: flex-start;
+    gap: 0.5rem;
+}
+
+.navButton {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 3px solid transparent;
+    transform: translateY(1px);
+    transition: all 0.2s ease-in-out;
+}
+
+.navButton:hover .navLabel,
+.navButton:hover {
+    color: var(--text-primary);
+}
+
+.navButton.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+}
+
+.navButton.active .navLabel {
+    color: var(--text-primary);
+}
+
+.navIcon {
+    margin-right: 0.5rem;
+}
+
+.navIcon svg {
+    fill: none;
+    width: 20px;
+    height: 20px;
+}
+
+.navLabel {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.addMatchButton {
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: var(--accent-color);
+    color: #fff;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+    margin-bottom: -1px; /* Aligns with bottom border */
+}
+
+.addMatchButton:hover {
+    background-color: var(--accent-color-hover);
+}
+
+.contentContainer {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}

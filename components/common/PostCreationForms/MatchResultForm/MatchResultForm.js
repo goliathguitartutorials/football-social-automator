@@ -180,28 +180,29 @@ export default function MatchResultForm({ appData = {}, initialData, onSubmit, o
     const handleRemoveOppositionScorer = (id) => setFormData(prev => ({ ...prev, oppositionScorers: prev.oppositionScorers.filter(s => s.id !== id) }));
     const handleOppositionScorerUpdate = (id, field, value) => setFormData(prev => ({ ...prev, oppositionScorers: prev.oppositionScorers.map(s => s.id === id ? { ...s, [field]: value } : s) }));
 
-    const handleMatchSelect = (eventId) => {
+    const handleMatchSelect = (matchId) => {
         setBadgeMessage('');
-        if (!eventId) {
+        if (!matchId) {
             setFormData(prev => ({ ...prev, homeTeamBadge: '', awayTeamBadge: '', homeTeamScore: '', awayTeamScore: '', matchDate: '', kickOffTime: '', venue: '', teamType: 'First Team', selectedMatchData: null, scorers: [{ id: 1, name: '', minute: '', isPenalty: false }] }));
             return;
         }
-        const selectedMatch = matches.find(m => m.eventId === eventId);
+        const selectedMatch = matches.find(m => m.matchId === matchId);
         if (!selectedMatch) return;
 
         const venue = selectedMatch.venue;
-        const dateTime = new Date(selectedMatch.startDateTime);
-        const matchDate = dateTime.toISOString().split('T')[0];
-        const kickOffTime = dateTime.toTimeString().substring(0, 5);
-        const teamType = `${selectedMatch.team.charAt(0).toUpperCase()}${selectedMatch.team.slice(1)} Team`.replace('First-team', 'First Team');
+        const matchDate = selectedMatch.matchDate;
+        const kickOffTime = selectedMatch.matchTime;
+        const teamType = selectedMatch.team === 'first-team' ? 'First Team' : 'Development Team';
         
-        const [homeTeamName, awayTeamName] = selectedMatch.title.split(' vs ');
+        const homeTeamName = selectedMatch.homeOrAway === 'Home' ? 'Y Glannau' : selectedMatch.opponent;
+        const awayTeamName = selectedMatch.homeOrAway === 'Away' ? 'Y Glannau' : selectedMatch.opponent;
+
         const glannauBadge = badges.find(b => b.Name.toLowerCase().includes('glannau'))?.Link || '';
         let foundHomeBadge = '', foundAwayBadge = '';
 
         if (homeTeamName.toLowerCase().includes('glannau')) { foundHomeBadge = glannauBadge; }
         if (awayTeamName.toLowerCase().includes('glannau')) { foundAwayBadge = glannauBadge; }
-        const oppositionName = homeTeamName.toLowerCase().includes('glannau') ? awayTeamName : homeTeamName;
+        const oppositionName = selectedMatch.opponent;
         const normalizedOppositionName = oppositionName.toLowerCase().replace(/ fc| afc| town| city| dev| development| u19s| pheonix/g, '').trim();
         const oppositionBadge = badges.find(badge => {
             if (badge.Name.toLowerCase().includes('glannau')) return false;
@@ -210,8 +211,6 @@ export default function MatchResultForm({ appData = {}, initialData, onSubmit, o
         })?.Link || '';
         if (oppositionBadge) {
             if (homeTeamName.toLowerCase().includes('glannau')) { foundAwayBadge = oppositionBadge; } else { foundHomeBadge = oppositionBadge; }
-        } else if (!homeTeamName.toLowerCase().includes('glannau') && !awayTeamName.toLowerCase().includes('glannau')) {
-            setBadgeMessage("Could not automatically match badges. Please select manually.");
         } else { setBadgeMessage("Opposition badge not matched. Please select manually."); }
         
         setFormData(prev => ({ ...prev, homeTeamBadge: foundHomeBadge, awayTeamBadge: foundAwayBadge, matchDate, kickOffTime, venue, teamType, selectedMatchData: selectedMatch }));
@@ -256,7 +255,12 @@ export default function MatchResultForm({ appData = {}, initialData, onSubmit, o
         <form className={styles.formContainer} onSubmit={(e) => { e.preventDefault(); onSubmit(formData); }}>
             <div className={styles.section}>
                 <div className={styles.formGrid}>
-                    <div className={styles.formGroupFull}><label htmlFor="matchSelector">Select a Match (Optional)</label><select id="matchSelector" onChange={(e) => handleMatchSelect(e.target.value)} defaultValue=""><option value="">-- Select a recent match --</option>{matches.map((match) => (<option key={match.eventId} value={match.eventId}>{match.title}</option>))}</select></div>
+                    <div className={styles.formGroupFull}><label htmlFor="matchSelector">Select a Match (Optional)</label><select id="matchSelector" onChange={(e) => handleMatchSelect(e.target.value)} defaultValue=""><option value="">-- Select a recent match --</option>{matches.map((match) => {
+                        const title = match.homeOrAway === 'Home' 
+                            ? `Y Glannau vs ${match.opponent}` 
+                            : `${match.opponent} vs Y Glannau`;
+                        return (<option key={match.matchId} value={match.matchId}>{title}</option>);
+                    })}</select></div>
                     {badgeMessage && <p className={styles.badgeNotice}>{badgeMessage}</p>}
                     <div className={styles.formGroup}><label htmlFor="homeTeamBadge">Home Team Badge</label><select id="homeTeamBadge" value={formData.homeTeamBadge || ''} onChange={handleChange} required><option value="">Select a badge...</option>{badges.map((badge) => (<option key={badge.Link} value={badge.Link}>{badge.Name.replace(/.png/i, '').substring(14)}</option>))}</select></div>
                     <div className={styles.formGroup}><label htmlFor="awayTeamBadge">Away Team Badge</label><select id="awayTeamBadge" value={formData.awayTeamBadge || ''} onChange={handleChange} required><option value="">Select a badge...</option>{badges.map((badge) => (<option key={badge.Link} value={badge.Link}>{badge.Name.replace(/.png/i, '').substring(14)}</option>))}</select></div>

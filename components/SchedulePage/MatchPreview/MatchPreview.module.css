@@ -1,0 +1,65 @@
+/*
+ * ==========================================================
+ * COMPONENT: MatchPreview
+ * PAGE: Schedule Page
+ * FILE: /components/SchedulePage/MatchPreview/MatchPreview.module.css
+ * ==========================================================
+ */
+.preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px;
+    border-radius: 4px;
+    /* MODIFIED: Changed from solid background to a subtle one */
+    background-color: var(--surface-dark); 
+    color: var(--text-secondary);
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.2s;
+    border: 1px solid var(--border-color);
+}
+
+.preview:hover {
+    background-color: var(--background-dark);
+    color: var(--text-primary);
+}
+
+/* NEW: Team-specific border styles */
+.firstTeam {
+    border-left: 3px solid #00b359; /* Green for first team */
+}
+.developmentTeam {
+    border-left: 3px solid #ff4d4d; /* Red for development */
+}
+
+
+.icon svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    stroke: var(--accent-color); /* Make icon stand out */
+}
+
+.details {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* List View variant */
+.listView {
+    padding: 10px;
+}
+
+.listView .title {
+    font-size: 1rem;
+}

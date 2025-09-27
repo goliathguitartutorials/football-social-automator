@@ -1,0 +1,115 @@
+/*
+ * ==========================================================
+ * COMPONENT: AddMatchForm
+ * PAGE: Match Hub
+ * FILE: /components/MatchHubPage/AddMatchForm/AddMatchForm.module.css
+ ==========================================================
+ */
+.pageContainer {
+    padding: 2rem;
+    background-color: var(--surface-dark, #1a1d2e);
+    border-radius: 8px;
+    color: var(--text-primary, #fff);
+}
+
+.formContainer {
+    /* The form itself doesn't need restrictive styles now */
+}
+
+.section {
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border-color, #4a5568);
+    padding-bottom: 2rem;
+}
+.section:last-of-type {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.sectionTitle {
+    font-size: 1.5rem;
+    color: var(--text-primary, #fff);
+    margin: 0 0 1.5rem 0;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.formGroup, .formGroupFull {
+    display: flex;
+    flex-direction: column;
+}
+
+.formGroupFull {
+    grid-column: 1 / -1;
+}
+
+.formGroup label, .formGroupFull label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-secondary, #a0aec0);
+}
+
+.formGroup input, .formGroup select, .formGroupFull input {
+    padding: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color, #4a5568);
+    background-color: #374151; /* From SquadForm */
+    color: var(--text-primary, #fff);
+    font-size: 1rem;
+}
+
+.formGroup input[type="date"],
+.formGroup input[type="time"] {
+    color-scheme: dark;
+}
+
+.actionsContainer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 2rem; /* Increased margin */
+}
+
+.actionButton {
+    padding: 0.85rem 2.2rem;
+    font-size: 1.1rem; /* Matched SquadForm */
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.actionButton.cancelButton {
+    background-color: #4b5563;
+    color: #fff;
+}
+.actionButton.cancelButton:hover:not(:disabled) {
+    background-color: #6b7280;
+}
+
+.actionButton {
+    background-color: var(--accent-color);
+    color: #fff;
+}
+.actionButton:hover:not(:disabled) {
+    background-color: var(--accent-color-hover);
+}
+
+.actionButton:disabled {
+    background-color: #4b5563;
+    cursor: not-allowed;
+}
+
+.message {
+    margin-top: 1.5rem;
+    font-weight: 500;
+    text-align: center;
+    color: var(--text-secondary);
+}

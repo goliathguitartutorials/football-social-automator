@@ -17,11 +17,18 @@
     flex-shrink: 0;
 }
 
-/* Sub-navigation container */
+/* NEW: Wrapper for top row of navigation */
+.topHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
 .subNav {
     display: flex;
-    justify-content: space-around;
-    border-bottom: 1px solid var(--border-color);
+    justify-content: flex-start; /* MODIFIED: Aligned to match Create page */
+    gap: 0.5rem;
 }
 
 /* Default mobile styles for the navigation button */
@@ -66,6 +73,32 @@
     line-height: 1.2;
     text-align: center;
 }
+
+
+/* NEW: Styles for the 'All / Posts / Matches' filter */
+.filterNav {
+    display: flex;
+    align-items: center;
+    background-color: var(--background-dark);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    margin-right: 1rem;
+}
+.filterNav button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+}
+.filterNav button.activeFilter {
+    background-color: var(--accent-color);
+    color: #fff;
+}
+
 
 /* Secondary Header (Date Nav etc.) */
 .secondaryHeader {

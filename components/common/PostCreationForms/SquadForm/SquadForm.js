@@ -6,67 +6,11 @@
  * ==========================================================
  */
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './SquadForm.module.css';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
 import { UploadIcon, GalleryIcon, GenerateIcon } from '@/components/CreatePage/SquadAnnouncement/SquadAnnouncementIcons';
-
-// Sub-component for player selection with autocomplete
-const PlayerAutocomplete = ({ index, value, onSelect, players, selectedPlayers }) => {
-    const [searchTerm, setSearchTerm] = useState(value);
-    const [isOpen, setIsOpen] = useState(false);
-    const wrapperRef = useRef(null);
-
-    const safePlayers = Array.isArray(players) ? players : [];
-    const availablePlayers = safePlayers.filter(p => !selectedPlayers.includes(p.fullName) || p.fullName === value);
-    const filteredPlayers = searchTerm
-        ? availablePlayers.filter(p => p.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
-        : availablePlayers;
-
-    useEffect(() => {
-        setSearchTerm(value);
-    }, [value]);
-
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [wrapperRef]);
-
-    const handleSelect = (playerName) => {
-        setSearchTerm(playerName);
-        onSelect(index, playerName);
-        setIsOpen(false);
-    };
-    
-    return (
-        <div className={styles.autocompleteWrapper} ref={wrapperRef}>
-            <input
-                type="text"
-                className={styles.autocompleteInput}
-                placeholder={`Player ${index + 1}`}
-                value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setIsOpen(true); }}
-                onFocus={() => setIsOpen(true)}
-                onKeyDown={(e) => { if (e.key === 'Escape') setIsOpen(false); }}
-            />
-            {isOpen && filteredPlayers.length > 0 && (
-                <ul className={styles.autocompleteList}>
-                    {filteredPlayers.map(player => (
-                        <li key={player.row_number} onClick={() => handleSelect(player.fullName)}>
-                            {player.fullName}
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
-    );
-};
-
+import PlayerMultiSelect from '@/components/MatchHubPage/AddMatchForm/PlayerMultiSelect';
 
 export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloSubmit, isSubmitting, authKey }) {
     const { players = [], backgrounds = [], badges = [], matches = [] } = appData;
@@ -77,10 +21,13 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
     const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
 
     useEffect(() => {
+        // CORRECTED: Spread initialData first, then overwrite the selectedPlayers
+        // property. This ensures the form starts with a clean, empty squad
+        // regardless of the data passed from the parent component.
         setFormData({
-            selectedPlayers: Array(16).fill(''),
-            saveCustomBackground: true,
             ...initialData,
+            selectedPlayers: [], 
+            saveCustomBackground: true,
         });
     }, [initialData]);
 
@@ -92,10 +39,8 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
         }));
     };
     
-    const handlePlayerSelect = (index, value) => {
-        const newSelectedPlayers = [...(formData.selectedPlayers || Array(16).fill(''))];
-        newSelectedPlayers[index] = value;
-        setFormData(prev => ({ ...prev, selectedPlayers: newSelectedPlayers }));
+    const handleSquadChange = (newSquad) => {
+        setFormData(prev => ({ ...prev, selectedPlayers: newSquad }));
     };
 
     const handleSelectGalleryBg = (bgLink) => {
@@ -106,9 +51,9 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
         setFormData(prev => ({ ...prev, selectedBackground: dataUrl }));
     };
 
-    const handleMatchSelect = (eventId) => {
+    const handleMatchSelect = (matchId) => {
         setBadgeMessage('');
-        if (!eventId) {
+        if (!matchId) {
             setFormData(prev => ({
                 ...prev,
                 homeTeamBadge: '',
@@ -117,27 +62,33 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
                 kickOffTime: '',
                 venue: '',
                 teamType: 'First Team',
-                selectedMatchData: null
+                selectedMatchData: null,
+                selectedPlayers: [] // Also ensure deselection clears the squad
             }));
             return;
         }
-        const selectedMatch = matches.find(m => m.eventId === eventId);
+        const selectedMatch = matches.find(m => m.matchId === matchId);
         if (!selectedMatch) return;
 
         const venue = selectedMatch.venue;
-        const dateTime = new Date(selectedMatch.startDateTime);
-        const matchDate = dateTime.toISOString().split('T')[0];
-        const kickOffTime = dateTime.toTimeString().substring(0, 5);
-        const teamType = `${selectedMatch.team.charAt(0).toUpperCase()}${selectedMatch.team.slice(1)} Team`.replace('First-team', 'First Team');
+        const matchDate = selectedMatch.matchDate;
+        const kickOffTime = selectedMatch.matchTime;
+        const teamType = selectedMatch.team === 'first-team' ? 'First Team' : 'Development Team';
 
-        const [homeTeamName, awayTeamName] = selectedMatch.title.split(' vs ');
+        const squad = selectedMatch.squad && selectedMatch.squad.length > 0
+            ? selectedMatch.squad.split(',').map(name => name.trim())
+            : [];
+
+        const homeTeamName = selectedMatch.homeOrAway === 'Home' ? 'Y Glannau' : selectedMatch.opponent;
+        const awayTeamName = selectedMatch.homeOrAway === 'Away' ? 'Y Glannau' : selectedMatch.opponent;
+        
         const glannauBadge = badges.find(b => b.Name.toLowerCase().includes('glannau'))?.Link || '';
         let foundHomeBadge = '', foundAwayBadge = '';
 
         if (homeTeamName.toLowerCase().includes('glannau')) { foundHomeBadge = glannauBadge; }
         if (awayTeamName.toLowerCase().includes('glannau')) { foundAwayBadge = glannauBadge; }
         
-        const oppositionName = homeTeamName.toLowerCase().includes('glannau') ? awayTeamName : homeTeamName;
+        const oppositionName = selectedMatch.opponent;
         const normalizedOppositionName = oppositionName.toLowerCase().replace(/ fc| afc| town| city| dev| development| u19s| pheonix/g, '').trim();
         
         const oppositionBadge = badges.find(badge => {
@@ -148,8 +99,6 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
 
         if (oppositionBadge) {
             if (homeTeamName.toLowerCase().includes('glannau')) { foundAwayBadge = oppositionBadge; } else { foundHomeBadge = oppositionBadge; }
-        } else if (!homeTeamName.toLowerCase().includes('glannau') && !awayTeamName.toLowerCase().includes('glannau')) {
-            setBadgeMessage("Could not automatically match badges. Please select manually.");
         } else {
             setBadgeMessage("Opposition badge not matched. Please select manually.");
         }
@@ -162,7 +111,8 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
             kickOffTime,
             venue,
             teamType,
-            selectedMatchData: selectedMatch
+            selectedMatchData: selectedMatch,
+            selectedPlayers: squad
         }));
     };
 
@@ -233,7 +183,12 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
                         <label htmlFor="matchSelector">Select a Match (Optional)</label>
                         <select id="matchSelector" onChange={(e) => handleMatchSelect(e.target.value)} defaultValue="">
                             <option value="">-- Select an upcoming match --</option>
-                            {matches.map((match) => (<option key={match.eventId} value={match.eventId}>{match.title}</option>))}
+                            {matches.map((match) => {
+                                const title = match.homeOrAway === 'Home' 
+                                    ? `Y Glannau vs ${match.opponent}` 
+                                    : `${match.opponent} vs Y Glannau`;
+                                return (<option key={match.matchId} value={match.matchId}>{title}</option>);
+                            })}
                         </select>
                     </div>
                     {badgeMessage && <p className={styles.badgeNotice}>{badgeMessage}</p>}
@@ -274,19 +229,11 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
             </div>
 
             <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>Select Players (1-16)</h3>
-                <div className={styles.playerGrid}>
-                    {formData.selectedPlayers && formData.selectedPlayers.map((player, index) => (
-                        <PlayerAutocomplete
-                            key={index}
-                            index={index}
-                            value={player}
-                            onSelect={handlePlayerSelect}
-                            players={players}
-                            selectedPlayers={formData.selectedPlayers}
-                        />
-                    ))}
-                </div>
+                <h3 className={styles.sectionTitle}>Select Squad</h3>
+                <PlayerMultiSelect 
+                    selectedPlayers={formData.selectedPlayers || []} 
+                    onChange={handleSquadChange} 
+                />
             </div>
 
             <div className={styles.section}>
