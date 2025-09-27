@@ -9,13 +9,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './MatchHubPage.module.css';
+import { FixturesIcon, LiveIcon } from './MatchHubIcons';
 import FixturesTab from './FixturesTab/FixturesTab';
+import LiveTab from './LiveTab/LiveTab';
 import AddMatchForm from './AddMatchForm/AddMatchForm';
-import LiveTab from './LiveTab/LiveTab'; // Assuming you have this placeholder
 
 export default function MatchHubPage() {
     const { authKey } = useAppContext();
-    const [view, setView] = useState('FIXTURES'); // FIXTURES, LIVE, ADD_FORM
+    const [view, setView] = useState('fixtures'); // 'fixtures', 'live', or 'add_form'
     const [matches, setMatches] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -37,60 +38,70 @@ export default function MatchHubPage() {
                 throw new Error(errData.error || "Failed to fetch matches.");
             }
             const data = await response.json();
-            // Ensure data is an array before setting state
             setMatches(Array.isArray(data) ? data : []);
         } catch (err) {
             setError(err.message);
-            setMatches([]); // Clear matches on error
+            setMatches([]);
         } finally {
             setIsLoading(false);
         }
     }, [authKey]);
 
     useEffect(() => {
-        fetchMatches();
-    }, [fetchMatches]);
+        // Fetch matches only when the fixtures tab is active and not adding a form
+        if (view === 'fixtures') {
+            fetchMatches();
+        }
+    }, [view, fetchMatches]);
 
     const handleMatchAdded = () => {
-        setView('FIXTURES');
-        fetchMatches(); // Re-fetch matches to show the newly added one
+        setView('fixtures'); // Switch back to fixtures tab
+        // The useEffect will automatically trigger a re-fetch
     };
 
     const renderContent = () => {
-        if (view === 'ADD_FORM') {
-            return <AddMatchForm onCancel={() => setView('FIXTURES')} onMatchAdded={handleMatchAdded} />;
+        if (view === 'add_form') {
+            // Pass the handler to fix the "is not a function" error
+            return <AddMatchForm onCancel={() => setView('fixtures')} onMatchAdded={handleMatchAdded} />;
         }
-        if (view === 'LIVE') {
+        if (view === 'fixtures') {
+            return <FixturesTab matches={matches} isLoading={isLoading} error={error} />;
+        }
+        if (view === 'live') {
             return <LiveTab />;
         }
-        // Default to FIXTURES view
-        return <FixturesTab matches={matches} isLoading={isLoading} error={error} />;
+        return null;
     };
 
     return (
-        <div className={styles.hubContainer}>
-            <div className={styles.header}>
-                <div className={styles.tabs}>
-                    <button 
-                        className={`${styles.tabButton} ${view === 'FIXTURES' ? styles.active : ''}`} 
-                        onClick={() => setView('FIXTURES')}>
-                        Fixtures
+        <div className={styles.container}>
+            <header className={styles.header}>
+                <nav className={styles.tabNav}>
+                    <button
+                        className={`${styles.navButton} ${view === 'fixtures' ? styles.active : ''}`}
+                        onClick={() => setView('fixtures')}
+                    >
+                        <span className={styles.navIcon}><FixturesIcon /></span>
+                        <span className={styles.navLabel}>Fixtures</span>
                     </button>
-                    <button 
-                        className={`${styles.tabButton} ${view === 'LIVE' ? styles.active : ''}`} 
-                        onClick={() => setView('LIVE')}>
-                        Live
+                    <button
+                        className={`${styles.navButton} ${view === 'live' ? styles.active : ''}`}
+                        onClick={() => setView('live')}
+                    >
+                        <span className={styles.navIcon}><LiveIcon /></span>
+                        <span className={styles.navLabel}>Live</span>
                     </button>
-                </div>
-                {view !== 'ADD_FORM' && (
-                    <button className={styles.addMatchButton} onClick={() => setView('ADD_FORM')}>
+                </nav>
+                {/* Show button only when not in the form view */}
+                {view !== 'add_form' && (
+                    <button className={styles.addMatchButton} onClick={() => setView('add_form')}>
                         + Add New Match
                     </button>
                 )}
-            </div>
-            <div className={styles.content}>
+            </header>
+            <main className={styles.contentContainer}>
                 {renderContent()}
-            </div>
+            </main>
         </div>
     );
 }
