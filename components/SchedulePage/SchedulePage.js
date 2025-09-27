@@ -6,214 +6,143 @@
  * ==========================================================
 */
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import styles from './SchedulePage.module.css';
 import CreatePostView from './CreatePostView/CreatePostView';
-import PostPreviewAndEditView from './PostPreviewAndEditView/PostPreviewAndEditView'; // New component import
+import PostPreviewAndEditView from './PostPreviewAndEditView/PostPreviewAndEditView';
 import MobileScheduleView from './MobileScheduleView/MobileScheduleView';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { CalendarIcon, DayIcon, ListIcon } from './SchedulePageIcons';
 import MonthView from './MonthView/MonthView';
 import WeekView from './WeekView/WeekView';
 import { useAppContext } from '@/app/context/AppContext';
+import AddChoicePopover from './AddChoicePopover/AddChoicePopover';
 
-export default function SchedulePage({ appData, onDataRefresh }) {
-    const { refreshAppData } = useAppContext();
+export default function SchedulePage() {
+    const { appData, refreshAppData } = useAppContext();
+    const router = useRouter();
 
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedPost, setSelectedPost] = useState(null);
-    const [newPostDate, setNewPostDate] = useState(null);
-    const [viewMode, setViewMode] = useState('calendar'); // 'calendar', 'list', 'day' for sub-views
-    const [viewType, setViewType] = useState('month'); // 'month', 'week'
+    const [viewMode, setViewMode] = useState('calendar');
+    const [viewType, setViewType] = useState('month');
     const [dayViewDate, setDayViewDate] = useState(new Date());
-    const [pageView, setPageView] = useState('calendar'); // Main view: 'calendar', 'create', 'preview'
+    const [pageView, setPageView] = useState('calendar');
+    
+    // NEW state for unified schedule
+    const [scheduleFilter, setScheduleFilter] = useState('all'); // 'all', 'posts', 'matches'
+    const [showAddChoice, setShowAddChoice] = useState(false);
+    const [addEventDate, setAddEventDate] = useState(null);
 
     const { width } = useWindowSize();
     const isMobile = width && width <= 768;
 
-    // --- New Handlers for Page View Navigation ---
-
+    // --- Event Handlers ---
     const handleSelectPost = (post) => {
         setSelectedPost(post);
         setPageView('preview');
     };
 
-    const handleExitPreview = () => {
-        setSelectedPost(null);
-        setPageView('calendar');
-    };
-
-    const enterCreateMode = (date) => {
-        setNewPostDate(date);
-        setPageView('create');
-    };
-
-    const exitCreateMode = () => {
-        setPageView('calendar');
-        setNewPostDate(null);
-    };
-
-    const handlePostScheduled = () => {
-        refreshAppData();
-        exitCreateMode();
+    // NEW handler for clicking on a match
+    const handleSelectMatch = (match) => {
+        router.push(`/match-hub?editMatchId=${match.matchId}`);
     };
 
     const handlePostUpdated = () => {
         refreshAppData();
-        handleExitPreview();
+        setSelectedPost(null);
+        setPageView('calendar');
     };
 
-    // --- Existing Calendar Logic (largely unchanged) ---
-
-    const handleDayClick = (date) => {
-        setDayViewDate(date);
-        setViewMode('day');
+    // MODIFIED: This now shows a choice popover instead of directly entering create mode
+    const handleNewEventClick = (date) => {
+        setAddEventDate(date);
+        setShowAddChoice(true);
     };
 
-    const getStartOfWeek = (date) => {
-        const day = date.getDay();
-        const diff = date.getDate() - (day === 0 ? 6 : day - 1);
-        return new Date(date.getFullYear(), date.getMonth(), diff);
-    };
-
-    const getEndOfWeek = (date) => {
-        const startOfWeek = getStartOfWeek(date);
-        const endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 6);
-        endOfWeek.setHours(23, 59, 59, 999);
-        return endOfWeek;
-    };
-
-    const scheduledPosts = appData?.scheduledPosts || [];
-
-    const currentPosts = scheduledPosts.filter(post => {
-        const postDate = new Date(post.scheduled_time_utc);
-        if (viewType === 'month') {
-            return postDate.getFullYear() === currentDate.getFullYear() &&
-                   postDate.getMonth() === currentDate.getMonth();
-        } else if (viewType === 'week') {
-            const start = getStartOfWeek(currentDate);
-            const end = getEndOfWeek(currentDate);
-            return postDate >= start && postDate <= end;
-        }
-        return false;
-    });
-
-    const handlePrev = () => {
-        if (viewMode === 'day') {
-            setDayViewDate(new Date(dayViewDate.getFullYear(), dayViewDate.getMonth(), dayViewDate.getDate() - 1));
-        } else if (viewType === 'month') {
-            setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-        } else if (viewType === 'week') {
-            setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7));
+    // NEW: Handles the choice from the popover
+    const handleAddChoice = (choice) => {
+        setShowAddChoice(false);
+        if (choice === 'post') {
+            setPageView('create');
+        } else if (choice === 'match') {
+            const dateString = addEventDate.toISOString().split('T')[0];
+            router.push(`/match-hub?newMatchDate=${dateString}`);
         }
     };
-
-    const handleNext = () => {
-        if (viewMode === 'day') {
-            setDayViewDate(new Date(dayViewDate.getFullYear(), dayViewDate.getMonth(), dayViewDate.getDate() + 1));
-        } else if (viewType === 'month') {
-            setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-        } else if (viewType === 'week') {
-            setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 7));
-        }
+    
+    const handlePostScheduled = () => {
+        refreshAppData();
+        setPageView('calendar');
     };
 
-    const renderActiveView = () => {
-        if (viewMode === 'list') {
-            return <MobileScheduleView posts={scheduledPosts} onPostClick={handleSelectPost} onNewPostClick={enterCreateMode} showDateHeaders={true} />;
-        }
-        if (viewMode === 'day') {
-            const dayPosts = scheduledPosts.filter(post => {
-                const postDate = new Date(post.scheduled_time_utc);
-                return postDate.getDate() === dayViewDate.getDate() && postDate.getMonth() === dayViewDate.getMonth() && postDate.getFullYear() === dayViewDate.getFullYear();
-            });
-            const dateKey = dayViewDate.toISOString().split('T')[0];
-            const postsForDay = { [dateKey]: dayPosts };
-            return <MobileScheduleView postsByDate={postsForDay} onPostClick={handleSelectPost} onNewPostClick={enterCreateMode} showDateHeaders={false} />;
-        }
-        if (viewMode === 'calendar') {
+    // --- Data Processing ---
+    const scheduledEvents = useMemo(() => {
+        const posts = (appData?.scheduledPosts || []).map(p => ({ ...p, type: 'post' }));
+        const matches = (appData?.matches || []).map(m => ({ ...m, type: 'match' }));
+        if (scheduleFilter === 'posts') return posts;
+        if (scheduleFilter === 'matches') return matches;
+        return [...posts, ...matches];
+    }, [appData, scheduleFilter]);
+
+    const currentEvents = useMemo(() => {
+        const getStartOfWeek = (date) => { const day = date.getDay(); const diff = date.getDate() - (day === 0 ? 6 : day - 1); return new Date(date.getFullYear(), date.getMonth(), diff); };
+        const getEndOfWeek = (date) => { const startOfWeek = getStartOfWeek(date); const endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 6); endOfWeek.setHours(23, 59, 59, 999); return endOfWeek; };
+        
+        return scheduledEvents.filter(event => {
+            const eventDate = new Date(event.type === 'post' ? event.scheduled_time_utc : `${event.matchDate}T${event.matchTime}`);
             if (viewType === 'month') {
-                return <MonthView currentDate={currentDate} posts={currentPosts} onDayClick={handleDayClick} onPostClick={handleSelectPost} onMoreClick={handleDayClick} onNewPostClick={enterCreateMode} isMobile={isMobile} />;
+                return eventDate.getFullYear() === currentDate.getFullYear() && eventDate.getMonth() === currentDate.getMonth();
+            } else if (viewType === 'week') {
+                const start = getStartOfWeek(currentDate);
+                const end = getEndOfWeek(currentDate);
+                return eventDate >= start && eventDate <= end;
             }
-            if (viewType === 'week' && !isMobile) {
-                return <WeekView currentDate={currentDate} posts={currentPosts} onPostClick={handleSelectPost} onNewPostClick={enterCreateMode} />;
-            }
-        }
-        return null;
-    };
+            return false;
+        });
+    }, [scheduledEvents, currentDate, viewType]);
 
-    const getHeaderText = () => {
-        if (viewMode === 'day') return dayViewDate.toLocaleString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        if (viewMode === 'list') return "All Scheduled Posts";
-        if (viewType === 'month') return currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-        if (viewType === 'week') return `${getStartOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric' })} - ${getEndOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-        return '';
-    };
 
-    const handleCalendarClick = () => {
-        setViewMode('calendar');
-        if (viewMode !== 'calendar') {
-            setViewType('month');
-        }
-    }
+    // --- Unchanged Calendar Logic ---
+    const handleDayClick = (date) => { setDayViewDate(date); setViewMode('day'); };
+    const getStartOfWeek = (date) => { const day = date.getDay(); const diff = date.getDate() - (day === 0 ? 6 : day - 1); return new Date(date.getFullYear(), date.getMonth(), diff); };
+    const getEndOfWeek = (date) => { const startOfWeek = getStartOfWeek(date); const endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 6); endOfWeek.setHours(23, 59, 59, 999); return endOfWeek; };
+    const handlePrev = () => { if (viewMode === 'day') { setDayViewDate(new Date(dayViewDate.getFullYear(), dayViewDate.getMonth(), dayViewDate.getDate() - 1)); } else if (viewType === 'month') { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)); } else if (viewType === 'week') { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7)); } };
+    const handleNext = () => { if (viewMode === 'day') { setDayViewDate(new Date(dayViewDate.getFullYear(), dayViewDate.getMonth(), dayViewDate.getDate() + 1)); } else if (viewType === 'month') { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)); } else if (viewType === 'week') { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 7)); } };
+    const getHeaderText = () => { if (viewMode === 'day') return dayViewDate.toLocaleString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); if (viewMode === 'list') return "All Scheduled Events"; if (viewType === 'month') return currentDate.toLocaleString('default', { month: 'long', year: 'numeric' }); if (viewType === 'week') return `${getStartOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric' })} - ${getEndOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`; return ''; };
+    const handleCalendarClick = () => { setViewMode('calendar'); if (viewMode !== 'calendar') setViewType('month'); };
+    const navButtons = [{ id: 'calendar', label: 'Calendar', icon: <CalendarIcon />, onClick: handleCalendarClick },{ id: 'list', label: 'List', icon: <ListIcon />, onClick: () => setViewMode('list') },{ id: 'day', label: 'Day', icon: <DayIcon />, onClick: () => handleDayClick(new Date()) }];
 
-    const navButtons = [
-        { id: 'calendar', label: 'Calendar', icon: <CalendarIcon />, onClick: handleCalendarClick },
-        { id: 'list', label: 'List', icon: <ListIcon />, onClick: () => setViewMode('list') },
-        { id: 'day', label: 'Day', icon: <DayIcon />, onClick: () => handleDayClick(new Date()) },
-    ];
-
-    // --- New Main Render Logic ---
+    // --- Main Render Logic ---
+    if (pageView === 'create') return <CreatePostView scheduleDate={addEventDate} onPostScheduled={handlePostScheduled} onCancel={() => setPageView('calendar')} />;
+    if (pageView === 'preview' && selectedPost) return <PostPreviewAndEditView post={selectedPost} onClose={() => setPageView('calendar')} onPostUpdated={handlePostUpdated} />;
 
     return (
         <div className={styles.container}>
-            {pageView === 'create' && (
-                <CreatePostView
-                    scheduleDate={newPostDate}
-                    onPostScheduled={handlePostScheduled}
-                    onCancel={exitCreateMode}
-                />
-            )}
-
-            {pageView === 'preview' && selectedPost && (
-                <PostPreviewAndEditView
-                    post={selectedPost}
-                    onClose={handleExitPreview}
-                    onPostUpdated={handlePostUpdated}
-                />
-            )}
-
-            {pageView === 'calendar' && (
-                <>
-                    <header className={styles.header}>
-                        <nav className={styles.subNav}>
-                            {navButtons.map((button) => (
-                                <button key={button.id} className={`${styles.navButton} ${viewMode === button.id ? styles.active : ''}`} onClick={button.onClick}>
-                                    <span className={styles.navIcon}>{button.icon}</span>
-                                    <span className={styles.navLabel}>{button.label}</span>
-                                </button>
-                            ))}
-                        </nav>
-                        <div className={styles.secondaryHeader}>
-                            <div className={styles.dateNav}>
-                                <button onClick={handlePrev}>&lt;</button>
-                                <h2>{getHeaderText()}</h2>
-                                <button onClick={handleNext}>&gt;</button>
-                            </div>
-                            {!isMobile && viewMode === 'calendar' && (
-                                <div className={styles.viewTypeNav}>
-                                    <button onClick={() => setViewType('month')} className={viewType === 'month' ? styles.activeViewType : ''}>Month</button>
-                                    <button onClick={() => setViewType('week')} className={viewType === 'week' ? styles.activeViewType : ''}>Week</button>
-                                </div>
-                            )}
-                        </div>
-                    </header>
-                    
-                    <div className={styles.calendarContainer}>
-                        {renderActiveView()}
+            {showAddChoice && <AddChoicePopover onChoice={handleAddChoice} onDismiss={() => setShowAddChoice(false)} />}
+            <header className={styles.header}>
+                <div className={styles.topHeader}>
+                    <nav className={styles.subNav}>
+                        {navButtons.map((button) => ( <button key={button.id} className={`${styles.navButton} ${viewMode === button.id ? styles.active : ''}`} onClick={button.onClick}><span className={styles.navIcon}>{button.icon}</span><span className={styles.navLabel}>{button.label}</span></button>))}
+                    </nav>
+                    <div className={styles.filterNav}>
+                        <button onClick={() => setScheduleFilter('posts')} className={scheduleFilter === 'posts' ? styles.activeFilter : ''}>Posts</button>
+                        <button onClick={() => setScheduleFilter('all')} className={scheduleFilter === 'all' ? styles.activeFilter : ''}>All</button>
+                        <button onClick={() => setScheduleFilter('matches')} className={scheduleFilter === 'matches' ? styles.activeFilter : ''}>Matches</button>
                     </div>
-                </>
-            )}
+                </div>
+                <div className={styles.secondaryHeader}>
+                    <div className={styles.dateNav}><button onClick={handlePrev}>&lt;</button><h2>{getHeaderText()}</h2><button onClick={handleNext}>&gt;</button></div>
+                    {!isMobile && viewMode === 'calendar' && (<div className={styles.viewTypeNav}><button onClick={() => setViewType('month')} className={viewType === 'month' ? styles.activeViewType : ''}>Month</button><button onClick={() => setViewType('week')} className={viewType === 'week' ? styles.activeViewType : ''}>Week</button></div>)}
+                </div>
+            </header>
+            <div className={styles.calendarContainer}>
+                {viewMode === 'list' && <MobileScheduleView events={scheduledEvents} onPostClick={handleSelectPost} onMatchClick={handleSelectMatch} onNewEventClick={handleNewEventClick} showDateHeaders={true} />}
+                {viewMode === 'day' && <MobileScheduleView events={scheduledEvents.filter(e => new Date(e.type === 'post' ? e.scheduled_time_utc : `${e.matchDate}T${e.matchTime}`).toDateString() === dayViewDate.toDateString())} onPostClick={handleSelectPost} onMatchClick={handleSelectMatch} onNewEventClick={handleNewEventClick} showDateHeaders={false} />}
+                {viewMode === 'calendar' && viewType === 'month' && <MonthView currentDate={currentDate} events={currentEvents} onDayClick={handleDayClick} onPostClick={handleSelectPost} onMatchClick={handleSelectMatch} onMoreClick={handleDayClick} onNewEventClick={handleNewEventClick} isMobile={isMobile} />}
+                {viewMode === 'calendar' && viewType === 'week' && !isMobile && <WeekView currentDate={currentDate} events={currentEvents} onPostClick={handleSelectPost} onMatchClick={handleSelectMatch} onNewEventClick={handleNewEventClick} />}
+            </div>
         </div>
     );
 }
