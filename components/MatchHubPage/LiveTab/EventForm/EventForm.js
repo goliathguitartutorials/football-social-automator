@@ -7,155 +7,171 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './EventForm.module.css';
 
-// Reusable form fields
-const MinuteField = ({ value, onChange }) => (
-    <div className={styles.formGroup}>
-        <label htmlFor="minute">Minute</label>
-        <input id="minute" type="number" value={value} onChange={e => onChange(e.target.value)} placeholder="e.g., 45" />
-    </div>
-);
-
-const TeamField = ({ value, onChange, match }) => (
-    <div className={styles.formGroup}>
-        <label htmlFor="team">Team</label>
-        <select id="team" value={value} onChange={e => onChange(e.target.value)}>
-            <option value="">Select Team</option>
-            <option value="home">{match.homeTeamName}</option>
-            <option value="away">{match.awayTeamName}</option>
-        </select>
-    </div>
-);
-
-const PlayerField = ({ id, label, value, onChange, squadList }) => (
-    <div className={styles.formGroup}>
-        <label htmlFor={id}>{label}</label>
-        <input id={id} type="text" list={`${id}-list`} value={value} onChange={e => onChange(e.target.value)} />
-        <datalist id={`${id}-list`}>
-            {squadList.map(player => <option key={player} value={player} />)}
-        </datalist>
-    </div>
-);
-
-
-export default function EventForm({ eventType, match, onCancel, onSubmit, initialMinute, isSubmitting: parentIsSubmitting, setApiError }) {
+export default function EventForm({ eventType, match, onCancel, onSubmit, initialMinute, isSubmitting, apiError }) {
     const [minute, setMinute] = useState(initialMinute || '');
-    const [team, setTeam] = useState('');
-    const [player, setPlayer] = useState('');
-    const [assist, setAssist] = useState('');
-    const [playerOff, setPlayerOff] = useState('');
-    const [playerOn, setPlayerOn] = useState('');
-    const [startTimeOption, setStartTimeOption] = useState('schedule');
+    const [team, setTeam] = useState('home');
+    const [player1, setPlayer1] = useState(''); // Used for scorer, carded player, sub off
+    const [player2, setPlayer2] = useState(''); // Used for assist, sub on
+    
+    // NEW: State for the MATCH_START options
+    const [startTimeOption, setStartTimeOption] = useState('now');
     const [specificTime, setSpecificTime] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const ourTeamKey = match.homeOrAway === 'Home' ? 'home' : 'away';
 
-    const handleSubmit = async (e) => {
+    useEffect(() => {
+        setPlayer1('');
+        setPlayer2('');
+    }, [team]);
+
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setIsSubmitting(true);
-        setApiError('');
+        let eventData = {
+            matchId: match.matchId, eventType, minute, team,
+        };
 
-        let submissionData = { eventType, minute: parseInt(minute, 10), team };
-
-        if (eventType === 'Goal') {
-            submissionData.scorer = player;
-            submissionData.assist = assist;
-        } else if (eventType.includes('Card')) {
-            submissionData.player = player;
-        } else if (eventType === 'Substitution') {
-            submissionData.playerOff = playerOff;
-            submissionData.playerOn = playerOn;
-        } else if (eventType === 'MATCH_START') {
+        // Handle MATCH_START event separately
+        if (eventType === 'MATCH_START') {
             if (startTimeOption === 'schedule') {
-                submissionData.startTime = `${match.matchDate} ${match.matchTime}`;
+                eventData.startTime = `${match.matchDate} ${match.matchTime}`;
             } else if (startTimeOption === 'now') {
-                submissionData.startTime = new Date().toISOString();
+                eventData.startTime = new Date().toISOString();
             } else { // 'specific'
-                submissionData.startTime = specificTime ? new Date(specificTime).toISOString() : new Date().toISOString();
+                eventData.startTime = specificTime ? new Date(specificTime).toISOString() : new Date().toISOString();
             }
-             submissionData.minute = 0;
+            eventData.minute = 0;
+        } else {
+        // Handle all other events
+            eventData = {
+                ...eventData,
+                ...(eventType === 'Goal' && { scorer: player1, assist: player2 }),
+                ...(eventType.includes('Card') && { player: player1 }),
+                ...(eventType === 'Substitution' && { playerOff: player1, playerOn: player2 }),
+            };
         }
         
-        try {
-            await onSubmit(submissionData);
-        } catch (error) {
-            // Error is handled in the parent component
-        } finally {
-            setIsSubmitting(false);
-        }
+        onSubmit(eventData);
     };
 
-    const renderFormFields = () => {
-        if (eventType === 'MATCH_START') {
+    const renderPlayerField = (label, value, setter, isRequired) => {
+        if (team !== ourTeamKey) {
             return (
-                <div className={styles.startMatchOptions}>
-                    <div className={styles.radioGroup}>
-                        <input type="radio" id="on-schedule" name="startTime" value="schedule" checked={startTimeOption === 'schedule'} onChange={() => setStartTimeOption('schedule')} />
-                        <label htmlFor="on-schedule">On Schedule ({new Date(`${match.matchDate} ${match.matchTime}`).toLocaleTimeString()})</label>
-                    </div>
-                    <div className={styles.radioGroup}>
-                        <input type="radio" id="now" name="startTime" value="now" checked={startTimeOption === 'now'} onChange={() => setStartTimeOption('now')} />
-                        <label htmlFor="now">Now</label>
-                    </div>
-                    <div className={styles.radioGroup}>
-                        <input type="radio" id="specific" name="startTime" value="specific" checked={startTimeOption === 'specific'} onChange={() => setStartTimeOption('specific')} />
-                        <label htmlFor="specific">Specific Time</label>
-                        {startTimeOption === 'specific' && (
-                            <input type="datetime-local" value={specificTime} onChange={e => setSpecificTime(e.target.value)} className={styles.timeInput} />
-                        )}
-                    </div>
+                <div className={styles.formGroup}>
+                    <label htmlFor={label.toLowerCase().replace(' ', '')}>{label} (Optional)</label>
+                    <input type="text" id={label.toLowerCase().replace(' ', '')} value={value} onChange={(e) => setter(e.target.value)} placeholder="Enter player name if known" />
                 </div>
             );
         }
-
-        const commonFields = (
-            <>
-                <MinuteField value={minute} onChange={setMinute} />
-                <TeamField value={team} onChange={setTeam} match={match} />
-            </>
+        return (
+            <div className={styles.formGroup}>
+                <label htmlFor={label.toLowerCase().replace(' ', '')}>{label}</label>
+                <select id={label.toLowerCase().replace(' ', '')} value={value} onChange={(e) => setter(e.target.value)} required={isRequired}>
+                    <option value="" disabled>Select player...</option>
+                    {match.squadList.map(p => <option key={p} value={p}>{p}</option>)}
+                    {label === 'Scorer' && <option value="Own Goal">Own Goal</option>}
+                </select>
+            </div>
         );
+    };
 
+    const renderAssistField = () => {
+        if (team !== ourTeamKey) return null;
+        return (
+            <div className={styles.formGroup}>
+                <label htmlFor="assist">Assist By (Optional)</label>
+                <select id="assist" value={player2} onChange={(e) => setPlayer2(e.target.value)}>
+                    <option value="">None</option>
+                    {match.squadList.filter(p => p !== player1).map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+            </div>
+        );
+    };
+
+    const renderFormContent = () => {
+        // NEW: Special view for MATCH_START event type
+        if (eventType === 'MATCH_START') {
+            return (
+                <div className={styles.startMatchOptions}>
+                    <div className={styles.formGroup}>
+                        <label>Choose Start Time</label>
+                        <div className={styles.teamSelector}>
+                            <button type="button" className={startTimeOption === 'schedule' ? styles.active : ''} onClick={() => setStartTimeOption('schedule')}>On Schedule</button>
+                            <button type="button" className={startTimeOption === 'now' ? styles.active : ''} onClick={() => setStartTimeOption('now')}>Now</button>
+                            <button type="button" className={startTimeOption === 'specific' ? styles.active : ''} onClick={() => setStartTimeOption('specific')}>Specific</button>
+                        </div>
+                    </div>
+                    {startTimeOption === 'specific' && (
+                        <div className={styles.formGroup}>
+                            <input type="datetime-local" value={specificTime} onChange={e => setSpecificTime(e.target.value)} className={styles.timeInput} />
+                        </div>
+                    )}
+                </div>
+            )
+        }
+        
+        // Original form logic for other events
         switch (eventType) {
             case 'Goal':
                 return (
                     <>
-                        {commonFields}
-                        <PlayerField id="scorer" label="Goal Scorer" value={player} onChange={setPlayer} squadList={match.squadList} />
-                        <PlayerField id="assist" label="Assist By (Optional)" value={assist} onChange={setAssist} squadList={match.squadList} />
+                        <div className={styles.formGroup}>
+                            <label>Team</label>
+                            <div className={styles.teamSelector}>
+                                <button type="button" className={team === 'home' ? styles.active : ''} onClick={() => setTeam('home')}>{match.homeTeamName}</button>
+                                <button type="button" className={team === 'away' ? styles.active : ''} onClick={() => setTeam('away')}>{match.awayTeamName}</button>
+                            </div>
+                        </div>
+                        {renderPlayerField('Scorer', player1, setPlayer1, true)}
+                        {renderAssistField()}
                     </>
                 );
             case 'Yellow Card':
             case 'Red Card':
                 return (
                     <>
-                        {commonFields}
-                        <PlayerField id="player" label="Player" value={player} onChange={setPlayer} squadList={match.squadList} />
+                        <div className={styles.formGroup}>
+                            <label>Team</label>
+                            <div className={styles.teamSelector}>
+                                <button type="button" className={team === 'home' ? styles.active : ''} onClick={() => setTeam('home')}>{match.homeTeamName}</button>
+                                <button type="button" className={team === 'away' ? styles.active : ''} onClick={() => setTeam('away')}>{match.awayTeamName}</button>
+                            </div>
+                        </div>
+                        {renderPlayerField('Player', player1, setPlayer1, true)}
                     </>
                 );
             case 'Substitution':
                 return (
                     <>
-                        {commonFields}
-                        <PlayerField id="playerOff" label="Player Off" value={playerOff} onChange={setPlayerOff} squadList={match.squadList} />
-                        <PlayerField id="playerOn" label="Player On" value={playerOn} onChange={setPlayerOn} squadList={match.squadList} />
+                         <div className={styles.formGroup}>
+                            <label>Team</label>
+                            <p className={styles.teamNotice}>Substitutions can only be logged for our team.</p>
+                        </div>
+                        {renderPlayerField('Player Off', player1, setPlayer1, true)}
+                        {renderPlayerField('Player On', player2, setPlayer2, true)}
                     </>
                 );
-            default:
-                return <p>Invalid event type.</p>;
+            default: return null;
         }
     };
 
     return (
         <div className={styles.formContainer}>
-            <form onSubmit={handleSubmit}>
-                <h3 className={styles.formHeader}>Log: {eventType}</h3>
-                <div className={styles.formBody}>
-                    {renderFormFields()}
-                </div>
-                <div className={styles.formActions}>
-                    <button type="button" onClick={onCancel} className={styles.cancelButton}>Cancel</button>
-                    <button type="submit" disabled={isSubmitting || parentIsSubmitting} className={styles.submitButton}>
+            <header className={styles.formHeader}><h3>Log: {eventType}</h3></header>
+            <form onSubmit={handleSubmit} className={styles.formBody}>
+                {apiError && <p className={styles.apiError}>{apiError}</p>}
+                {renderFormContent()}
+                {eventType !== 'MATCH_START' && (
+                    <div className={styles.formGroup}>
+                        <label htmlFor="minute">Minute</label>
+                        <input id="minute" type="number" value={minute} onChange={(e) => setMinute(e.target.value)} placeholder="e.g., 42" required min="0" />
+                    </div>
+                )}
+                <div className={styles.formFooter}>
+                    <button type="button" className={styles.cancelButton} onClick={onCancel} disabled={isSubmitting}>Cancel</button>
+                    <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
                         {isSubmitting ? 'Logging...' : 'Log Event'}
                     </button>
                 </div>
