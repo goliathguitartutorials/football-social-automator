@@ -8,10 +8,10 @@
 'use client';
 import styles from './MonthView.module.css';
 import PostPreview from '../PostPreview/PostPreview';
-import MatchPreview from '../MatchPreview/MatchPreview'; // Import the new component
+import MatchPreview from '../MatchPreview/MatchPreview';
 import { MoreIcon, PlusIcon } from '../SchedulePageIcons';
 
-export default function MonthView({ currentDate, events, onPostClick, onMatchClick, onMoreClick, onNewEventClick, isMobile = false }) {
+export default function MonthView({ currentDate, events, onPostClick, onMatchClick, onMoreClick, onDayClick, onNewEventClick, isMobile = false }) {
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
     const startDay = startOfMonth.getDay();
@@ -36,8 +36,13 @@ export default function MonthView({ currentDate, events, onPostClick, onMatchCli
                 return eventDate.toDateString() === date.toDateString();
             });
 
+            const dayProps = {};
+            if (isMobile && onDayClick) {
+                dayProps.onClick = () => onDayClick(date);
+            }
+
             days.push(
-                <div key={date.toISOString()} className={styles.day}>
+                <div key={date.toISOString()} className={styles.day} {...dayProps}>
                     {!isMobile && (
                         <button className={styles.addPostButton} onClick={() => onNewEventClick(date)}>
                             <PlusIcon />
