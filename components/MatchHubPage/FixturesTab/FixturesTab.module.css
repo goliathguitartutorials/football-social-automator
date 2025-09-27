@@ -5,14 +5,15 @@
 }
 
 .matchCard {
-    display: flex;
-    justify-content: space-between;
+    display: grid; /* Switched to grid for more control */
+    grid-template-columns: 1fr auto auto;
     align-items: center;
     background-color: var(--surface-dark, #1a1d2e);
     padding: 1.5rem;
     border-radius: 8px;
     border: 1px solid var(--border-color, #4a5568);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    gap: 1.5rem;
 }
 
 .matchCard:hover {
@@ -20,14 +21,37 @@
     box-shadow: 0 10px 20px rgba(0,0,0,0.2);
 }
 
-.matchInfo .competition {
+.metaLine {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.competition {
     font-size: 0.9rem;
     font-weight: 500;
     color: var(--text-secondary, #a0aec0);
-    margin: 0 0 0.5rem;
+    margin: 0;
 }
 
-.matchInfo .teams {
+/* Team Type Badge */
+.teamBadge {
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+    color: #fff;
+}
+.teamBadge.first-team {
+    background-color: var(--accent-color);
+}
+.teamBadge.development {
+    background-color: #38a169; /* Green */
+}
+
+
+.teams {
     font-size: 1.5rem;
     color: var(--text-primary, #fff);
     margin: 0 0 0.5rem;
@@ -36,12 +60,12 @@
     gap: 1rem;
 }
 
-.matchInfo .teams span {
+.teams span {
     font-size: 1rem;
     color: var(--accent-color);
 }
 
-.matchInfo .venue {
+.venue {
     font-size: 1rem;
     color: var(--text-secondary, #a0aec0);
     margin: 0;
@@ -51,17 +75,46 @@
     text-align: right;
 }
 
-.matchTime .date {
+.date {
     font-size: 1rem;
     color: var(--text-primary, #fff);
     margin: 0 0 0.5rem;
 }
 
-.matchTime .time {
+.time {
     font-size: 1.5rem;
     font-weight: bold;
     color: var(--accent-color);
     margin: 0;
+}
+
+/* Edit Button */
+.actions {
+    border-left: 1px solid var(--border-color);
+    padding-left: 1.5rem;
+}
+
+.editButton {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+.editButton:hover {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #fff;
+}
+.editButton svg {
+    width: 18px;
+    height: 18px;
 }
 
 .notice {
@@ -69,11 +122,4 @@
     padding: 3rem;
     font-size: 1.2rem;
     color: var(--text-secondary);
-}
-
-.error {
-    color: #fca5a5;
-    background-color: rgba(252, 165, 165, 0.1);
-    border: 1px solid #fca5a5;
-    border-radius: 8px;
 }
