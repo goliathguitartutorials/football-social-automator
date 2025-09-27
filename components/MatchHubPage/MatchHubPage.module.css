@@ -16,32 +16,34 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem; /* Increased margin to match CreatePage */
+    margin-bottom: 1.5rem; /* Adjusted margin */
     flex-shrink: 0;
     border-bottom: 1px solid var(--border-color);
 }
 
 .tabNav {
     display: flex;
-    justify-content: flex-start;
-    gap: 0.5rem;
+    justify-content: space-around; /* Changed for mobile */
+    width: 100%; /* Ensure it takes full width */
 }
 
+/* MODIFIED: Mobile-first styles for navigation buttons */
 .navButton {
     background: none;
     border: none;
     color: var(--text-secondary);
     display: flex;
-    flex-direction: row;
+    flex-direction: column; /* Icon on top */
     align-items: center;
+    justify-content: center;
     cursor: pointer;
-    padding: 0.75rem 1.5rem;
+    flex-grow: 1; /* Allow buttons to take up space */
+    padding: 8px 4px;
     border-bottom: 3px solid transparent;
     transform: translateY(1px);
     transition: all 0.2s ease-in-out;
 }
 
-.navButton:hover .navLabel,
 .navButton:hover {
     color: var(--text-primary);
 }
@@ -56,40 +58,63 @@
 }
 
 .navIcon {
-    margin-right: 0.5rem;
+    margin-bottom: 4px; /* Space between icon and label */
+    margin-right: 0; /* Remove side margin for mobile */
 }
 
 .navIcon svg {
     fill: none;
-    width: 20px;
-    height: 20px;
+    width: 24px; /* Slightly larger icon for mobile */
+    height: 24px;
 }
 
 .navLabel {
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 0.75rem; /* Smaller text for mobile */
+    font-weight: 500;
+    text-align: center;
 }
 
+/* MODIFIED: The button style has been moved to FixturesTab.module.css */
 .addMatchButton {
-    padding: 0.7rem 1.5rem;
-    font-size: 1rem;
-    font-weight: bold;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background-color: var(--accent-color);
-    color: #fff;
-    transition: background-color 0.2s;
-    flex-shrink: 0;
-    margin-bottom: -1px; /* Aligns with bottom border */
-}
-
-.addMatchButton:hover {
-    background-color: var(--accent-color-hover);
+    display: none; /* Hidden by default now */
 }
 
 .contentContainer {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+}
+
+/* MODIFIED: Desktop styles using a media query, like in CreatePage.css */
+@media (min-width: 768px) {
+    .header {
+        margin-bottom: 2rem;
+    }
+
+    .tabNav {
+        justify-content: flex-start;
+        gap: 0.5rem;
+        width: auto;
+    }
+
+    .navButton {
+        flex-direction: row; /* Icon beside text on desktop */
+        flex-grow: 0;
+        padding: 0.75rem 1.5rem;
+    }
+
+    .navIcon {
+        margin-bottom: 0;
+        margin-right: 0.5rem; /* Restore side margin */
+    }
+
+    .navIcon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .navLabel {
+        font-size: 1rem;
+        font-weight: 600;
+    }
 }
