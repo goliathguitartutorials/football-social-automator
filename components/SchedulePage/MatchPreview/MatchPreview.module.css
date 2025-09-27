@@ -1,4 +1,10 @@
-/* MatchPreview.module.css */
+/*
+ * ==========================================================
+ * COMPONENT: MatchPreview
+ * PAGE: Schedule Page
+ * FILE: /components/SchedulePage/MatchPreview/MatchPreview.module.css
+ * ==========================================================
+ */
 .preview {
     display: flex;
     align-items: center;
@@ -11,19 +17,23 @@
     overflow: hidden;
     transition: background-color 0.2s;
 }
+
 .preview:hover {
     background-color: #2f855a;
 }
+
 .icon svg {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
 }
+
 .details {
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
+
 .title {
     font-size: 0.8rem;
     font-weight: 600;
@@ -31,6 +41,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 .teamType {
     font-size: 0.7rem;
     opacity: 0.8;
@@ -40,5 +51,11 @@
 .listView {
     padding: 10px;
 }
-.listView .title { font-size: 1rem; }
-.listView .teamType { font-size: 0.8rem; }
+
+.listView .title {
+    font-size: 1rem;
+}
+
+.listView .teamType {
+    font-size: 0.8rem;
+}
