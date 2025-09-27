@@ -9,14 +9,15 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './MatchHubPage.module.css';
-import { FixturesIcon, LiveIcon } from './MatchHubIcons';
+// MODIFIED: Imported new ArchiveIcon
+import { FixturesIcon, LiveIcon, ArchiveIcon } from './MatchHubIcons';
 import FixturesTab from './FixturesTab/FixturesTab';
 import LiveTab from './LiveTab/LiveTab';
 import AddMatchForm from './AddMatchForm/AddMatchForm';
+// MODIFIED: Imported new ArchiveTab component
+import ArchiveTab from './ArchiveTab/ArchiveTab';
 
-// MODIFIED: Simplified back to a single component, no Suspense needed.
 export default function MatchHubPage() {
-    // MODIFIED: Get navigation state from context
     const { appData, navigationRequest, setNavigationRequest } = useAppContext();
     
     const [view, setView] = useState('fixtures');
@@ -24,8 +25,6 @@ export default function MatchHubPage() {
     const [newMatchData, setNewMatchData] = useState(null);
 
     useEffect(() => {
-        // This effect runs when the component loads or a navigation request changes.
-        // It checks if a navigation request is targeted for this page.
         if (navigationRequest && navigationRequest.page === 'Match Hub' && navigationRequest.data) {
             const { editMatchId, newMatchDate } = navigationRequest.data;
 
@@ -40,7 +39,6 @@ export default function MatchHubPage() {
                 setView('add_form');
             }
             
-            // Crucially, clear the request after it has been handled.
             setNavigationRequest(null);
         }
     }, [navigationRequest, setNavigationRequest, appData.matches]);
@@ -73,6 +71,10 @@ export default function MatchHubPage() {
         if (view === 'live') {
             return <LiveTab />;
         }
+        // MODIFIED: Added render logic for the new ArchiveTab
+        if (view === 'archive') {
+            return <ArchiveTab matches={appData.matches} />;
+        }
         return null;
     };
     
@@ -82,6 +84,8 @@ export default function MatchHubPage() {
                 <nav className={styles.tabNav}>
                     <button className={`${styles.navButton} ${view === 'fixtures' ? styles.active : ''}`} onClick={() => setView('fixtures')}><span className={styles.navIcon}><FixturesIcon /></span><span className={styles.navLabel}>Fixtures</span></button>
                     <button className={`${styles.navButton} ${view === 'live' ? styles.active : ''}`} onClick={() => setView('live')}><span className={styles.navIcon}><LiveIcon /></span><span className={styles.navLabel}>Live</span></button>
+                    {/* MODIFIED: Added the new Archive tab button */}
+                    <button className={`${styles.navButton} ${view === 'archive' ? styles.active : ''}`} onClick={() => setView('archive')}><span className={styles.navIcon}><ArchiveIcon /></span><span className={styles.navLabel}>Archive</span></button>
                 </nav>
                 {view !== 'add_form' && (<button className={styles.addMatchButton} onClick={() => setView('add_form')}>+ Add New Match</button>)}
             </header>
