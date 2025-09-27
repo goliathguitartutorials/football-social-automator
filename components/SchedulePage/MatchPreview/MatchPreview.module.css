@@ -1,0 +1,44 @@
+/* MatchPreview.module.css */
+.preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px;
+    border-radius: 4px;
+    background-color: #38a169; /* Green for matches */
+    color: #fff;
+    cursor: pointer;
+    overflow: hidden;
+    transition: background-color 0.2s;
+}
+.preview:hover {
+    background-color: #2f855a;
+}
+.icon svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+.details {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.teamType {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+/* List View variant */
+.listView {
+    padding: 10px;
+}
+.listView .title { font-size: 1rem; }
+.listView .teamType { font-size: 0.8rem; }
