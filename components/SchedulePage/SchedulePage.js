@@ -7,7 +7,6 @@
 */
 'use client';
 import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import styles from './SchedulePage.module.css';
 import CreatePostView from './CreatePostView/CreatePostView';
 import PostPreviewAndEditView from './PostPreviewAndEditView/PostPreviewAndEditView';
@@ -20,8 +19,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import AddChoicePopover from './AddChoicePopover/AddChoicePopover';
 
 export default function SchedulePage() {
-    const { appData, refreshAppData } = useAppContext();
-    const router = useRouter();
+    const { appData, refreshAppData, setNavigationRequest } = useAppContext();
 
     // --- All original state is preserved ---
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -40,37 +38,34 @@ export default function SchedulePage() {
     const { width } = useWindowSize();
     const isMobile = width && width <= 768;
 
-    // --- All original handlers are preserved ---
+    // --- All original handlers are preserved and new ones added ---
     const handleSelectPost = (post) => {
         setSelectedPost(post);
         setPageView('preview');
     };
-    
-    // NEW handler for clicking on a match in the calendar
+
     const handleSelectMatch = (match) => {
-        router.push(`/match-hub?editMatchId=${match.matchId}`);
+        setNavigationRequest({ page: 'matchHub', data: { editMatchId: match.matchId } });
     };
 
     const handleExitPreview = () => {
         setSelectedPost(null);
         setPageView('calendar');
     };
-    
-    // MODIFIED: This now sets the date and shows the choice popover
+
     const handleNewEventClick = (date) => {
         setAddEventDate(date);
         setShowAddChoice(true);
     };
 
-    // NEW: Handles the choice from the popover (Post vs Match)
     const handleAddChoice = (choice) => {
         setShowAddChoice(false);
         if (choice === 'post') {
-            setNewPostDate(addEventDate); // Set date for the create view
+            setNewPostDate(addEventDate);
             setPageView('create');
         } else if (choice === 'match') {
             const dateString = addEventDate.toISOString().split('T')[0];
-            router.push(`/match-hub?newMatchDate=${dateString}`);
+            setNavigationRequest({ page: 'matchHub', data: { newMatchDate: dateString } });
         }
     };
 
@@ -89,7 +84,25 @@ export default function SchedulePage() {
         handleExitPreview();
     };
 
-    // --- Data Processing ---
+    const handleDayClick = (date) => {
+        setDayViewDate(date);
+        setViewMode('day');
+    };
+
+    const getStartOfWeek = (date) => {
+        const day = date.getDay();
+        const diff = date.getDate() - (day === 0 ? 6 : day - 1);
+        return new Date(date.getFullYear(), date.getMonth(), diff);
+    };
+
+    const getEndOfWeek = (date) => {
+        const startOfWeek = getStartOfWeek(date);
+        const endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        return endOfWeek;
+    };
+    
+    // MODIFIED: This now combines posts and matches based on the filter
     const scheduledEvents = useMemo(() => {
         const posts = (appData?.scheduledPosts || []).map(p => ({ ...p, type: 'post' }));
         const matches = (appData?.matches || []).map(m => ({ ...m, type: 'match' }));
@@ -98,9 +111,7 @@ export default function SchedulePage() {
         return [...posts, ...matches];
     }, [appData, scheduleFilter]);
 
-    const getStartOfWeek = (date) => { const day = date.getDay(); const diff = date.getDate() - (day === 0 ? 6 : day - 1); return new Date(date.getFullYear(), date.getMonth(), diff); };
-    const getEndOfWeek = (date) => { const startOfWeek = getStartOfWeek(date); const endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 6); endOfWeek.setHours(23, 59, 59, 999); return endOfWeek; };
-
+    // MODIFIED: This now filters the combined `scheduledEvents`
     const currentEvents = useMemo(() => {
         return scheduledEvents.filter(event => {
             const eventDate = new Date(event.type === 'post' ? event.scheduled_time_utc : `${event.matchDate}T${event.matchTime || '00:00'}`);
@@ -115,13 +126,25 @@ export default function SchedulePage() {
         });
     }, [scheduledEvents, currentDate, viewType]);
 
-    // --- Unchanged Calendar Logic & Handlers ---
-    const handleDayClick = (date) => { setDayViewDate(date); setViewMode('day'); };
-    const handlePrev = () => { if (viewMode === 'day') { setDayViewDate(new Date(dayViewDate.getFullYear(), dayViewDate.getMonth(), dayViewDate.getDate() - 1)); } else if (viewType === 'month') { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)); } else if (viewType === 'week') { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7)); } };
-    const handleNext = () => { if (viewMode === 'day') { setDayViewDate(new Date(dayViewDate.getFullYear(), dayViewDate.getMonth(), dayViewDate.getDate() + 1)); } else if (viewType === 'month') { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)); } else if (viewType === 'week') { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 7)); } };
-    const getHeaderText = () => { if (viewMode === 'day') return dayViewDate.toLocaleString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); if (viewMode === 'list') return "All Scheduled Events"; if (viewType === 'month') return currentDate.toLocaleString('default', { month: 'long', year: 'numeric' }); if (viewType === 'week') return `${getStartOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric' })} - ${getEndOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`; return ''; };
-    const handleCalendarClick = () => { setViewMode('calendar'); if (viewMode !== 'calendar') setViewType('month'); };
-    const navButtons = [{ id: 'calendar', label: 'Calendar', icon: <CalendarIcon />, onClick: handleCalendarClick },{ id: 'list', label: 'List', icon: <ListIcon />, onClick: () => setViewMode('list') },{ id: 'day', label: 'Day', icon: <DayIcon />, onClick: () => handleDayClick(new Date()) }];
+    const handlePrev = () => {
+        if (viewMode === 'day') {
+            setDayViewDate(new Date(dayViewDate.getFullYear(), dayViewDate.getMonth(), dayViewDate.getDate() - 1));
+        } else if (viewType === 'month') {
+            setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+        } else if (viewType === 'week') {
+            setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7));
+        }
+    };
+
+    const handleNext = () => {
+        if (viewMode === 'day') {
+            setDayViewDate(new Date(dayViewDate.getFullYear(), dayViewDate.getMonth(), dayViewDate.getDate() + 1));
+        } else if (viewType === 'month') {
+            setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+        } else if (viewType === 'week') {
+            setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 7));
+        }
+    };
 
     const renderActiveView = () => {
         if (viewMode === 'list') {
@@ -144,6 +167,27 @@ export default function SchedulePage() {
         }
         return null;
     };
+
+    const getHeaderText = () => {
+        if (viewMode === 'day') return dayViewDate.toLocaleString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        if (viewMode === 'list') return "All Scheduled Events"; // MODIFIED Text
+        if (viewType === 'month') return currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+        if (viewType === 'week') return `${getStartOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric' })} - ${getEndOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        return '';
+    };
+
+    const handleCalendarClick = () => {
+        setViewMode('calendar');
+        if (viewMode !== 'calendar') {
+            setViewType('month');
+        }
+    }
+
+    const navButtons = [
+        { id: 'calendar', label: 'Calendar', icon: <CalendarIcon />, onClick: handleCalendarClick },
+        { id: 'list', label: 'List', icon: <ListIcon />, onClick: () => setViewMode('list') },
+        { id: 'day', label: 'Day', icon: <DayIcon />, onClick: () => handleDayClick(new Date()) },
+    ];
 
     // --- Main Render Logic ---
     if (pageView === 'create') return <CreatePostView scheduleDate={newPostDate} onPostScheduled={handlePostScheduled} onCancel={exitCreateMode} />;
