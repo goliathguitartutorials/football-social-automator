@@ -17,6 +17,9 @@ export function AppProvider({ children }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [authStatus, setAuthStatus] = useState('idle');
+    
+    // NEW: State to handle navigation requests between major components
+    const [navigationRequest, setNavigationRequest] = useState(null);
 
     const authorizeAndFetchData = async (key) => {
         if (!key) {
@@ -76,23 +79,19 @@ export function AppProvider({ children }) {
         setAppData({ players, backgrounds, badges, matches, scheduledPosts });
     };
 
-    // MODIFIED: Renamed and updated logic to handle both adding and updating a match.
     const addOrUpdateMatch = (matchData) => {
         setAppData(prevData => {
             const existingMatchIndex = prevData.matches.findIndex(m => m.matchId === matchData.matchId);
             let updatedMatches;
 
             if (existingMatchIndex > -1) {
-                // This is an update. Replace the existing match.
                 updatedMatches = prevData.matches.map((match, index) => 
                     index === existingMatchIndex ? matchData : match
                 );
             } else {
-                // This is a new match. Add it to the list.
                 updatedMatches = [...prevData.matches, matchData];
             }
 
-            // Re-sort matches by date after the add/update
             updatedMatches.sort((a, b) => new Date(a.matchDate + ' ' + a.matchTime) - new Date(b.matchDate + ' ' + b.matchTime));
             return { ...prevData, matches: updatedMatches };
         });
@@ -123,7 +122,10 @@ export function AppProvider({ children }) {
         authStatus,
         authorizeAndFetchData,
         refreshAppData,
-        addOrUpdateMatch, // MODIFIED: Expose the new function
+        addOrUpdateMatch,
+        // NEW: Expose the navigation state and its setter function
+        navigationRequest,
+        setNavigationRequest,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
