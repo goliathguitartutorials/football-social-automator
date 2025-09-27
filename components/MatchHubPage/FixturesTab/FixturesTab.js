@@ -5,8 +5,9 @@
  * FILE: /components/MatchHubPage/FixturesTab/FixturesTab.js
  ==========================================================
  */
+// MODIFIED: Import the new EditIcon from the correct file
+import { EditIcon } from '../MatchHubIcons';
 import styles from './FixturesTab.module.css';
-import { EditIcon } from '../MatchHubIcons'; // Assuming you have an EditIcon
 
 const MatchCard = ({ match, onEditClick }) => {
     const formatDateTime = (dateStr, timeStr) => {
