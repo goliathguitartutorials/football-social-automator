@@ -27,27 +27,56 @@
     margin-bottom: 0.5rem;
 }
 
-/* NEW: Styles for the active live match interface */
 .liveContainer {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 800px; /* Constrain width for better layout on large screens */
+    max-width: 800px; 
     margin: 0 auto;
 }
 
-.liveHeader {
-    font-size: 1.5rem;
+/* MODIFIED: Replaced .liveHeader with .matchHeader for the score display */
+.matchHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.teamInfo {
+    flex: 1;
+    text-align: center;
+}
+
+.teamName {
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 2rem;
-    text-align: center;
-    padding: 1rem;
-    background-color: var(--background-light);
-    border-radius: 8px;
-    width: 100%;
-    border: 1px solid var(--border-color);
+}
+
+.scoreContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 1rem;
+}
+
+.score {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+.matchTime {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 .eventGrid {
@@ -86,7 +115,6 @@
     height: 40px;
 }
 
-/* NEW: Styles for countdown timer */
 .nextMatchTeams {
     font-size: 1.1rem;
     color: var(--text-primary);
