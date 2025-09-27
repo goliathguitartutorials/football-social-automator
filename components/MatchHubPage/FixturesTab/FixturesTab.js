@@ -5,33 +5,60 @@
  * FILE: /components/MatchHubPage/FixturesTab/FixturesTab.js
  ==========================================================
  */
-'use client';
-import { useState } from 'react';
 import styles from './FixturesTab.module.css';
-import AddMatchForm from '../AddMatchForm/AddMatchForm';
-import { PlusIcon } from '../MatchHubIcons';
 
-export default function FixturesTab() {
-    const [view, setView] = useState('list'); // 'list' or 'add_form'
+const MatchCard = ({ match }) => {
+    // Helper to format date and time
+    const formatDateTime = (dateStr, timeStr) => {
+        const date = new Date(`${dateStr}T${timeStr}`);
+        const formattedDate = date.toLocaleDateString('en-GB', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+        const formattedTime = date.toLocaleTimeString('en-US', {
+            hour: '2-digit', minute: '2-digit', hour12: true 
+        });
+        return { formattedDate, formattedTime };
+    };
 
-    // This will eventually fetch and display a list of matches
-    const MatchListView = () => (
-        <div>
-            <div className={styles.toolbar}>
-                <button className={styles.addMatchButton} onClick={() => setView('add_form')}>
-                    <PlusIcon />
-                    Add New Match
-                </button>
+    const { formattedDate, formattedTime } = formatDateTime(match.matchDate, match.matchTime);
+
+    return (
+        <div className={styles.matchCard}>
+            <div className={styles.matchInfo}>
+                <p className={styles.competition}>{match.competition}</p>
+                <h3 className={styles.teams}>
+                    {match.homeOrAway === 'Home' ? 'Y Glannau' : match.opponent}
+                    <span>vs</span>
+                    {match.homeOrAway === 'Away' ? 'Y Glannau' : match.opponent}
+                </h3>
+                <p className={styles.venue}>{match.venue}</p>
             </div>
-            <div className={styles.placeholder}>
-                <p>Upcoming and past matches will be listed here.</p>
+            <div className={styles.matchTime}>
+                <p className={styles.date}>{formattedDate}</p>
+                <p className={styles.time}>{formattedTime}</p>
             </div>
         </div>
     );
+};
 
-    if (view === 'add_form') {
-        return <AddMatchForm onCancel={() => setView('list')} />;
+export default function FixturesTab({ matches, isLoading, error }) {
+    if (isLoading) {
+        return <p className={styles.notice}>Loading fixtures...</p>;
     }
 
-    return <MatchListView />;
+    if (error) {
+        return <p className={`${styles.notice} ${styles.error}`}>{error}</p>;
+    }
+
+    if (matches.length === 0) {
+        return <p className={styles.notice}>No upcoming matches found.</p>;
+    }
+
+    return (
+        <div className={styles.fixturesList}>
+            {matches.map(match => (
+                <MatchCard key={match.matchId} match={match} />
+            ))}
+        </div>
+    );
 }
