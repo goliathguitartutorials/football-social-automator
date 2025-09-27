@@ -1,0 +1,28 @@
+/*
+ * ==========================================================
+ * COMPONENT: LiveTab
+ * PAGE: Match Hub
+ * FILE: /components/MatchHubPage/LiveTab/LiveTab.module.css
+ ==========================================================
+ */
+.container {
+    width: 100%;
+}
+
+.placeholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.placeholder h3 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
