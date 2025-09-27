@@ -5,7 +5,6 @@
  * FILE: /components/MatchHubPage/FixturesTab/FixturesTab.js
  ==========================================================
  */
-// MODIFIED: Imported useMemo for performance
 import { useMemo } from 'react';
 import { EditIcon } from '../MatchHubIcons';
 import styles from './FixturesTab.module.css';
@@ -53,10 +52,10 @@ const MatchCard = ({ match, onEditClick }) => {
 };
 
 export default function FixturesTab({ matches, onEditClick }) {
-    // MODIFIED: Filter out archived matches before rendering the list.
     const unarchivedMatches = useMemo(() => {
         if (!matches) return [];
-        return matches.filter(match => match.status !== 'Archived');
+        // FIXED: Changed 'Archived' to 'archived' to match the database value.
+        return matches.filter(match => match.status !== 'archived');
     }, [matches]);
 
     if (unarchivedMatches.length === 0) {
