@@ -45,7 +45,6 @@ export function AppProvider({ children }) {
             }
 
             const rawData = await response.json();
-            
             const dataArray = Array.isArray(rawData) ? rawData : rawData.data || [];
             
             processData(dataArray);
@@ -63,21 +62,28 @@ export function AppProvider({ children }) {
     };
 
     const processData = (dataArray) => {
-        // MODIFIED: Changed filter to correctly identify player objects by the 'playerId' property.
         const players = dataArray.filter((item) => item.hasOwnProperty('playerId'));
         const assets = dataArray.filter((item) => item.class === 'asset');
-        
         const scheduledPosts = dataArray.filter((item) => item.class === 'scheduledPost');
-        scheduledPosts.sort((a, b) => new Date(a.scheduled_time_utc) - new Date(b.scheduled_time_utc));
-
         const backgrounds = assets.filter((asset) => asset.Type === 'background');
         const badges = assets.filter((asset) => asset.Type === 'badge');
-        badges.sort((a, b) => a.Name.localeCompare(b.Name));
-
         const matches = dataArray.filter((item) => item.type === 'Match');
+
         matches.sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+        badges.sort((a, b) => a.Name.localeCompare(b.Name));
+        scheduledPosts.sort((a, b) => new Date(a.scheduled_time_utc) - new Date(b.scheduled_time_utc));
 
         setAppData({ players, backgrounds, badges, matches, scheduledPosts });
+    };
+
+    // ADDED: Function to add a new match to the global state
+    const addNewMatch = (newMatch) => {
+        setAppData(prevData => {
+            const updatedMatches = [...prevData.matches, newMatch];
+            // Re-sort matches by date after adding the new one
+            updatedMatches.sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+            return { ...prevData, matches: updatedMatches };
+        });
     };
     
     const handleSetAuthKey = (key) => {
@@ -105,6 +111,7 @@ export function AppProvider({ children }) {
         authStatus,
         authorizeAndFetchData,
         refreshAppData,
+        addNewMatch, // ADDED: Expose the new function to the context
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
