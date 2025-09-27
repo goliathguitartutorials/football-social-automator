@@ -17,7 +17,8 @@ import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
 import SquadPanel from './SquadPanel/SquadPanel';
 
 export default function LiveTab() {
-    const { appData } = useAppContext();
+    // MODIFIED: Added authKey for API calls and isSubmitting for user feedback
+    const { appData, authKey } = useAppContext();
     const [liveMatch, setLiveMatch] = useState(null);
     const [nextMatch, setNextMatch] = useState(null);
     const [view, setView] = useState('dashboard'); // dashboard | logEvent
@@ -27,40 +28,39 @@ export default function LiveTab() {
     const [events, setEvents] = useState([]);
     const [score, setScore] = useState({ home: 0, away: 0 });
     const [elapsedTimeDisplay, setElapsedTimeDisplay] = useState("00:00");
+    const [isSubmitting, setIsSubmitting] = useState(false); // New state
+    const [apiError, setApiError] = useState(''); // New state for errors
 
     const calculateElapsedTime = useCallback(() => {
         if (!liveMatch) return { minute: 0, display: "00:00" };
-
         const kickOffTime = new Date(`${liveMatch.matchDate} ${liveMatch.matchTime}`);
         const now = new Date();
         const totalSeconds = Math.floor((now - kickOffTime) / 1000);
-
         if (totalSeconds < 0) return { minute: 0, display: "00:00" };
 
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
-        
         let displayMinute = 0;
         let gameMinute = 0;
 
-        if (minutes < 45) { // First half
+        if (minutes < 45) {
             displayMinute = minutes;
             gameMinute = minutes + 1;
-        } else if (minutes < 60) { // Half time (15 min break)
+        } else if (minutes < 60) {
             return { minute: 45, display: "HT" };
-        } else if (minutes < 105) { // Second half
+        } else if (minutes < 105) {
             displayMinute = minutes - 15;
             gameMinute = minutes - 14;
-        } else { // Full time
+        } else {
             return { minute: 90, display: "FT" };
         }
 
         const display = `${String(displayMinute).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         return { minute: gameMinute, display };
-
     }, [liveMatch]);
 
     useEffect(() => {
+        // This effect for finding matches remains the same
         const now = new Date();
         const liveMatchWindowMs = 150 * 60 * 1000;
         const findMatches = () => {
@@ -89,11 +89,12 @@ export default function LiveTab() {
     }, [appData.matches]);
 
     useEffect(() => {
+        // This effect for the clock remains the same
         if (liveMatch) {
             const interval = setInterval(() => {
                 const { display } = calculateElapsedTime();
                 setElapsedTimeDisplay(display);
-            }, 1000); // Update every second
+            }, 1000);
             return () => clearInterval(interval);
         }
     }, [liveMatch, calculateElapsedTime]);
@@ -103,6 +104,7 @@ export default function LiveTab() {
         setPrepopulatedMinute(minute);
         setSelectedEventType(eventType);
         setView('logEvent');
+        setApiError(''); // Clear previous errors
     };
 
     const handleFormCancel = () => {
@@ -110,20 +112,59 @@ export default function LiveTab() {
         setSelectedEventType(null);
     };
 
-    const handleEventSubmit = (eventData) => {
-        const newEvent = { ...eventData, id: Date.now() };
-        const newEvents = [...events, newEvent];
-        setEvents(newEvents);
+    // MODIFIED: This function now handles the API call
+    const handleEventSubmit = async (eventData) => {
+        setIsSubmitting(true);
+        setApiError('');
 
-        // Recalculate score from the new events list
-        const newHomeScore = newEvents.filter(e => e.eventType === 'Goal' && e.team === 'home').length;
-        const newAwayScore = newEvents.filter(e => e.eventType === 'Goal' && e.team === 'away').length;
-        setScore({ home: newHomeScore, away: newAwayScore });
-        
-        // TODO: Add API call to /api/manage-match here
-        console.log("Event Logged:", newEvent);
-        
-        handleFormCancel();
+        // 1. Prepare the data for the API
+        const eventId = `event_${Date.now()}`;
+        const apiPayload = {
+            eventId: eventId,
+            matchId: eventData.matchId,
+            eventType: eventData.eventType,
+            minute: eventData.minute,
+            team: eventData.team, // 'home' or 'away'
+            playerFullName: eventData.scorer || eventData.player || eventData.playerOff || '',
+            assistByFullName: eventData.assist || eventData.playerOn || '',
+        };
+
+        try {
+            // 2. Send data to the manage-match API route
+            const response = await fetch('/api/manage-match', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authKey}`
+                },
+                body: JSON.stringify({
+                    action: 'log_event',
+                    matchData: apiPayload 
+                })
+            });
+
+            if (!response.ok) {
+                const errorResult = await response.json();
+                throw new Error(errorResult.error || 'Failed to log event.');
+            }
+
+            // 3. Update local state on success
+            const newEvent = { ...eventData, id: eventId };
+            const newEvents = [...events, newEvent].sort((a, b) => a.minute - b.minute);
+            setEvents(newEvents);
+            
+            const newHomeScore = newEvents.filter(e => e.eventType === 'Goal' && e.team === 'home').length;
+            const newAwayScore = newEvents.filter(e => e.eventType === 'Goal' && e.team === 'away').length;
+            setScore({ home: newHomeScore, away: newAwayScore });
+            
+            handleFormCancel();
+
+        } catch (error) {
+            console.error("API Error:", error);
+            setApiError(error.message);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // --- RENDER LOGIC ---
@@ -136,14 +177,16 @@ export default function LiveTab() {
                 onCancel={handleFormCancel}
                 onSubmit={handleEventSubmit}
                 initialMinute={prepopulatedMinute}
+                isSubmitting={isSubmitting} /* Pass submitting state */
+                apiError={apiError} /* Pass error message */
             />
         );
     }
-
+    
+    // The rest of the render logic remains unchanged...
     if (liveMatch) {
         return (
             <div className={styles.dashboardContainer}>
-                {/* Score Header */}
                 <div className={styles.matchHeader}>
                     <span className={styles.teamName}>{liveMatch.homeTeamName}</span>
                     <div className={styles.scoreContainer}>
@@ -153,7 +196,6 @@ export default function LiveTab() {
                     <span className={styles.teamName}>{liveMatch.awayTeamName}</span>
                 </div>
 
-                {/* Event Logging Buttons */}
                 <div className={styles.eventGrid}>
                     <button className={styles.eventButton} onClick={() => handleEventClick('Goal')}><GoalIcon /><span>Goal</span></button>
                     <button className={styles.eventButton} onClick={() => handleEventClick('Yellow Card')}><YellowCardIcon /><span>Yellow Card</span></button>
@@ -161,7 +203,6 @@ export default function LiveTab() {
                     <button className={styles.eventButton} onClick={() => handleEventClick('Substitution')}><SubIcon /><span>Substitution</span></button>
                 </div>
 
-                {/* Tabbed Panels for Info */}
                 <div className={styles.detailsContainer}>
                     <div className={styles.tabBar}>
                         <button className={`${styles.tabButton} ${activeTab === 'overview' ? styles.active : ''}`} onClick={() => setActiveTab('overview')}><OverviewIcon /><span>Overview</span></button>
