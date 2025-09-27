@@ -6,8 +6,7 @@
  ==========================================================
  */
 'use client';
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './MatchHubPage.module.css';
 import { FixturesIcon, LiveIcon } from './MatchHubIcons';
@@ -15,31 +14,36 @@ import FixturesTab from './FixturesTab/FixturesTab';
 import LiveTab from './LiveTab/LiveTab';
 import AddMatchForm from './AddMatchForm/AddMatchForm';
 
-// This inner component contains the page logic and can safely use searchParams
-function MatchHubContent() {
-    const { appData } = useAppContext();
-    const router = useRouter();
-    const searchParams = useSearchParams();
+// MODIFIED: Simplified back to a single component, no Suspense needed.
+export default function MatchHubPage() {
+    // MODIFIED: Get navigation state from context
+    const { appData, navigationRequest, setNavigationRequest } = useAppContext();
     
     const [view, setView] = useState('fixtures');
     const [editingMatch, setEditingMatch] = useState(null);
     const [newMatchData, setNewMatchData] = useState(null);
 
     useEffect(() => {
-        const matchIdToEdit = searchParams.get('editMatchId');
-        const dateForNewMatch = searchParams.get('newMatchDate');
+        // This effect runs when the component loads or a navigation request changes.
+        // It checks if a navigation request is targeted for this page.
+        if (navigationRequest && navigationRequest.page === 'Match Hub' && navigationRequest.data) {
+            const { editMatchId, newMatchDate } = navigationRequest.data;
 
-        if (matchIdToEdit) {
-            const match = appData.matches.find(m => m.matchId === matchIdToEdit);
-            if (match) {
-                setEditingMatch(match);
+            if (editMatchId) {
+                const match = appData.matches.find(m => m.matchId === editMatchId);
+                if (match) {
+                    setEditingMatch(match);
+                    setView('add_form');
+                }
+            } else if (newMatchDate) {
+                setNewMatchData({ matchDate: newMatchDate });
                 setView('add_form');
             }
-        } else if (dateForNewMatch) {
-            setNewMatchData({ matchDate: dateForNewMatch });
-            setView('add_form');
+            
+            // Crucially, clear the request after it has been handled.
+            setNavigationRequest(null);
         }
-    }, [searchParams, appData.matches]);
+    }, [navigationRequest, setNavigationRequest, appData.matches]);
 
     const handleEditClick = (match) => {
         setEditingMatch(match);
@@ -50,8 +54,6 @@ function MatchHubContent() {
         setEditingMatch(null);
         setNewMatchData(null);
         setView('fixtures');
-        // Clean up URL parameters after closing the form
-        router.replace('/match-hub', { scroll: false });
     };
 
     const renderContent = () => {
@@ -87,15 +89,5 @@ function MatchHubContent() {
                 {renderContent()}
             </main>
         </div>
-    );
-}
-
-// Next.js requires `useSearchParams` to be used within a <Suspense> boundary.
-// This wrapper component provides that boundary.
-export default function MatchHubPage() {
-    return (
-        <Suspense fallback={<div style={{textAlign: 'center', padding: '2rem'}}>Loading Match Hub...</div>}>
-            <MatchHubContent />
-        </Suspense>
     );
 }
