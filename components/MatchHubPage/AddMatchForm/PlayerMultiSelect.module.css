@@ -8,18 +8,18 @@
 .multiSelectContainer {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 1rem; /* Increased gap for better spacing */
 }
 
 .selectedPillsContainer {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    background-color: var(--background-dark);
+    gap: 0.75rem; /* Increased gap */
+    padding: 0.75rem; /* Matched input padding */
+    background-color: #374151; /* Darker background like other inputs */
     border: 1px solid var(--border-color, #4a5568);
     border-radius: 6px;
-    min-height: 40px;
+    min-height: 50px; /* Matched input height */
 }
 
 .pill {
@@ -28,7 +28,7 @@
     gap: 0.5rem;
     background-color: var(--accent-color);
     color: white;
-    padding: 0.25rem 0.75rem;
+    padding: 0.35rem 0.85rem;
     border-radius: 1rem;
     font-size: 0.9rem;
     font-weight: 500;
@@ -42,6 +42,11 @@
     cursor: pointer;
     padding: 0;
     line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+.removeButton:hover {
+    opacity: 1;
 }
 
 .autocompleteWrapper {
@@ -53,7 +58,7 @@
     padding: 0.75rem;
     border-radius: 6px;
     border: 1px solid var(--border-color, #4a5568);
-    background-color: #374151; /* From SquadForm CSS */
+    background-color: #374151; /* Matched SquadForm */
     color: var(--text-primary, #fff);
     font-size: 1rem;
 }
@@ -63,7 +68,7 @@
     top: 100%;
     left: 0;
     right: 0;
-    background-color: #2d3748; /* From SquadForm CSS */
+    background-color: #2d3748; /* Matched SquadForm */
     border: 1px solid var(--border-color, #4a5568);
     border-top: none;
     border-radius: 0 0 6px 6px;
