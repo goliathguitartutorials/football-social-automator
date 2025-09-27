@@ -6,6 +6,8 @@
  * ==========================================================
  */
 import styles from './MatchEventsPanel.module.css';
+// DIAGNOSIS: The crash is likely caused by this import failing on a case-sensitive server.
+// Please ensure the file is named EXACTLY "LiveTabIcons.js" in your repository.
 import { GoalIcon, YellowCardIcon, RedCardIcon, SubIcon } from '../LiveTabIcons';
 
 const EventIcon = ({ type }) => {
@@ -24,12 +26,15 @@ export default function MatchEventsPanel({ events, match }) {
     const renderEventDetails = (event) => {
         switch (event.eventType) {
             case 'Goal':
-                return `${event.scorer}${event.assist ? ` (assist by ${event.assist})` : ''}`;
+                // MODIFIED: Correctly reference playerFullName and assistByFullName
+                return `${event.playerFullName}${event.assistByFullName ? ` (assist by ${event.assistByFullName})` : ''}`;
             case 'Yellow Card':
             case 'Red Card':
-                return event.player;
+                 // MODIFIED: Correctly reference playerFullName
+                return event.playerFullName;
             case 'Substitution':
-                return `${event.playerOn} for ${event.playerOff}`;
+                 // MODIFIED: Correctly reference assistByFullName and playerFullName
+                return `${event.assistByFullName} for ${event.playerFullName}`;
             default:
                 return '';
         }
@@ -44,7 +49,8 @@ export default function MatchEventsPanel({ events, match }) {
                 <h4 className={styles.teamHeader}>{match.homeTeamName}</h4>
                 <ul className={styles.eventList}>
                     {homeEvents.map(event => (
-                        <li key={event.id} className={styles.eventItem}>
+                        // FIXED: Changed key from event.id to event.eventId to match the actual prop name.
+                        <li key={event.eventId} className={styles.eventItem}>
                             <span className={styles.eventIcon}><EventIcon type={event.eventType} /></span>
                             <span className={styles.eventMinute}>{event.minute}'</span>
                             <span className={styles.eventDetails}>{renderEventDetails(event)}</span>
@@ -56,7 +62,8 @@ export default function MatchEventsPanel({ events, match }) {
                 <h4 className={styles.teamHeader}>{match.awayTeamName}</h4>
                  <ul className={styles.eventList}>
                     {awayEvents.map(event => (
-                        <li key={event.id} className={styles.eventItem}>
+                        // FIXED: Changed key from event.id to event.eventId to match the actual prop name.
+                        <li key={event.eventId} className={styles.eventItem}>
                             <span className={styles.eventIcon}><EventIcon type={event.eventType} /></span>
                             <span className={styles.eventMinute}>{event.minute}'</span>
                             <span className={styles.eventDetails}>{renderEventDetails(event)}</span>
