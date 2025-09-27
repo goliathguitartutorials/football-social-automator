@@ -6,8 +6,8 @@
  ==========================================================
  */
 'use client';
-import { useState, useEffect, Suspense } from 'react'; // Import Suspense
-import { useSearchParams } from 'next/navigation'; // Import useSearchParams
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './MatchHubPage.module.css';
 import { FixturesIcon, LiveIcon } from './MatchHubIcons';
@@ -15,14 +15,15 @@ import FixturesTab from './FixturesTab/FixturesTab';
 import LiveTab from './LiveTab/LiveTab';
 import AddMatchForm from './AddMatchForm/AddMatchForm';
 
-// Create a new component to handle the logic, so we can wrap it in Suspense
+// This inner component contains the page logic and can safely use searchParams
 function MatchHubContent() {
     const { appData } = useAppContext();
+    const router = useRouter();
     const searchParams = useSearchParams();
     
     const [view, setView] = useState('fixtures');
     const [editingMatch, setEditingMatch] = useState(null);
-    const [newMatchDate, setNewMatchDate] = useState(null);
+    const [newMatchData, setNewMatchData] = useState(null);
 
     useEffect(() => {
         const matchIdToEdit = searchParams.get('editMatchId');
@@ -35,7 +36,7 @@ function MatchHubContent() {
                 setView('add_form');
             }
         } else if (dateForNewMatch) {
-            setNewMatchDate(dateForNewMatch);
+            setNewMatchData({ matchDate: dateForNewMatch });
             setView('add_form');
         }
     }, [searchParams, appData.matches]);
@@ -47,14 +48,15 @@ function MatchHubContent() {
 
     const handleFormClose = () => {
         setEditingMatch(null);
-        setNewMatchDate(null);
+        setNewMatchData(null);
         setView('fixtures');
+        // Clean up URL parameters after closing the form
+        router.replace('/match-hub', { scroll: false });
     };
 
     const renderContent = () => {
         if (view === 'add_form') {
-            // If newMatchDate exists, create a new initialData object
-            const formInitialData = editingMatch || (newMatchDate ? { matchDate: newMatchDate } : null);
+            const formInitialData = editingMatch || newMatchData;
             return (
                 <AddMatchForm 
                     initialData={formInitialData} 
@@ -76,8 +78,8 @@ function MatchHubContent() {
         <div className={styles.container}>
             <header className={styles.header}>
                 <nav className={styles.tabNav}>
-                    <button className={`${styles.navButton} ${view === 'fixtures' ? styles.active : ''}`} onClick={() => setView('fixtures')}><FixturesIcon /><span>Fixtures</span></button>
-                    <button className={`${styles.navButton} ${view === 'live' ? styles.active : ''}`} onClick={() => setView('live')}><LiveIcon /><span>Live</span></button>
+                    <button className={`${styles.navButton} ${view === 'fixtures' ? styles.active : ''}`} onClick={() => setView('fixtures')}><span className={styles.navIcon}><FixturesIcon /></span><span className={styles.navLabel}>Fixtures</span></button>
+                    <button className={`${styles.navButton} ${view === 'live' ? styles.active : ''}`} onClick={() => setView('live')}><span className={styles.navIcon}><LiveIcon /></span><span className={styles.navLabel}>Live</span></button>
                 </nav>
                 {view !== 'add_form' && (<button className={styles.addMatchButton} onClick={() => setView('add_form')}>+ Add New Match</button>)}
             </header>
@@ -88,10 +90,11 @@ function MatchHubContent() {
     );
 }
 
-// Wrap the main content in a Suspense boundary as required by useSearchParams
+// Next.js requires `useSearchParams` to be used within a <Suspense> boundary.
+// This wrapper component provides that boundary.
 export default function MatchHubPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div style={{textAlign: 'center', padding: '2rem'}}>Loading Match Hub...</div>}>
             <MatchHubContent />
         </Suspense>
     );
