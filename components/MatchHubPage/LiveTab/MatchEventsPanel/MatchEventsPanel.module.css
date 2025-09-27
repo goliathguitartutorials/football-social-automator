@@ -1,0 +1,47 @@
+/*
+ * ==========================================================
+ * COMPONENT: MatchEventsPanel
+ * PAGE: Match Hub
+ * FILE: /components/MatchHubPage/LiveTab/MatchEventsPanel/MatchEventsPanel.module.css
+ * ==========================================================
+ */
+.panelContainer {
+    display: flex;
+    gap: 2rem;
+}
+.teamColumn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.teamHeader {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.eventList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.eventItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+}
+.eventIcon { display: flex; align-items: center; }
+.eventIcon svg { width: 18px; height: 18px; }
+.eventMinute { font-weight: bold; color: var(--text-primary); }
+.eventDetails { color: var(--text-secondary); }
+.noEvents {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 2rem;
+}
