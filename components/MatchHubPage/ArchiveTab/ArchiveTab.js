@@ -9,15 +9,16 @@
 
 import { useState, useMemo } from 'react';
 import styles from './ArchiveTab.module.css';
-// MODIFIED: Added the missing ArchiveIcon to the import list.
 import { EditIcon, FootballIcon, ArchiveIcon } from '../MatchHubIcons';
 
 export default function ArchiveTab({ matches }) {
     const [selectedMatch, setSelectedMatch] = useState(null);
 
     const archivedMatches = useMemo(() => {
+        if (!matches) return [];
+        // FIXED: Changed 'Archived' to 'archived' to match the database value.
         return matches
-            .filter(match => match.status === 'Archived')
+            .filter(match => match.status === 'archived')
             .sort((a, b) => new Date(b.matchDate) - new Date(a.matchDate)); // Most recent first
     }, [matches]);
 
