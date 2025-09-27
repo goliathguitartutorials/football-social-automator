@@ -17,7 +17,7 @@ import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
 import SquadPanel from './SquadPanel/SquadPanel';
 
 export default function LiveTab() {
-    const { appData, authKey } = useAppContext();
+    const { appData, authKey, refreshAppData } = useAppContext(); // Added refreshAppData
     const [liveMatch, setLiveMatch] = useState(null);
     const [nextMatch, setNextMatch] = useState(null);
     const [view, setView] = useState('dashboard');
@@ -52,7 +52,6 @@ export default function LiveTab() {
         setScore({ home: newHomeScore, away: newAwayScore });
     }, []);
 
-    // NEW: Load from session storage on initial mount for instant UI
     useEffect(() => {
         try {
             const savedState = sessionStorage.getItem('liveMatchState');
@@ -83,11 +82,10 @@ export default function LiveTab() {
             const foundLiveMatch = appData.matches.find(match => {
                 const matchScheduledTime = new Date(`${match.matchDate} ${match.matchTime}`);
                 const matchEndTime = new Date(matchScheduledTime.getTime() + liveMatchWindowMs);
-                return now >= matchScheduledTime && now <= matchEndTime;
+                return now >= matchScheduledTime && now <= matchEndTime && !match.isArchived; // Exclude archived matches
             });
 
             if (foundLiveMatch) {
-                // If the live match in state is already the correct one, don't re-fetch
                 if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
 
                 setApiError('');
@@ -113,10 +111,9 @@ export default function LiveTab() {
                     const result = await response.json();
                     const existingEvents = result.data || result || [];
                     
-                    setLiveMatch(processedMatch); // Set the match details
-                    reconstructStateFromEvents(existingEvents); // Set the events
-
-                    // NEW: Save the successful state to session storage
+                    setLiveMatch(processedMatch);
+                    reconstructStateFromEvents(existingEvents);
+                    
                     sessionStorage.setItem('liveMatchState', JSON.stringify({ match: processedMatch, events: existingEvents }));
                     
                 } catch (error) {
@@ -125,8 +122,8 @@ export default function LiveTab() {
 
             } else {
                 setLiveMatch(null);
-                sessionStorage.removeItem('liveMatchState'); // Clean up session if no match is live
-                const upcomingMatches = appData.matches.filter(match => new Date(`${match.matchDate} ${match.matchTime}`) > now);
+                sessionStorage.removeItem('liveMatchState');
+                const upcomingMatches = appData.matches.filter(match => new Date(`${match.matchDate} ${match.matchTime}`) > now && !match.isArchived);
                 setNextMatch(upcomingMatches[0] || null);
             }
         };
@@ -145,11 +142,11 @@ export default function LiveTab() {
         const now = new Date();
         let totalSeconds;
 
+        // FIXED: New timer logic for the second half
         if (secondHalfStartTime && now >= secondHalfStartTime) {
-            const firstHalfOfficialEnd = new Date(events.find(e => e.eventType === 'HALF_TIME').timestamp);
-            const actualFirstHalfDuration = (firstHalfOfficialEnd - matchStartTime) / 1000;
+            const halftimeBreakSeconds = 45 * 60; // Standard 45 minutes for the first half
             const secondHalfSeconds = (now - secondHalfStartTime) / 1000;
-            totalSeconds = actualFirstHalfDuration + secondHalfSeconds;
+            totalSeconds = halftimeBreakSeconds + secondHalfSeconds;
         } else {
             totalSeconds = (now - matchStartTime) / 1000;
         }
@@ -179,13 +176,13 @@ export default function LiveTab() {
         setApiError('');
     };
     
-    const handleControlClick = async (eventType) => {
+    const handleControlClick = async (eventType, extraData = {}) => {
         if (isSubmitting) return;
         setIsSubmitting(true);
         setApiError('');
         try {
             const { minute } = calculateElapsedTime();
-            await handleEventSubmit({ eventType, minute });
+            await handleEventSubmit({ eventType, minute, ...extraData });
         } catch (error) {
             setApiError(error.message);
         } finally {
@@ -247,6 +244,13 @@ export default function LiveTab() {
              }
         }
     };
+
+    // Placeholder for the archive action
+    const handleArchiveMatch = async () => {
+        alert("Archive functionality to be implemented.");
+        // Logic to call API to archive the match
+        // Then call refreshAppData()
+    };
     
     const renderContent = () => {
         if (!liveMatch) return null;
@@ -281,6 +285,25 @@ export default function LiveTab() {
         const isHalfTime = events.some(e => e.eventType === 'HALF_TIME') && !events.some(e => e.eventType === 'SECOND_HALF_START');
         const hasSecondHalfStarted = events.some(e => e.eventType === 'SECOND_HALF_START');
         const hasEnded = events.some(e => e.eventType === 'MATCH_END');
+
+        // NEW: Render archive button only when the match has ended
+        if (hasEnded) {
+            return (
+                 <div className={styles.preGameContainer}>
+                    <h3>Match Finished</h3>
+                    <p>The final score was {score.home} - {score.away}. You can now archive this match.</p>
+                    <div className={styles.preGameButtons}>
+                        <button 
+                            className={styles.controlButton} 
+                            onClick={handleArchiveMatch}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? 'Archiving...' : 'Archive Match'}
+                        </button>
+                    </div>
+                </div>
+            )
+        }
 
         return (
             <>
