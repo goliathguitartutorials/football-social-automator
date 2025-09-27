@@ -8,40 +8,39 @@
 'use client';
 
 import styles from './DesktopNav.module.css';
-import { CreateIcon, ScheduleIcon, LiveMatchIcon, AssetIcon, SettingsIcon } from './Icons';
+import { CreateIcon, ScheduleIcon, AssetIcon, SettingsIcon } from './Icons';
+import { FootballIcon } from '../MatchHubPage/MatchHubIcons'; // --- MODIFIED: Import new icon
 
 // Define the main navigation items
 const navItems = [
-  { id: 'create', label: 'Create Post', icon: <CreateIcon /> },
-  { id: 'schedule', label: 'Schedule', icon: <ScheduleIcon /> },
-  { id: 'live', label: 'Live Match', icon: <LiveMatchIcon /> },
-  { id: 'assets', label: 'Assets', icon: <AssetIcon /> }, // NEW: Assets button added
-  { id: 'settings', label: 'Settings', icon: <SettingsIcon /> },
+    { id: 'create', label: 'Create Post', icon: <CreateIcon /> },
+    { id: 'schedule', label: 'Schedule', icon: <ScheduleIcon /> },
+    { id: 'matchHub', label: 'Match Hub', icon: <FootballIcon /> }, // --- MODIFIED: Updated ID, label, and icon
+    { id: 'assets', label: 'Assets', icon: <AssetIcon /> },
+    { id: 'settings', label: 'Settings', icon: <SettingsIcon /> },
 ];
 
 export default function DesktopNav({ activeView, setView }) {
-  // Authorization logic has been moved to the Settings page
-  return (
-    <aside className={styles.desktopNav}>
-      <div>
-        <h1 className={styles.logo}>Glannau Automator</h1>
-        <nav className={styles.nav}>
-          <ul>
-            {navItems.map((item) => (
-              <li key={item.id}>
-                <button
-                  className={activeView === item.id ? styles.active : ''}
-                  onClick={() => setView(item.id)}
-                >
-                  <span className={styles.icon}>{item.icon}</span>
-                  {item.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-      {/* The entire auth section has been removed from here */}
-    </aside>
-  );
+    return (
+        <aside className={styles.desktopNav}>
+            <div>
+                <h1 className={styles.logo}>Glannau Automator</h1>
+                <nav className={styles.nav}>
+                    <ul>
+                        {navItems.map((item) => (
+                            <li key={item.id}>
+                                <button
+                                    className={activeView === item.id ? styles.active : ''}
+                                    onClick={() => setView(item.id)}
+                                >
+                                    <span className={styles.icon}>{item.icon}</span>
+                                    {item.label}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+    );
 }
