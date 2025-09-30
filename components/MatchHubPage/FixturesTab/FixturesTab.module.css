@@ -67,9 +67,7 @@
     gap: 1rem;
 }
 
-/* MODIFIED: The list item is now styled as a button */
 .fixtureListItem {
-    /* Reset button styles */
     background: none;
     border: none;
     padding: 0;
@@ -78,8 +76,6 @@
     color: inherit;
     text-align: left;
     width: 100%;
-    
-    /* Original container styles */
     display: flex;
     align-items: center;
     background-color: var(--surface-dark);
@@ -92,12 +88,12 @@
     cursor: pointer;
 }
 
-/* MODIFIED: Swapped team colors */
+/* MODIFIED: Updated with your specified team colors. */
 .fixtureListItem.first-team {
-    border-left-color: #38a169; /* Green */
+    border-left-color: #00b359; /* Green */
 }
 .fixtureListItem.development {
-    border-left-color: #e53e3e; /* Red */
+    border-left-color: #ff4d4d; /* Red */
 }
 
 .fixtureListItem:hover {
@@ -105,7 +101,6 @@
     box-shadow: 0 5px 15px rgba(0,0,0,0.15);
     border-color: var(--border-color-hover);
 }
-
 
 .timeInfo {
     font-size: 1.25rem;
@@ -154,15 +149,13 @@
     line-height: 1;
 }
 
-/* MODIFIED: Swapped team colors */
+/* MODIFIED: Updated with your specified team colors. */
 .teamBadge.first-team {
-    background-color: #38a169; /* Green */
+    background-color: #00b359; /* Green */
 }
 .teamBadge.development {
-    background-color: #e53e3e; /* Red */
+    background-color: #ff4d4d; /* Red */
 }
-
-/* REMOVED: .actions and .editButton styles are no longer needed */
 
 .notice {
     text-align: center;
@@ -204,11 +197,11 @@
     }
     
     .addMatchButton span {
-        display: none; /* Hide text on small buttons */
+        display: none;
     }
     
     .addMatchButton {
-        padding: 0.7rem; /* Make it square */
+        padding: 0.7rem;
         border-radius: 50%;
     }
 }
