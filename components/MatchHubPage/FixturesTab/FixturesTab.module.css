@@ -67,7 +67,19 @@
     gap: 1rem;
 }
 
+/* MODIFIED: The list item is now styled as a button */
 .fixtureListItem {
+    /* Reset button styles */
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    width: 100%;
+    
+    /* Original container styles */
     display: flex;
     align-items: center;
     background-color: var(--surface-dark);
@@ -77,12 +89,15 @@
     border-left-width: 4px;
     gap: 1rem;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
 }
+
+/* MODIFIED: Swapped team colors */
 .fixtureListItem.first-team {
-    border-left-color: var(--accent-color);
+    border-left-color: #38a169; /* Green */
 }
 .fixtureListItem.development {
-    border-left-color: #38a169;
+    border-left-color: #e53e3e; /* Red */
 }
 
 .fixtureListItem:hover {
@@ -138,43 +153,16 @@
     color: #fff;
     line-height: 1;
 }
+
+/* MODIFIED: Swapped team colors */
 .teamBadge.first-team {
-    background-color: var(--accent-color);
+    background-color: #38a169; /* Green */
 }
 .teamBadge.development {
-    background-color: #38a169;
+    background-color: #e53e3e; /* Red */
 }
 
-
-.actions {
-    margin-left: auto;
-}
-
-.editButton {
-    background: none;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1.2rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-.editButton:hover {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
-    color: #fff;
-}
-
-.editButton svg {
-    width: 16px;
-    height: 16px;
-}
-
+/* REMOVED: .actions and .editButton styles are no longer needed */
 
 .notice {
     text-align: center;
@@ -214,20 +202,8 @@
     .meta {
         gap: 0.75rem;
     }
-
-    .actions {
-        margin-left: 0;
-        margin-top: 1rem;
-        border-top: 1px solid var(--border-color);
-        padding-top: 1rem;
-    }
-
-    .editButton {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .addMatchButton span, .editButton span {
+    
+    .addMatchButton span {
         display: none; /* Hide text on small buttons */
     }
     
