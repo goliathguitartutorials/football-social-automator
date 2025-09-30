@@ -1,16 +1,24 @@
-/* FixturesTab.module.css */
+/*
+ * ==========================================================
+ * COMPONENT: FixturesTab
+ * PAGE: Match Hub
+ * FILE: /components/MatchHubPage/FixturesTab/FixturesTab.module.css
+ ==========================================================
+ */
 
-/* NEW: Styles for the new container and header */
 .container {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    width: 100%;
 }
 
 .fixturesHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 .fixturesHeader h2 {
@@ -19,10 +27,12 @@
     color: var(--text-primary);
 }
 
-/* NEW: Copied button style from MatchHubPage.module.css */
 .addMatchButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     padding: 0.7rem 1.5rem;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: bold;
     border: none;
     border-radius: 6px;
@@ -37,97 +47,107 @@
     background-color: var(--accent-color-hover);
 }
 
-
-.fixturesList {
-    display: grid;
-    gap: 1.5rem;
+.addMatchButton svg {
+    width: 18px;
+    height: 18px;
 }
 
-.matchCard {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
+.dayGroup h3 {
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.matchList {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.fixtureListItem {
+    display: flex;
     align-items: center;
-    background-color: var(--surface-dark, #1a1d2e);
-    padding: 1.5rem;
+    background-color: var(--surface-dark);
+    padding: 1rem 1.5rem;
     border-radius: 8px;
-    border: 1px solid var(--border-color, #4a5568);
+    border: 1px solid var(--border-color);
+    border-left-width: 4px;
+    gap: 1rem;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    gap: 1.5rem;
+}
+.fixtureListItem.first-team {
+    border-left-color: var(--accent-color);
+}
+.fixtureListItem.development {
+    border-left-color: #38a169;
 }
 
-.matchCard:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+.fixtureListItem:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    border-color: var(--border-color-hover);
 }
 
-.metaLine {
+
+.timeInfo {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    padding-right: 1rem;
+    border-right: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.matchDetails {
+    flex-grow: 1;
+}
+
+.teams {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.teams span {
+    font-size: 0.8rem;
+    color: var(--accent-color);
+    font-weight: normal;
+}
+
+.meta {
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 0.5rem;
-}
-
-.competition {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--text-secondary, #a0aec0);
-    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
 }
 
 .teamBadge {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: bold;
     padding: 0.2rem 0.6rem;
     border-radius: 1rem;
     color: #fff;
+    line-height: 1;
 }
 .teamBadge.first-team {
     background-color: var(--accent-color);
 }
 .teamBadge.development {
-    background-color: #38a169; /* Green */
+    background-color: #38a169;
 }
 
-.teams {
-    font-size: 1.5rem;
-    color: var(--text-primary, #fff);
-    margin: 0 0 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.teams span {
-    font-size: 1rem;
-    color: var(--accent-color);
-}
-
-.venue {
-    font-size: 1rem;
-    color: var(--text-secondary, #a0aec0);
-    margin: 0;
-}
-
-.matchTime {
-    text-align: right;
-}
-
-.date {
-    font-size: 1rem;
-    color: var(--text-primary, #fff);
-    margin: 0 0 0.5rem;
-}
-
-.time {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--accent-color);
-    margin: 0;
-}
 
 .actions {
-    border-left: 1px solid var(--border-color);
-    padding-left: 1.5rem;
+    margin-left: auto;
 }
 
 .editButton {
@@ -143,19 +163,82 @@
     font-weight: 600;
     transition: all 0.2s ease;
 }
+
 .editButton:hover {
     background-color: var(--accent-color);
     border-color: var(--accent-color);
     color: #fff;
 }
+
 .editButton svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
 }
+
 
 .notice {
     text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
+    padding: 3rem 1rem;
+    background-color: var(--surface-dark);
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
     color: var(--text-secondary);
+}
+
+.notice p {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem;
+}
+
+/* --- Mobile Styles --- */
+@media (max-width: 768px) {
+    .fixtureListItem {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem;
+    }
+
+    .timeInfo {
+        padding-right: 0;
+        border-right: none;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        color: var(--accent-color);
+    }
+    
+    .teams {
+        font-size: 1.1rem;
+    }
+
+    .meta {
+        gap: 0.75rem;
+    }
+
+    .actions {
+        margin-left: 0;
+        margin-top: 1rem;
+        border-top: 1px solid var(--border-color);
+        padding-top: 1rem;
+    }
+
+    .editButton {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .addMatchButton span, .editButton span {
+        display: none; /* Hide text on small buttons */
+    }
+    
+    .addMatchButton {
+        padding: 0.7rem; /* Make it square */
+        border-radius: 50%;
+    }
+}
+
+@media (min-width: 769px) {
+    .addMatchButton span {
+        display: inline;
+    }
 }
