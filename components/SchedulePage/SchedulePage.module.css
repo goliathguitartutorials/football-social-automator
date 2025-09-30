@@ -17,7 +17,7 @@
     flex-shrink: 0;
 }
 
-/* NEW: Wrapper for top row of navigation */
+/* MODIFIED: This is now simpler as it only holds the main nav */
 .topHeader {
     display: flex;
     justify-content: space-between;
@@ -27,11 +27,10 @@
 
 .subNav {
     display: flex;
-    justify-content: flex-start; /* MODIFIED: Aligned to match Create page */
+    justify-content: flex-start;
     gap: 0.5rem;
 }
 
-/* Default mobile styles for the navigation button */
 .navButton {
     background: none;
     border: none;
@@ -74,16 +73,14 @@
     text-align: center;
 }
 
-
-/* NEW: Styles for the 'All / Posts / Matches' filter */
+/* MODIFIED: FilterNav is now a standalone element, removed margin */
 .filterNav {
     display: flex;
     align-items: center;
-    background-color: var(--background-dark);
+    background-color: var(--surface-dark);
     border-radius: 6px;
     border: 1px solid var(--border-color);
     overflow: hidden;
-    margin-right: 1rem;
 }
 .filterNav button {
     background: none;
@@ -99,8 +96,7 @@
     color: #fff;
 }
 
-
-/* Secondary Header (Date Nav etc.) */
+/* MODIFIED: Secondary Header now handles mobile layout differently */
 .secondaryHeader {
     display: flex;
     justify-content: space-between;
@@ -138,6 +134,13 @@
     cursor: pointer;
 }
 
+/* NEW: Wrapper for controls on the right of the date nav */
+.controlsWrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
 .viewTypeNav {
     display: flex;
     align-items: center;
@@ -167,7 +170,18 @@
     flex-direction: column;
 }
 
-/* DESKTOP STYLES */
+/* --- MOBILE STYLES --- */
+@media (max-width: 768px) {
+    /* NEW: On mobile, stack the date nav and controls */
+    .secondaryHeader {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 0;
+    }
+}
+
+
+/* --- DESKTOP STYLES --- */
 @media (min-width: 768px) {
     .subNav {
         justify-content: flex-start;
