@@ -4,7 +4,7 @@
  * PAGE: Schedule Page
  * FILE: /components/SchedulePage/SchedulePage.js
  * ==========================================================
-*/
+ */
 'use client';
 import { useState, useMemo } from 'react';
 import styles from './SchedulePage.module.css';
@@ -21,7 +21,6 @@ import AddChoicePopover from './AddChoicePopover/AddChoicePopover';
 export default function SchedulePage() {
     const { appData, refreshAppData, setNavigationRequest } = useAppContext();
 
-    // --- All original state is preserved ---
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedPost, setSelectedPost] = useState(null);
     const [newPostDate, setNewPostDate] = useState(null);
@@ -30,15 +29,13 @@ export default function SchedulePage() {
     const [dayViewDate, setDayViewDate] = useState(new Date());
     const [pageView, setPageView] = useState('calendar');
 
-    // --- NEW state for unified schedule ---
-    const [scheduleFilter, setScheduleFilter] = useState('all'); // 'all', 'posts', 'matches'
+    const [scheduleFilter, setScheduleFilter] = useState('all');
     const [showAddChoice, setShowAddChoice] = useState(false);
     const [addEventDate, setAddEventDate] = useState(null);
 
     const { width } = useWindowSize();
     const isMobile = width && width <= 768;
 
-    // --- All original handlers are preserved and new ones added ---
     const handleSelectPost = (post) => {
         setSelectedPost(post);
         setPageView('preview');
@@ -102,7 +99,6 @@ export default function SchedulePage() {
         return endOfWeek;
     };
     
-    // MODIFIED: This now combines posts and matches based on the filter
     const scheduledEvents = useMemo(() => {
         const posts = (appData?.scheduledPosts || []).map(p => ({ ...p, type: 'post' }));
         const matches = (appData?.matches || []).map(m => ({ ...m, type: 'match' }));
@@ -111,7 +107,6 @@ export default function SchedulePage() {
         return [...posts, ...matches];
     }, [appData, scheduleFilter]);
 
-    // MODIFIED: This now filters the combined `scheduledEvents`
     const currentEvents = useMemo(() => {
         return scheduledEvents.filter(event => {
             const eventDate = new Date(event.type === 'post' ? event.scheduled_time_utc : `${event.matchDate}T${event.matchTime || '00:00'}`);
@@ -148,14 +143,16 @@ export default function SchedulePage() {
 
     const renderActiveView = () => {
         if (viewMode === 'list') {
-            return <MobileScheduleView events={scheduledEvents} onPostClick={handleSelectPost} onMatchClick={handleSelectMatch} onNewEventClick={handleNewEventClick} showDateHeaders={true} />;
+            // MODIFIED: Passed currentDate prop for adding new events.
+            return <MobileScheduleView events={scheduledEvents} onPostClick={handleSelectPost} onMatchClick={handleSelectMatch} onNewEventClick={handleNewEventClick} showDateHeaders={true} currentDate={new Date()} />;
         }
         if (viewMode === 'day') {
             const dayEvents = scheduledEvents.filter(event => {
                 const eventDate = new Date(event.type === 'post' ? event.scheduled_time_utc : `${event.matchDate}T${event.matchTime || '00:00'}`);
                 return eventDate.toDateString() === dayViewDate.toDateString();
             });
-            return <MobileScheduleView events={dayEvents} onPostClick={handleSelectPost} onMatchClick={handleSelectMatch} onNewEventClick={handleNewEventClick} showDateHeaders={false} />;
+            // MODIFIED: Passed dayViewDate prop for adding new events.
+            return <MobileScheduleView events={dayEvents} onPostClick={handleSelectPost} onMatchClick={handleSelectMatch} onNewEventClick={handleNewEventClick} showDateHeaders={false} currentDate={dayViewDate} />;
         }
         if (viewMode === 'calendar') {
             if (viewType === 'month') {
@@ -170,7 +167,7 @@ export default function SchedulePage() {
 
     const getHeaderText = () => {
         if (viewMode === 'day') return dayViewDate.toLocaleString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        if (viewMode === 'list') return "All Scheduled Events"; // MODIFIED Text
+        if (viewMode === 'list') return "All Scheduled Events";
         if (viewType === 'month') return currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
         if (viewType === 'week') return `${getStartOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric' })} - ${getEndOfWeek(currentDate).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`;
         return '';
@@ -189,7 +186,6 @@ export default function SchedulePage() {
         { id: 'day', label: 'Day', icon: <DayIcon />, onClick: () => handleDayClick(new Date()) },
     ];
 
-    // --- Main Render Logic ---
     if (pageView === 'create') return <CreatePostView scheduleDate={newPostDate} onPostScheduled={handlePostScheduled} onCancel={exitCreateMode} />;
     if (pageView === 'preview' && selectedPost) return <PostPreviewAndEditView post={selectedPost} onClose={handleExitPreview} onPostUpdated={handlePostUpdated} />;
 
@@ -199,6 +195,7 @@ export default function SchedulePage() {
             {pageView === 'calendar' && (
                 <>
                     <header className={styles.header}>
+                        {/* MODIFIED: topHeader now only contains the main navigation */}
                         <div className={styles.topHeader}>
                             <nav className={styles.subNav}>
                                 {navButtons.map((button) => (
@@ -208,24 +205,30 @@ export default function SchedulePage() {
                                     </button>
                                 ))}
                             </nav>
-                            <div className={styles.filterNav}>
-                                <button onClick={() => setScheduleFilter('posts')} className={scheduleFilter === 'posts' ? styles.activeFilter : ''}>Posts</button>
-                                <button onClick={() => setScheduleFilter('all')} className={scheduleFilter === 'all' ? styles.activeFilter : ''}>All</button>
-                                <button onClick={() => setScheduleFilter('matches')} className={scheduleFilter === 'matches' ? styles.activeFilter : ''}>Matches</button>
-                            </div>
                         </div>
+                        
+                        {/* MODIFIED: secondaryHeader now contains the date nav and all controls */}
                         <div className={styles.secondaryHeader}>
                             <div className={styles.dateNav}>
                                 <button onClick={handlePrev}>&lt;</button>
                                 <h2>{getHeaderText()}</h2>
                                 <button onClick={handleNext}>&gt;</button>
                             </div>
-                            {!isMobile && viewMode === 'calendar' && (
-                                <div className={styles.viewTypeNav}>
-                                    <button onClick={() => setViewType('month')} className={viewType === 'month' ? styles.activeViewType : ''}>Month</button>
-                                    <button onClick={() => setViewType('week')} className={viewType === 'week' ? styles.activeViewType : ''}>Week</button>
+                            
+                            {/* NEW: Wrapper for filter and view controls */}
+                            <div className={styles.controlsWrapper}>
+                                <div className={styles.filterNav}>
+                                    <button onClick={() => setScheduleFilter('posts')} className={scheduleFilter === 'posts' ? styles.activeFilter : ''}>Posts</button>
+                                    <button onClick={() => setScheduleFilter('all')} className={scheduleFilter === 'all' ? styles.activeFilter : ''}>All</button>
+                                    <button onClick={() => setScheduleFilter('matches')} className={scheduleFilter === 'matches' ? styles.activeFilter : ''}>Matches</button>
                                 </div>
-                            )}
+                                {!isMobile && viewMode === 'calendar' && (
+                                    <div className={styles.viewTypeNav}>
+                                        <button onClick={() => setViewType('month')} className={viewType === 'month' ? styles.activeViewType : ''}>Month</button>
+                                        <button onClick={() => setViewType('week')} className={viewType === 'week' ? styles.activeViewType : ''}>Week</button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </header>
                     <div className={styles.calendarContainer}>
