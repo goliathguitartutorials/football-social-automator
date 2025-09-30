@@ -20,8 +20,9 @@ const FixtureListItem = ({ match, onEditClick }) => {
 
     const teamType = match.team === 'first-team' ? 'First Team' : 'Development';
 
+    // MODIFIED: The entire item is now a button that triggers the edit action.
     return (
-        <div className={`${styles.fixtureListItem} ${styles[match.team]}`}>
+        <button onClick={() => onEditClick(match)} className={`${styles.fixtureListItem} ${styles[match.team]}`}>
             <div className={styles.timeInfo}>
                 <p>{formattedTime}</p>
             </div>
@@ -37,12 +38,8 @@ const FixtureListItem = ({ match, onEditClick }) => {
                     <span className={`${styles.teamBadge} ${styles[match.team]}`}>{teamType}</span>
                 </div>
             </div>
-            <div className={styles.actions}>
-                <button onClick={() => onEditClick(match)} className={styles.editButton}>
-                    <EditIcon /> <span>Edit</span>
-                </button>
-            </div>
-        </div>
+            {/* REMOVED: The actions div with the edit button has been removed. */}
+        </button>
     );
 };
 
