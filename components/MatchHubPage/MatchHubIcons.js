@@ -31,7 +31,7 @@ export const FootballIcon = () => (
         <rect x="3" y="3" width="18" height="18" rx="2"></rect>
         <line x1="12" y1="3" x2="12" y2="21"></line>
         <circle cx="12" cy="12" r="3"></circle>
-        <path d="M8 7h-5v10h5v-10z"></path>
-        <path d="M16 7h5v10h-5v-10z"></path>
+        <path d="M7 7h-4v10h4v-10z"></path>
+        <path d="M17 7h4v10h-4v-10z"></path>
     </svg>
 );
