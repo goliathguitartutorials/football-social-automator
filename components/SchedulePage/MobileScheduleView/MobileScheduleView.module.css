@@ -55,10 +55,28 @@
     height: 20px;
 }
 
-/* ADDED: Style for the "no events" message */
+/* MODIFIED: Renamed and repurposed for a more generic message */
 .noEventsMessage {
-    text-align: center;
-    padding: 3rem;
     font-size: 1.2rem;
     color: var(--text-secondary);
+    margin: 0;
+}
+
+/* NEW: Styles for the container when there are no events */
+.noEventsContainer {
+    text-align: center;
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    background-color: var(--surface-dark);
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+}
+
+.noEventsContainer .newPostButton {
+    margin-top: 0;
+    width: 100%;
+    max-width: 250px;
 }
