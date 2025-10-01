@@ -1,8 +1,8 @@
 /*
  * ==========================================================
  * COMPONENT: EventForm
- * PAGE: Match Hub
- * FILE: /components/MatchHubPage/LiveTab/EventForm/EventForm.js
+ * PAGE: Live
+ * FILE: /components/LivePage/EventForm/EventForm.js
  * ==========================================================
  */
 'use client';
