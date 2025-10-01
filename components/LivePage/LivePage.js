@@ -1,6 +1,6 @@
 /*
  * ==========================================================
- * COMPONENT: LivePage (Debugging Step 2: Fetch Events)
+ * COMPONENT: LivePage (Debugging Step 3: Add Events Panel)
  * PAGE: Live
  * FILE: /components/LivePage/LivePage.js
  * ==========================================================
@@ -11,16 +11,20 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './LivePage.module.css';
 import CountdownTimer from './CountdownTimer';
+// STEP 3: Re-introduce necessary imports
+import { OverviewIcon, SquadIcon } from '@/components/LivePage/LivePageIcons';
+import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
+import SquadPanel from './SquadPanel/SquadPanel';
+
 
 export default function LivePage() {
     const { appData, authKey } = useAppContext();
     const [liveMatch, setLiveMatch] = useState(null);
     const [nextMatch, setNextMatch] = useState(null);
-    
-    // STEP 2: Re-introduce the 'events' state
     const [events, setEvents] = useState([]);
+    // STEP 3: Re-introduce activeTab state
+    const [activeTab, setActiveTab] = useState('overview');
 
-    // STEP 2: Re-introduce a simple function to set events state
     const reconstructStateFromEvents = useCallback((eventList) => {
         const safeEvents = Array.isArray(eventList) ? eventList : [];
         const sortedEvents = safeEvents.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
@@ -46,18 +50,20 @@ export default function LivePage() {
             });
 
             if (foundLiveMatch) {
-                // Prevent re-fetching if the match is already loaded
                 if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
 
                 const homeTeamName = foundLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
                 const awayTeamName = foundLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
-                const processedMatch = { ...foundLiveMatch, homeTeamName, awayTeamName };
+                const processedMatch = { 
+                    ...foundLiveMatch, 
+                    homeTeamName, 
+                    awayTeamName,
+                    squadList: foundLiveMatch.squad ? foundLiveMatch.squad.split(',').map(name => name.trim()) : []
+                };
 
                 setLiveMatch(processedMatch);
 
-                // STEP 2: Re-introduce the API call to fetch events
                 try {
-                    console.log(`DIAGNOSTIC: Fetching events for matchId: ${foundLiveMatch.matchId}`);
                     const response = await fetch('/api/manage-match', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
@@ -69,16 +75,15 @@ export default function LivePage() {
                     const result = await response.json();
                     const existingEvents = Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
                     
-                    console.log("DIAGNOSTIC: Fetched events from API ->", existingEvents);
                     reconstructStateFromEvents(existingEvents);
                     
                 } catch (error) {
                     console.error("DIAGNOSTIC: Error fetching events:", error);
-                    reconstructStateFromEvents([]); // Set to empty array on error
+                    reconstructStateFromEvents([]);
                 }
 
             } else {
-                if(liveMatch) setLiveMatch(null); // Clear live match if window has passed
+                if(liveMatch) setLiveMatch(null);
                 
                 const upcomingMatches = appData.matches
                     .filter(match => {
@@ -108,6 +113,18 @@ export default function LivePage() {
                         <span className={styles.elapsedTime}>Match in Progress</span>
                     </div>
                     <span className={styles.teamName}>{liveMatch.awayTeamName}</span>
+                </div>
+
+                {/* STEP 3: Re-introduce the details container and tabs */}
+                <div className={styles.detailsContainer}>
+                    <div className={styles.tabBar}>
+                        <button className={`${styles.tabButton} ${activeTab === 'overview' ? styles.active : ''}`} onClick={() => setActiveTab('overview')}><OverviewIcon /><span>Overview</span></button>
+                        <button className={`${styles.tabButton} ${activeTab === 'squad' ? styles.active : ''}`} onClick={() => setActiveTab('squad')}><SquadIcon /><span>Squad</span></button>
+                    </div>
+                    <div className={styles.panelContainer}>
+                        {activeTab === 'overview' && <MatchEventsPanel events={events} match={liveMatch} />}
+                        {activeTab === 'squad' && <SquadPanel squadList={liveMatch.squadList} />}
+                    </div>
                 </div>
             </div>
         );
