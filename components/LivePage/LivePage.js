@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './LivePage.module.css';
 import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from '@/components/LivePage/LivePageIcons';
-import { useMatchTimer } from './hooks/useMatchTimer'; // REFACTORED: Import the new hook
+import { useMatchTimer } from './hooks/useMatchTimer';
 import CountdownTimer from './CountdownTimer';
 import EventForm from './EventForm/EventForm';
 import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
@@ -30,15 +30,11 @@ export default function LivePage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [apiError, setApiError] = useState('');
     
-    // REFACTORED: All timer logic is now handled by the custom hook.
     const { minute: currentMinute, display: elapsedTimeDisplay } = useMatchTimer(liveMatch, events);
 
     const reconstructStateFromEvents = useCallback((eventList) => {
-        if (!Array.isArray(eventList)) {
-            setEvents([]);
-            return;
-        }
-        const sortedEvents = eventList.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const safeEvents = Array.isArray(eventList) ? eventList : [];
+        const sortedEvents = safeEvents.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setEvents(sortedEvents);
 
         const newHomeScore = sortedEvents.filter(e => e.eventType === 'Goal' && e.team === 'home').length;
@@ -148,7 +144,8 @@ export default function LivePage() {
                     }
                     
                     const result = await response.json();
-                    const existingEvents = result.data || result || [];
+                    // FIX: Ensure the result from the API is always treated as an array.
+                    const existingEvents = Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
                     
                     setLiveMatch(processedMatch);
                     reconstructStateFromEvents(existingEvents);
@@ -235,7 +232,7 @@ export default function LivePage() {
             if (!refetchResponse.ok) throw new Error((await refetchResponse.json()).error || 'Failed to refetch events.');
             
             const result = await refetchResponse.json();
-            const freshEvents = result.data || result || [];
+            const freshEvents = Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
 
             reconstructStateFromEvents(freshEvents);
             
