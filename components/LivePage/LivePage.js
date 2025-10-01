@@ -19,21 +19,36 @@ export default function LivePage() {
 
     useEffect(() => {
         const findMatches = () => {
-            // Ensure we have match data to work with from the context
+            console.clear(); // Clear console for fresh logs on each run
+            console.log("--- Running findMatches ---");
+
             if (!appData.matches || appData.matches.length === 0) {
+                console.log("DIAGNOSTIC: No matches found in appData.");
                 setLiveMatch(null);
                 setNextMatch(null);
                 return;
             }
 
-            const now = new Date();
-            const liveMatchWindowMs = 120 * 60 * 1000; // 120 minutes
+            // --- DIAGNOSTIC LOGGING ---
+            console.log("DIAGNOSTIC: Full matches array from context:", JSON.parse(JSON.stringify(appData.matches)));
 
-            // 1. Find if a match is currently within its live window
+            const now = new Date();
+            const liveMatchWindowMs = 120 * 60 * 1000;
+            console.log(`DIAGNOSTIC: Current time (now): ${now.toISOString()}`);
+
+            // 1. Find if a match is currently in its live window
             const currentLiveMatch = appData.matches.find(match => {
                 if (match.status === 'archived') return false;
+
                 const matchScheduledTime = new Date(`${match.matchDate}T${match.matchTime}`);
                 const matchEndTime = new Date(matchScheduledTime.getTime() + liveMatchWindowMs);
+                
+                // --- DIAGNOSTIC LOGGING ---
+                console.log(`Checking match: ${match.opponent} on ${match.matchDate}`);
+                console.log(` -> Match Start Time: ${matchScheduledTime.toISOString()}`);
+                console.log(` -> Match End Time:   ${matchEndTime.toISOString()}`);
+                console.log(` -> Is Live? ${now >= matchScheduledTime && now <= matchEndTime}`);
+
                 return now >= matchScheduledTime && now <= matchEndTime;
             });
 
@@ -41,10 +56,13 @@ export default function LivePage() {
                 const homeTeamName = currentLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : currentLiveMatch.opponent;
                 const awayTeamName = currentLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : currentLiveMatch.opponent;
                 
+                // --- DIAGNOSTIC LOGGING ---
+                console.log("RESULT: Found live match ->", currentLiveMatch);
+
                 setLiveMatch({ ...currentLiveMatch, homeTeamName, awayTeamName });
                 setNextMatch(null);
             } else {
-                // 2. If no live match, find the very next upcoming match
+                // 2. If no live match, find the next upcoming match
                 const upcomingMatches = appData.matches
                     .filter(match => {
                         if (match.status === 'archived') return false;
@@ -52,17 +70,18 @@ export default function LivePage() {
                         return matchScheduledTime > now;
                     })
                     .sort((a, b) => new Date(`${a.matchDate}T${a.matchTime}`) - new Date(`${b.matchDate}T${b.matchTime}`));
+                
+                // --- DIAGNOSTIC LOGGING ---
+                console.log("RESULT: No live match found. Found next upcoming match ->", upcomingMatches[0] || "None");
 
                 setLiveMatch(null);
                 setNextMatch(upcomingMatches[0] || null);
             }
         };
 
-        // Run the check once immediately, then set an interval to re-check every 30 seconds
         findMatches();
         const intervalId = setInterval(findMatches, 30000);
 
-        // Clean up the interval when the component is unmounted
         return () => clearInterval(intervalId);
 
     }, [appData.matches]);
