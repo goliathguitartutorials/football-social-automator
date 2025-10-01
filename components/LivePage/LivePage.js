@@ -10,7 +10,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './LivePage.module.css';
-import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from './LivePageIcons';
+// FIXED: Changed to absolute path for robust module resolution.
+import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from '@/components/LivePage/LivePageIcons';
 import CountdownTimer from './CountdownTimer';
 import EventForm from './EventForm/EventForm';
 import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
@@ -66,7 +67,6 @@ export default function LivePage() {
                 if (match && Array.isArray(savedEvents)) {
                     setLiveMatch(match);
                     reconstructStateFromEvents(savedEvents);
-                    // NEW: Set assumed start time if no event exists
                     if (!savedEvents.some(e => e.eventType === 'MATCH_START')) {
                         setMatchStartTime(new Date(`${match.matchDate}T${match.matchTime}`));
                     }
@@ -169,7 +169,6 @@ export default function LivePage() {
                     setLiveMatch(processedMatch);
                     reconstructStateFromEvents(existingEvents);
                     
-                    // NEW: Set the match start time to the scheduled time if no official start event has been logged.
                     const hasStartEvent = existingEvents.some(e => e.eventType === 'MATCH_START');
                     if (!hasStartEvent) {
                         setMatchStartTime(new Date(`${processedMatch.matchDate}T${processedMatch.matchTime}`));
