@@ -10,13 +10,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './LivePage.module.css';
-import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from './LiveTabIcons';
+import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from './LivePageIcons'; // MODIFIED: Corrected import path
 import CountdownTimer from './CountdownTimer';
 import EventForm from './EventForm/EventForm';
 import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
 import SquadPanel from './SquadPanel/SquadPanel';
 
 export default function LivePage() {
+    // ... rest of the file is unchanged
     const { appData, authKey, refreshAppData } = useAppContext();
     const [liveMatch, setLiveMatch] = useState(null);
     const [nextMatch, setNextMatch] = useState(null);
