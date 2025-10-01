@@ -10,8 +10,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './LivePage.module.css';
-import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from '@/components/LivePage/LivePageIcons';
+import { OverviewIcon, SquadIcon } from '@/components/LivePage/LivePageIcons';
 import { useMatchTimer } from './hooks/useMatchTimer';
+import MatchHeader from './MatchHeader/MatchHeader'; // REFACTORED: Import new component
+import MatchControls from './MatchControls/MatchControls'; // REFACTORED: Import new component
 import CountdownTimer from './CountdownTimer';
 import EventForm from './EventForm/EventForm';
 import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
@@ -144,7 +146,6 @@ export default function LivePage() {
                     }
                     
                     const result = await response.json();
-                    // FIX: Ensure the result from the API is always treated as an array.
                     const existingEvents = Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
                     
                     setLiveMatch(processedMatch);
@@ -261,29 +262,25 @@ export default function LivePage() {
     const renderContent = () => {
         if (!liveMatch) return null;
 
-        const isHalfTime = events.some(e => e.eventType === 'HALF_TIME') && !events.some(e => e.eventType === 'SECOND_HALF_START');
-        const hasSecondHalfStarted = events.some(e => e.eventType === 'SECOND_HALF_START');
-        const hasEnded = events.some(e => e.eventType === 'MATCH_END');
+        const matchState = {
+            isHalfTime: events.some(e => e.eventType === 'HALF_TIME') && !events.some(e => e.eventType === 'SECOND_HALF_START'),
+            hasSecondHalfStarted: events.some(e => e.eventType === 'SECOND_HALF_START'),
+            hasEnded: events.some(e => e.eventType === 'MATCH_END')
+        };
 
-        if (hasEnded) {
+        if (matchState.hasEnded) {
             return (
                 <>
-                    <div className={styles.matchHeader}>
-                        <span className={styles.teamName}>{liveMatch.homeTeamName}</span>
-                        <div className={styles.scoreContainer}>
-                            <span className={styles.score}>{score.home} - {score.away}</span>
-                            <span className={styles.elapsedTime}>Match Finished</span>
-                        </div>
-                        <span className={styles.teamName}>{liveMatch.awayTeamName}</span>
-                    </div>
+                    <MatchHeader
+                        homeTeam={liveMatch.homeTeamName}
+                        awayTeam={liveMatch.awayTeamName}
+                        score={score}
+                        time={"Match Finished"}
+                    />
                     <div className={styles.preGameContainer}>
                         <p>You can now archive this match. This will remove it from the Fixtures and Live tabs.</p>
                         <div className={styles.preGameButtons}>
-                            <button 
-                                className={styles.controlButton} 
-                                onClick={manuallyArchiveMatch}
-                                disabled={isSubmitting}
-                            >
+                            <button className={styles.controlButton} onClick={manuallyArchiveMatch} disabled={isSubmitting}>
                                 {isSubmitting ? 'Archiving...' : 'Archive Match'}
                             </button>
                         </div>
@@ -294,35 +291,24 @@ export default function LivePage() {
                         </div>
                     </div>
                 </>
-            )
+            );
         }
 
         return (
             <>
-                <div className={styles.matchHeader}>
-                    <span className={styles.teamName}>{liveMatch.homeTeamName}</span>
-                    <div className={styles.scoreContainer}>
-                        <span className={styles.score}>{score.home} - {score.away}</span>
-                        <span className={styles.elapsedTime}>{elapsedTimeDisplay}</span>
-                    </div>
-                    <span className={styles.teamName}>{liveMatch.awayTeamName}</span>
-                </div>
-
-                <div className={styles.controlsSection}>
-                    {!hasEnded && (
-                        <div className={styles.matchControls}>
-                            {!isHalfTime && <button className={styles.controlButton} onClick={() => handleControlClick('HALF_TIME')} disabled={isSubmitting}>{isSubmitting ? 'Logging...' : <><PauseIcon/>Half-Time</>}</button>}
-                            {isHalfTime && !hasSecondHalfStarted && <button className={styles.controlButton} onClick={() => handleControlClick('SECOND_HALF_START')} disabled={isSubmitting}>{isSubmitting ? 'Starting...' : <><PlayIcon/>Start 2nd Half</>}</button>}
-                            {!hasEnded && <button className={styles.controlButton} onClick={() => handleControlClick('MATCH_END')} disabled={isSubmitting}>{isSubmitting ? 'Finishing...' : <><StopIcon/>Finish Match</>}</button>}
-                        </div>
-                    )}
-                     <div className={styles.eventGrid}>
-                          <button className={styles.eventButton} onClick={() => handleEventClick('Goal')} disabled={hasEnded}><GoalIcon /><span>Goal</span></button>
-                          <button className={styles.eventButton} onClick={() => handleEventClick('Yellow Card')} disabled={hasEnded}><YellowCardIcon /><span>Yellow Card</span></button>
-                          <button className={styles.eventButton} onClick={() => handleEventClick('Red Card')} disabled={hasEnded}><RedCardIcon /><span>Red Card</span></button>
-                          <button className={styles.eventButton} onClick={() => handleEventClick('Substitution')} disabled={hasEnded}><SubIcon /><span>Substitution</span></button>
-                     </div>
-                </div>
+                <MatchHeader
+                    homeTeam={liveMatch.homeTeamName}
+                    awayTeam={liveMatch.awayTeamName}
+                    score={score}
+                    time={elapsedTimeDisplay}
+                />
+                
+                <MatchControls
+                    isSubmitting={isSubmitting}
+                    matchState={matchState}
+                    onControlClick={handleControlClick}
+                    onEventClick={handleEventClick}
+                />
 
                 <div className={styles.detailsContainer}>
                     <div className={styles.tabBar}>
