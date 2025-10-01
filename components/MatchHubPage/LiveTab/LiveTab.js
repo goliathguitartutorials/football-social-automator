@@ -103,7 +103,7 @@ export default function LiveTab() {
     useEffect(() => {
         const findAndLoadMatch = async () => {
             const now = new Date();
-            const liveMatchWindowMs = 105 * 60 * 1000;
+            const liveMatchWindowMs = 120 * 60 * 1000; // 120 minute window for a match to be "live"
             if (!appData.matches || appData.matches.length === 0) {
                 setLiveMatch(null);
                 setNextMatch(null);
@@ -123,9 +123,11 @@ export default function LiveTab() {
                 }
             });
 
+            // FIXED: Reinstated the original, correct logic with a time window
             const foundLiveMatch = appData.matches.find(match => {
                 const matchScheduledTime = new Date(`${match.matchDate}T${match.matchTime}`);
-                return now >= matchScheduledTime && match.status !== 'archived';
+                const matchEndTime = new Date(matchScheduledTime.getTime() + liveMatchWindowMs);
+                return now >= matchScheduledTime && now <= matchEndTime && match.status !== 'archived';
             });
 
             if (foundLiveMatch) {
