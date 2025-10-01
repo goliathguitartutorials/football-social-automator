@@ -10,7 +10,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './LivePage.module.css';
-// FIXED: Changed to absolute path for robust module resolution.
 import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from '@/components/LivePage/LivePageIcons';
 import CountdownTimer from './CountdownTimer';
 import EventForm from './EventForm/EventForm';
@@ -18,6 +17,9 @@ import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
 import SquadPanel from './SquadPanel/SquadPanel';
 
 export default function LivePage() {
+    // --- DIAGNOSTIC LOGGING: Log component mount ---
+    console.log('[DIAGNOSTIC] LivePage component mounted.');
+
     const { appData, authKey, refreshAppData } = useAppContext();
     const [liveMatch, setLiveMatch] = useState(null);
     const [nextMatch, setNextMatch] = useState(null);
@@ -114,6 +116,10 @@ export default function LivePage() {
         const findAndLoadMatch = async () => {
             const now = new Date();
             const liveMatchWindowMs = 120 * 60 * 1000;
+            
+            // --- DIAGNOSTIC LOGGING: Check the source data for matches ---
+            console.log('[DIAGNOSTIC] Running findAndLoadMatch. appData.matches:', appData.matches);
+
             if (!appData.matches || appData.matches.length === 0) {
                 setLiveMatch(null);
                 setNextMatch(null);
@@ -141,6 +147,9 @@ export default function LivePage() {
                 return now >= matchScheduledTime && now <= matchEndTime && match.status !== 'archived';
             });
 
+            // --- DIAGNOSTIC LOGGING: Check if a live match was found ---
+            console.log('[DIAGNOSTIC] foundLiveMatch object:', foundLiveMatch);
+
             if (foundLiveMatch) {
                 if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
 
@@ -150,6 +159,9 @@ export default function LivePage() {
                     ...foundLiveMatch, homeTeamName, awayTeamName,
                     squadList: foundLiveMatch.squad ? foundLiveMatch.squad.split(',').map(name => name.trim()) : []
                 };
+
+                // --- DIAGNOSTIC LOGGING: Check the processed match object before setting state ---
+                console.log('[DIAGNOSTIC] Processed match to be set as liveMatch:', processedMatch);
 
                 try {
                     const response = await fetch('/api/manage-match', {
@@ -177,6 +189,8 @@ export default function LivePage() {
                     sessionStorage.setItem('liveMatchState', JSON.stringify({ match: processedMatch, events: existingEvents }));
                     
                 } catch (error) {
+                    // --- DIAGNOSTIC LOGGING: Log any errors during the fetch process ---
+                    console.error('[DIAGNOSTIC] Error in findAndLoadMatch:', error);
                     setApiError(error.message);
                 }
 
@@ -323,6 +337,9 @@ export default function LivePage() {
         });
     };
     
+    // --- DIAGNOSTIC LOGGING: Check the state right before rendering ---
+    console.log('[DIAGNOSTIC] State before render:', { liveMatch, nextMatch, view, apiError });
+
     const renderContent = () => {
         if (!liveMatch) return null;
 
