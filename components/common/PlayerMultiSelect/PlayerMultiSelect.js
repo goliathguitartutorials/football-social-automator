@@ -1,9 +1,9 @@
 /*
  * ==========================================================
  * COMPONENT: PlayerMultiSelect
- * PAGE: Match Hub
- * FILE: /components/MatchHubPage/AddMatchForm/PlayerMultiSelect.js
- ==========================================================
+ * PAGE: (Shared)
+ * FILE: /components/common/PlayerMultiSelect/PlayerMultiSelect.js
+ * ==========================================================
  */
 'use client';
 import { useState, useRef, useEffect } from 'react';

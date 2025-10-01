@@ -1,12 +1,12 @@
 /*
  * ==========================================================
  * COMPONENT: MatchEventsPanel
- * PAGE: Match Hub
- * FILE: /components/MatchHubPage/LiveTab/MatchEventsPanel/MatchEventsPanel.js
+ * PAGE: Live
+ * FILE: /components/LivePage/MatchEventsPanel/MatchEventsPanel.js
  * ==========================================================
  */
 import styles from './MatchEventsPanel.module.css';
-import { GoalIcon, YellowCardIcon, RedCardIcon, SubIcon } from '../LiveTabIcons';
+import { GoalIcon, YellowCardIcon, RedCardIcon, SubIcon } from '../LivePageIcons'; // MODIFIED: Corrected import path
 
 const EventIcon = ({ type }) => {
     if (type === 'Goal') return <GoalIcon />;
@@ -17,12 +17,12 @@ const EventIcon = ({ type }) => {
 };
 
 export default function MatchEventsPanel({ events, match }) {
+    // ... rest of the file is unchanged
     if (!events || events.length === 0) {
         return <p className={styles.noEvents}>No events logged yet.</p>;
     }
 
     const renderEventDetails = (event) => {
-        // FIXED: All references now correctly use `playerFullName` and `assistByFullName`
         switch (event.eventType) {
             case 'Goal':
                 return `${event.playerFullName}${event.assistByFullName ? ` (assist by ${event.assistByFullName})` : ''}`;
@@ -32,12 +32,11 @@ export default function MatchEventsPanel({ events, match }) {
             case 'Substitution':
                 return `${event.assistByFullName} for ${event.playerFullName}`;
             default:
-                // For control events like MATCH_START, HALF_TIME etc., don't render details.
                 return event.eventType.replace(/_/g, ' ');
         }
     };
 
-    const homeEvents = events.filter(e => e.team === 'home' || !e.team); // Include team-less events in home column for now
+    const homeEvents = events.filter(e => e.team === 'home' || !e.team);
     const awayEvents = events.filter(e => e.team === 'away');
 
     return (

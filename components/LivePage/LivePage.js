@@ -1,22 +1,23 @@
 /*
  * ==========================================================
- * COMPONENT: LiveTab
- * PAGE: Match Hub
- * FILE: /components/MatchHubPage/LiveTab/LiveTab.js
+ * COMPONENT: LivePage
+ * PAGE: Live
+ * FILE: /components/LivePage/LivePage.js
  * ==========================================================
  */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import styles from './LiveTab.module.css';
-import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from './LiveTabIcons';
+import styles from './LivePage.module.css';
+import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from './LivePageIcons'; // MODIFIED: Corrected import path
 import CountdownTimer from './CountdownTimer';
 import EventForm from './EventForm/EventForm';
 import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
 import SquadPanel from './SquadPanel/SquadPanel';
 
-export default function LiveTab() {
+export default function LivePage() {
+    // ... rest of the file is unchanged
     const { appData, authKey, refreshAppData } = useAppContext();
     const [liveMatch, setLiveMatch] = useState(null);
     const [nextMatch, setNextMatch] = useState(null);
@@ -32,8 +33,6 @@ export default function LiveTab() {
     
     const [matchStartTime, setMatchStartTime] = useState(null);
     const [secondHalfStartTime, setSecondHalfStartTime] = useState(null);
-
-    console.log("--- [DEBUG] Component Re-rendered. Current liveMatch state:", liveMatch);
 
     const reconstructStateFromEvents = useCallback((eventList) => {
         if (!Array.isArray(eventList)) {
@@ -104,7 +103,6 @@ export default function LiveTab() {
 
     useEffect(() => {
         const findAndLoadMatch = async () => {
-            console.log("--- [DEBUG] Running findAndLoadMatch ---");
             const now = new Date();
             const liveMatchWindowMs = 120 * 60 * 1000;
             if (!appData.matches || appData.matches.length === 0) {
@@ -134,14 +132,8 @@ export default function LiveTab() {
                 return now >= matchScheduledTime && now <= matchEndTime && match.status !== 'archived';
             });
 
-            console.log("[DEBUG] Value of foundLiveMatch:", foundLiveMatch);
-
             if (foundLiveMatch) {
-                console.log("[DEBUG] Found a live match. ID:", foundLiveMatch.matchId);
-                if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) {
-                    console.log("[DEBUG] Match is already set as live. Doing nothing.");
-                    return;
-                }
+                if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
 
                 const homeTeamName = foundLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
                 const awayTeamName = foundLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
@@ -151,43 +143,31 @@ export default function LiveTab() {
                 };
 
                 try {
-                    console.log("[DEBUG] Attempting to fetch events for match ID:", foundLiveMatch.matchId);
                     const response = await fetch('/api/manage-match', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
                         body: JSON.stringify({ action: 'get_match_events', matchData: { matchId: foundLiveMatch.matchId } })
                     });
                     
-                    console.log("[DEBUG] API Response Status:", response.status);
-
                     if (!response.ok) {
                         const err = await response.json();
-                        console.error("[DEBUG] API Error on get_match_events:", err);
                         throw new Error(err.error || 'Failed to fetch existing match events.');
                     }
                     
                     const result = await response.json();
-                    console.log("[DEBUG] Raw API Result from response.json():", result);
-
                     const existingEvents = result.data || result || [];
-                    console.log("[DEBUG] Parsed existingEvents:", existingEvents);
                     
-                    console.log("[DEBUG] PREPARING TO SET LIVE MATCH STATE NOW.");
                     setLiveMatch(processedMatch);
                     reconstructStateFromEvents(existingEvents);
-                    console.log("[DEBUG] SET LIVE MATCH STATE HAS BEEN CALLED.");
                     
                     sessionStorage.setItem('liveMatchState', JSON.stringify({ match: processedMatch, events: existingEvents }));
                     
                 } catch (error) {
-                    console.error("[DEBUG] Error caught in findAndLoadMatch try...catch block:", error);
                     setApiError(error.message);
                 }
 
             } else {
-                console.log("[DEBUG] No live match found.");
                 if(liveMatch) {
-                    console.log("[DEBUG] Clearing existing live match from state.");
                     setLiveMatch(null);
                     sessionStorage.removeItem('liveMatchState');
                 }
@@ -467,7 +447,7 @@ export default function LiveTab() {
     return (
         <div className={styles.placeholder}>
             <h3>No Match Currently In Progress</h3>
-            <p>When a match is live, this tab will activate to allow real-time event logging.</p>
+            <p>When a match is live, this page will activate to allow real-time event logging.</p>
         </div>
     );
 }

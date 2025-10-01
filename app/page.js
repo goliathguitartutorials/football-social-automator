@@ -3,11 +3,11 @@
  * COMPONENT: Home Page
  * PAGE: /
  * FILE: /app/page.js
- ==========================================================
+ * ==========================================================
  */
 'use client';
 
-import { useState, useEffect } from 'react'; // MODIFIED: Import useEffect
+import { useState, useEffect } from 'react';
 import { useAppContext } from './context/AppContext';
 import styles from './page.module.css';
 import DesktopNav from '@/components/Navigation/DesktopNav';
@@ -16,7 +16,7 @@ import CreatePage from '@/components/CreatePage/CreatePage';
 import SettingsPage from '@/components/SettingsPage/SettingsPage';
 import AssetsPage from '@/components/AssetsPage/AssetsPage';
 import SchedulePage from '@/components/SchedulePage/SchedulePage';
-import MatchHubPage from '@/components/MatchHubPage/MatchHubPage';
+import LivePage from '@/components/LivePage/LivePage'; // MODIFIED: Import LivePage instead of MatchHubPage
 
 const MainContent = ({ view, appData }) => {
     switch (view) {
@@ -24,8 +24,8 @@ const MainContent = ({ view, appData }) => {
             return <CreatePage />;
         case 'schedule':
             return <SchedulePage appData={appData} />;
-        case 'matchHub':
-            return <MatchHubPage />;
+        case 'live': // MODIFIED: Changed 'matchHub' to 'live'
+            return <LivePage />; // MODIFIED: Render LivePage
         case 'assets':
             return <AssetsPage appData={appData} />;
         case 'settings':
@@ -35,18 +35,13 @@ const MainContent = ({ view, appData }) => {
     }
 };
 
-export default function Home() { // MODIFIED: Renamed from HomePage for convention
+export default function Home() {
     const [activeView, setActiveView] = useState('create');
-    // MODIFIED: Get navigation state from context
     const { appData, navigationRequest, setNavigationRequest } = useAppContext();
 
-    // NEW: This hook listens for navigation requests from other pages (like the Schedule page)
     useEffect(() => {
         if (navigationRequest && navigationRequest.page) {
-            // If there's a navigation request, switch to the target page
             setActiveView(navigationRequest.page);
-            // The request is consumed by the target page (MatchHubPage), 
-            // so we don't clear it here.
         }
     }, [navigationRequest]);
 

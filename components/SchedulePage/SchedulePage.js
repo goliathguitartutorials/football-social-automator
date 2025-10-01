@@ -17,9 +17,10 @@ import MonthView from './MonthView/MonthView';
 import WeekView from './WeekView/WeekView';
 import { useAppContext } from '@/app/context/AppContext';
 import AddChoicePopover from './AddChoicePopover/AddChoicePopover';
+import ManageMatchView from './ManageMatchView/ManageMatchView'; // MODIFIED: Import the new view
 
 export default function SchedulePage() {
-    const { appData, refreshAppData, setNavigationRequest } = useAppContext();
+    const { appData, refreshAppData } = useAppContext();
 
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedPost, setSelectedPost] = useState(null);
@@ -33,6 +34,8 @@ export default function SchedulePage() {
     const [showAddChoice, setShowAddChoice] = useState(false);
     const [addEventDate, setAddEventDate] = useState(null);
 
+    const [matchToManage, setMatchToManage] = useState(null); // MODIFIED: State for add/edit match form
+
     const { width } = useWindowSize();
     const isMobile = width && width <= 768;
 
@@ -41,8 +44,10 @@ export default function SchedulePage() {
         setPageView('preview');
     };
 
+    // MODIFIED: This now opens the form view within this page
     const handleSelectMatch = (match) => {
-        setNavigationRequest({ page: 'matchHub', data: { editMatchId: match.matchId } });
+        setMatchToManage(match);
+        setPageView('manageMatch');
     };
 
     const handleExitPreview = () => {
@@ -55,6 +60,7 @@ export default function SchedulePage() {
         setShowAddChoice(true);
     };
 
+    // MODIFIED: Handles the choice from the popover
     const handleAddChoice = (choice) => {
         setShowAddChoice(false);
         if (choice === 'post') {
@@ -62,13 +68,21 @@ export default function SchedulePage() {
             setPageView('create');
         } else if (choice === 'match') {
             const dateString = addEventDate.toISOString().split('T')[0];
-            setNavigationRequest({ page: 'matchHub', data: { newMatchDate: dateString } });
+            setMatchToManage({ matchDate: dateString }); // Set initial data for a new match
+            setPageView('manageMatch');
         }
     };
 
     const exitCreateMode = () => {
         setPageView('calendar');
         setNewPostDate(null);
+    };
+
+    // MODIFIED: Generic handler for when match form is done
+    const exitMatchMode = () => {
+        setPageView('calendar');
+        setMatchToManage(null);
+        refreshAppData(); // Refresh data after adding/editing a match
     };
 
     const handlePostScheduled = () => {
@@ -86,10 +100,11 @@ export default function SchedulePage() {
         setViewMode('day');
     };
 
+    // ... (utility functions like getStartOfWeek, getEndOfWeek remain unchanged)
     const getStartOfWeek = (date) => {
-        const day = date.getDay();
-        const diff = date.getDate() - (day === 0 ? 6 : day - 1);
-        return new Date(date.getFullYear(), date.getMonth(), diff);
+      const day = date.getDay();
+      const diff = date.getDate() - (day === 0 ? 6 : day - 1);
+      return new Date(date.getFullYear(), date.getMonth(), diff);
     };
 
     const getEndOfWeek = (date) => {
@@ -121,6 +136,7 @@ export default function SchedulePage() {
         });
     }, [scheduledEvents, currentDate, viewType]);
 
+    // ... (handlePrev, handleNext, renderActiveView, getHeaderText, etc. remain unchanged)
     const handlePrev = () => {
         if (viewMode === 'day') {
             setDayViewDate(new Date(dayViewDate.getFullYear(), dayViewDate.getMonth(), dayViewDate.getDate() - 1));
@@ -143,7 +159,6 @@ export default function SchedulePage() {
 
     const renderActiveView = () => {
         if (viewMode === 'list') {
-            // MODIFIED: Passed currentDate prop for adding new events.
             return <MobileScheduleView events={scheduledEvents} onPostClick={handleSelectPost} onMatchClick={handleSelectMatch} onNewEventClick={handleNewEventClick} showDateHeaders={true} currentDate={new Date()} />;
         }
         if (viewMode === 'day') {
@@ -151,7 +166,6 @@ export default function SchedulePage() {
                 const eventDate = new Date(event.type === 'post' ? event.scheduled_time_utc : `${event.matchDate}T${event.matchTime || '00:00'}`);
                 return eventDate.toDateString() === dayViewDate.toDateString();
             });
-            // MODIFIED: Passed dayViewDate prop for adding new events.
             return <MobileScheduleView events={dayEvents} onPostClick={handleSelectPost} onMatchClick={handleSelectMatch} onNewEventClick={handleNewEventClick} showDateHeaders={false} currentDate={dayViewDate} />;
         }
         if (viewMode === 'calendar') {
@@ -185,9 +199,11 @@ export default function SchedulePage() {
         { id: 'list', label: 'List', icon: <ListIcon />, onClick: () => setViewMode('list') },
         { id: 'day', label: 'Day', icon: <DayIcon />, onClick: () => handleDayClick(new Date()) },
     ];
-
+    
+    // MODIFIED: Render logic to include the new match management view
     if (pageView === 'create') return <CreatePostView scheduleDate={newPostDate} onPostScheduled={handlePostScheduled} onCancel={exitCreateMode} />;
     if (pageView === 'preview' && selectedPost) return <PostPreviewAndEditView post={selectedPost} onClose={handleExitPreview} onPostUpdated={handlePostUpdated} />;
+    if (pageView === 'manageMatch') return <ManageMatchView initialData={matchToManage} onComplete={exitMatchMode} onCancel={exitMatchMode} />;
 
     return (
         <div className={styles.container}>
@@ -195,7 +211,6 @@ export default function SchedulePage() {
             {pageView === 'calendar' && (
                 <>
                     <header className={styles.header}>
-                        {/* MODIFIED: topHeader now only contains the main navigation */}
                         <div className={styles.topHeader}>
                             <nav className={styles.subNav}>
                                 {navButtons.map((button) => (
@@ -207,7 +222,6 @@ export default function SchedulePage() {
                             </nav>
                         </div>
                         
-                        {/* MODIFIED: secondaryHeader now contains the date nav and all controls */}
                         <div className={styles.secondaryHeader}>
                             <div className={styles.dateNav}>
                                 <button onClick={handlePrev}>&lt;</button>
@@ -215,7 +229,6 @@ export default function SchedulePage() {
                                 <button onClick={handleNext}>&gt;</button>
                             </div>
                             
-                            {/* NEW: Wrapper for filter and view controls */}
                             <div className={styles.controlsWrapper}>
                                 <div className={styles.filterNav}>
                                     <button onClick={() => setScheduleFilter('posts')} className={scheduleFilter === 'posts' ? styles.activeFilter : ''}>Posts</button>

@@ -1,14 +1,14 @@
 /*
  * ==========================================================
  * COMPONENT: CountdownTimer
- * PAGE: Match Hub
- * FILE: /components/MatchHubPage/LiveTab/CountdownTimer.js
+ * PAGE: Live
+ * FILE: /components/LivePage/CountdownTimer.js
  * ==========================================================
  */
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from './LiveTab.module.css';
+import styles from './LivePage.module.css';
 
 export default function CountdownTimer({ targetDate }) {
     const calculateTimeLeft = () => {

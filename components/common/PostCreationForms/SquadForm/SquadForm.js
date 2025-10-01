@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react';
 import styles from './SquadForm.module.css';
 import ImageEditor from '@/components/ImageEditor/ImageEditor';
 import { UploadIcon, GalleryIcon, GenerateIcon } from '@/components/CreatePage/SquadAnnouncement/SquadAnnouncementIcons';
-import PlayerMultiSelect from '@/components/MatchHubPage/AddMatchForm/PlayerMultiSelect';
+import PlayerMultiSelect from '@/components/common/PlayerMultiSelect/PlayerMultiSelect'; // MODIFIED: Corrected import path
 
 export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloSubmit, isSubmitting, authKey }) {
     const { players = [], backgrounds = [], badges = [], matches = [] } = appData;
@@ -21,9 +21,6 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
     const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
 
     useEffect(() => {
-        // CORRECTED: Spread initialData first, then overwrite the selectedPlayers
-        // property. This ensures the form starts with a clean, empty squad
-        // regardless of the data passed from the parent component.
         setFormData({
             ...initialData,
             selectedPlayers: [], 
@@ -63,7 +60,7 @@ export default function SquadForm({ appData = {}, initialData, onSubmit, onYoloS
                 venue: '',
                 teamType: 'First Team',
                 selectedMatchData: null,
-                selectedPlayers: [] // Also ensure deselection clears the squad
+                selectedPlayers: []
             }));
             return;
         }

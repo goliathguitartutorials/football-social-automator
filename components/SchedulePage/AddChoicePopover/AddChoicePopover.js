@@ -7,7 +7,7 @@
  */
 'use client';
 import styles from './AddChoicePopover.module.css';
-import { FootballIcon } from '@/components/MatchHubPage/MatchHubIcons';
+import { FootballPitchIcon } from '../../Navigation/Icons'; // MODIFIED: Corrected import path and icon name
 import { CalendarIcon } from '../SchedulePageIcons';
 
 export default function AddChoicePopover({ onChoice, onDismiss }) {
@@ -21,7 +21,7 @@ export default function AddChoicePopover({ onChoice, onDismiss }) {
                         <span>Schedule a Post</span>
                     </button>
                     <button onClick={() => onChoice('match')}>
-                        <FootballIcon />
+                        <FootballPitchIcon /> {/* MODIFIED: Use the new icon component */}
                         <span>Schedule a Match</span>
                     </button>
                 </div>

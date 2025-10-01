@@ -1,17 +1,10 @@
 /*
  * ==========================================================
- * COMPONENT: AddMatchForm
- * PAGE: Match Hub
- * FILE: /components/MatchHubPage/AddMatchForm/AddMatchForm.module.css
- ==========================================================
+ * COMPONENT: AddMatchForm CSS
+ * PAGE: Schedule Page
+ * FILE: /components/SchedulePage/ManageMatchView/AddMatchForm/AddMatchForm.module.css
+ * ==========================================================
  */
-.pageContainer {
-    padding: 2rem;
-    background-color: var(--surface-dark, #1a1d2e);
-    border-radius: 8px;
-    color: var(--text-primary, #fff);
-}
-
 .formContainer {
     /* The form itself doesn't need restrictive styles now */
 }
@@ -73,12 +66,12 @@
     justify-content: flex-end;
     align-items: center;
     gap: 1.5rem;
-    margin-top: 2rem; /* Increased margin */
+    margin-top: 2rem;
 }
 
 .actionButton {
     padding: 0.85rem 2.2rem;
-    font-size: 1.1rem; /* Matched SquadForm */
+    font-size: 1.1rem;
     font-weight: bold;
     border: none;
     border-radius: 6px;
