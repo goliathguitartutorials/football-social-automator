@@ -1,8 +1,8 @@
 /*
  * ==========================================================
  * COMPONENT: CountdownTimer
- * PAGE: Match Hub
- * FILE: /components/MatchHubPage/LiveTab/CountdownTimer.js
+ * PAGE: Live
+ * FILE: /components/LivePage/CountdownTimer.js
  * ==========================================================
  */
 'use client';
