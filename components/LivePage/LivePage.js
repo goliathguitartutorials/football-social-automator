@@ -30,23 +30,16 @@ export default function LivePage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [apiError, setApiError] = useState('');
     
-    const [matchStartTime, setMatchStartTime] = useState(null);
+    // REFACTORED: Removed dedicated matchStartTime state. It will now be derived.
     const [secondHalfStartTime, setSecondHalfStartTime] = useState(null);
-    const [hasKickOffEvent, setHasKickOffEvent] = useState(false);
 
     const reconstructStateFromEvents = useCallback((eventList) => {
-        if (!Array.isArray(eventList) || eventList.length === 0) {
+        if (!Array.isArray(eventList)) {
             setEvents([]);
-            setScore({ home: 0, away: 0 });
-            setHasKickOffEvent(false);
-            setSecondHalfStartTime(null);
             return;
         }
         const sortedEvents = eventList.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setEvents(sortedEvents);
-
-        const startEvent = sortedEvents.find(e => e.eventType === 'MATCH_START');
-        setHasKickOffEvent(!!startEvent);
 
         const secondHalfEvent = sortedEvents.find(e => e.eventType === 'SECOND_HALF_START');
         if (secondHalfEvent && secondHalfEvent.timestamp) setSecondHalfStartTime(new Date(secondHalfEvent.timestamp));
@@ -60,10 +53,9 @@ export default function LivePage() {
         try {
             const savedState = sessionStorage.getItem('liveMatchState');
             if (savedState) {
-                const { match, events: savedEvents, startTime } = JSON.parse(savedState);
-                if (match && Array.isArray(savedEvents) && startTime) {
+                const { match, events: savedEvents } = JSON.parse(savedState);
+                if (match && Array.isArray(savedEvents)) {
                     setLiveMatch(match);
-                    setMatchStartTime(new Date(startTime));
                     reconstructStateFromEvents(savedEvents);
                 }
             }
@@ -161,23 +153,11 @@ export default function LivePage() {
                     const result = await response.json();
                     const existingEvents = result.data || result || [];
                     
-                    // --- REVISED LOGIC ---
-                    // 1. Set the assumed start time first from the schedule.
-                    let startTime = new Date(`${processedMatch.matchDate}T${processedMatch.matchTime}`);
-
-                    // 2. Check if a more accurate `MATCH_START` event exists.
-                    const startEvent = existingEvents.find(e => e.eventType === 'MATCH_START');
-                    if (startEvent && startEvent.timestamp) {
-                        // 3. If it exists, overwrite the assumed time with the official one.
-                        startTime = new Date(startEvent.timestamp);
-                    }
-
-                    // 4. Update state together to ensure consistency.
+                    // REFACTORED: Set state together to prevent race conditions.
                     setLiveMatch(processedMatch);
-                    setMatchStartTime(startTime);
                     reconstructStateFromEvents(existingEvents);
                     
-                    sessionStorage.setItem('liveMatchState', JSON.stringify({ match: processedMatch, events: existingEvents, startTime: startTime.toISOString() }));
+                    sessionStorage.setItem('liveMatchState', JSON.stringify({ match: processedMatch, events: existingEvents }));
                     
                 } catch (error) {
                     setApiError(error.message);
@@ -205,8 +185,14 @@ export default function LivePage() {
     }, [appData.matches, authKey, reconstructStateFromEvents, liveMatch, handleArchiveMatch]);
 
     const calculateElapsedTime = useCallback(() => {
-        if (!matchStartTime) return { minute: 0, display: "00:00" };
+        // --- REFACTORED LOGIC ---
+        // 1. A match must be live to calculate time.
+        if (!liveMatch) return { minute: 0, display: "00:00" };
 
+        // 2. Determine the definitive start time. Default to schedule.
+        const startEvent = events.find(e => e.eventType === 'MATCH_START');
+        const matchStartTime = startEvent ? new Date(startEvent.timestamp) : new Date(`${liveMatch.matchDate}T${liveMatch.matchTime}`);
+        
         const hasEnded = events.some(e => e.eventType === 'MATCH_END');
         if (hasEnded) return { minute: 90, display: "Finished" };
         
@@ -231,7 +217,7 @@ export default function LivePage() {
         
         const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         return { minute: minutes, display };
-    }, [matchStartTime, secondHalfStartTime, events]);
+    }, [liveMatch, events, secondHalfStartTime]);
     
     useEffect(() => {
         const interval = setInterval(() => {
@@ -275,7 +261,7 @@ export default function LivePage() {
         const eventTimestamp = (eventData.startTime) ? new Date(eventData.startTime) : new Date();
         const eventId = `event_${eventTimestamp.getTime()}`;
         
-        if (eventData.eventType === 'MATCH_START') setMatchStartTime(eventTimestamp);
+        // REFACTORED: No longer need to set matchStartTime here.
         if (eventData.eventType === 'SECOND_HALF_START') setSecondHalfStartTime(eventTimestamp);
         
         const apiPayload = {
@@ -302,18 +288,13 @@ export default function LivePage() {
             
             const result = await refetchResponse.json();
             const freshEvents = result.data || result || [];
-            
-            // Re-evaluate start time in case a MATCH_START event was just added
-            const startEvent = freshEvents.find(e => e.eventType === 'MATCH_START');
-            const newStartTime = startEvent ? new Date(startEvent.timestamp) : new Date(`${liveMatch.matchDate}T${liveMatch.matchTime}`);
 
-            setMatchStartTime(newStartTime);
             reconstructStateFromEvents(freshEvents);
             
             if (freshEvents.some(e => e.eventType === 'MATCH_END')) {
                 sessionStorage.removeItem('liveMatchState');
             } else {
-                sessionStorage.setItem('liveMatchState', JSON.stringify({ match: liveMatch, events: freshEvents, startTime: newStartTime.toISOString() }));
+                sessionStorage.setItem('liveMatchState', JSON.stringify({ match: liveMatch, events: freshEvents }));
             }
 
             handleFormCancel();
