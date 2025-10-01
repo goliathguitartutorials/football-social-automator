@@ -8,14 +8,13 @@
 'use client';
 
 import styles from './DesktopNav.module.css';
-import { CreateIcon, ScheduleIcon, AssetIcon, SettingsIcon } from './Icons';
-import { FootballIcon } from '../MatchHubPage/MatchHubIcons'; // --- MODIFIED: Import new icon
+import { CreateIcon, ScheduleIcon, AssetIcon, SettingsIcon, LiveMatchIcon } from './Icons'; // MODIFIED: Import LiveMatchIcon
 
 // Define the main navigation items
 const navItems = [
     { id: 'create', label: 'Create Post', icon: <CreateIcon /> },
     { id: 'schedule', label: 'Schedule', icon: <ScheduleIcon /> },
-    { id: 'matchHub', label: 'Match Hub', icon: <FootballIcon /> }, // --- MODIFIED: Updated ID, label, and icon
+    { id: 'live', label: 'Live', icon: <LiveMatchIcon /> }, // MODIFIED: Updated ID, label, and icon
     { id: 'assets', label: 'Assets', icon: <AssetIcon /> },
     { id: 'settings', label: 'Settings', icon: <SettingsIcon /> },
 ];
