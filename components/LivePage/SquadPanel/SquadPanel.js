@@ -1,8 +1,8 @@
 /*
  * ==========================================================
  * COMPONENT: SquadPanel
- * PAGE: Match Hub
- * FILE: /components/MatchHubPage/LiveTab/SquadPanel/SquadPanel.js
+ * PAGE: Live
+ * FILE: /components/LivePage/SquadPanel/SquadPanel.js
  * ==========================================================
  */
 import styles from './SquadPanel.module.css';
