@@ -21,6 +21,11 @@
     gap: 1rem;
 }
 
+/* NEW: Added to ensure the button stays to the right */
+.headerPlaceholder {
+    flex-grow: 1;
+}
+
 .fixturesHeader h2 {
     margin: 0;
     font-size: 1.5rem;
@@ -88,7 +93,6 @@
     cursor: pointer;
 }
 
-/* MODIFIED: Updated with your specified team colors. */
 .fixtureListItem.first-team {
     border-left-color: #00b359; /* Green */
 }
@@ -149,7 +153,6 @@
     line-height: 1;
 }
 
-/* MODIFIED: Updated with your specified team colors. */
 .teamBadge.first-team {
     background-color: #00b359; /* Green */
 }
