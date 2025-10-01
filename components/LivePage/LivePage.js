@@ -10,14 +10,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './LivePage.module.css';
-import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from './LivePageIcons'; // MODIFIED: Corrected import path
+import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from './LivePageIcons';
 import CountdownTimer from './CountdownTimer';
 import EventForm from './EventForm/EventForm';
 import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
 import SquadPanel from './SquadPanel/SquadPanel';
 
 export default function LivePage() {
-    // ... rest of the file is unchanged
     const { appData, authKey, refreshAppData } = useAppContext();
     const [liveMatch, setLiveMatch] = useState(null);
     const [nextMatch, setNextMatch] = useState(null);
@@ -33,6 +32,7 @@ export default function LivePage() {
     
     const [matchStartTime, setMatchStartTime] = useState(null);
     const [secondHalfStartTime, setSecondHalfStartTime] = useState(null);
+    const [hasKickOffEvent, setHasKickOffEvent] = useState(false);
 
     const reconstructStateFromEvents = useCallback((eventList) => {
         if (!Array.isArray(eventList)) {
@@ -43,7 +43,12 @@ export default function LivePage() {
         setEvents(sortedEvents);
 
         const startEvent = sortedEvents.find(e => e.eventType === 'MATCH_START');
-        if (startEvent && startEvent.timestamp) setMatchStartTime(new Date(startEvent.timestamp));
+        if (startEvent && startEvent.timestamp) {
+            setMatchStartTime(new Date(startEvent.timestamp));
+            setHasKickOffEvent(true);
+        } else {
+            setHasKickOffEvent(false);
+        }
 
         const secondHalfEvent = sortedEvents.find(e => e.eventType === 'SECOND_HALF_START');
         if (secondHalfEvent && secondHalfEvent.timestamp) setSecondHalfStartTime(new Date(secondHalfEvent.timestamp));
@@ -61,6 +66,10 @@ export default function LivePage() {
                 if (match && Array.isArray(savedEvents)) {
                     setLiveMatch(match);
                     reconstructStateFromEvents(savedEvents);
+                    // NEW: Set assumed start time if no event exists
+                    if (!savedEvents.some(e => e.eventType === 'MATCH_START')) {
+                        setMatchStartTime(new Date(`${match.matchDate}T${match.matchTime}`));
+                    }
                 }
             }
         } catch (error) {
@@ -160,6 +169,12 @@ export default function LivePage() {
                     setLiveMatch(processedMatch);
                     reconstructStateFromEvents(existingEvents);
                     
+                    // NEW: Set the match start time to the scheduled time if no official start event has been logged.
+                    const hasStartEvent = existingEvents.some(e => e.eventType === 'MATCH_START');
+                    if (!hasStartEvent) {
+                        setMatchStartTime(new Date(`${processedMatch.matchDate}T${processedMatch.matchTime}`));
+                    }
+                    
                     sessionStorage.setItem('liveMatchState', JSON.stringify({ match: processedMatch, events: existingEvents }));
                     
                 } catch (error) {
@@ -188,7 +203,7 @@ export default function LivePage() {
     }, [appData.matches, authKey, reconstructStateFromEvents, liveMatch, handleArchiveMatch]);
 
     const calculateElapsedTime = useCallback(() => {
-        if (!matchStartTime) return { minute: 0, display: "Not Started" };
+        if (!matchStartTime) return { minute: 0, display: "00:00" };
 
         const hasEnded = events.some(e => e.eventType === 'MATCH_END');
         if (hasEnded) return { minute: 90, display: "Finished" };
@@ -252,9 +267,7 @@ export default function LivePage() {
     };
 
     const handleEventSubmit = async (eventData) => {
-        if (!['MATCH_START'].includes(eventData.eventType)) {
-            setIsSubmitting(true);
-        }
+        setIsSubmitting(true);
         setApiError('');
 
         const eventTimestamp = (eventData.startTime) ? new Date(eventData.startTime) : new Date();
@@ -299,9 +312,7 @@ export default function LivePage() {
         } catch (error) {
             setApiError(error.message);
         } finally {
-             if (!['MATCH_START'].includes(eventData.eventType)) {
-                setIsSubmitting(false);
-             }
+            setIsSubmitting(false);
         }
     };
 
@@ -315,33 +326,6 @@ export default function LivePage() {
     
     const renderContent = () => {
         if (!liveMatch) return null;
-
-        const hasStarted = events.some(e => e.eventType === 'MATCH_START');
-
-        if (!hasStarted) {
-            return (
-                <div className={styles.preGameContainer}>
-                    <h3>Confirm Match Start Time</h3>
-                    <p>This match is now live. Please confirm when it started.</p>
-                    <div className={styles.preGameButtons}>
-                        <button 
-                            className={styles.controlButton} 
-                            onClick={() => handleControlClick('MATCH_START', { startTime: `${liveMatch.matchDate}T${liveMatch.matchTime}` })}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? 'Starting...' : 'Start on Schedule'}
-                        </button>
-                        <button 
-                            className={styles.controlButton} 
-                            onClick={() => handleEventClick('MATCH_START')}
-                            disabled={isSubmitting}
-                        >
-                            Set Custom Start Time
-                        </button>
-                    </div>
-                </div>
-            );
-        }
 
         const isHalfTime = events.some(e => e.eventType === 'HALF_TIME') && !events.some(e => e.eventType === 'SECOND_HALF_START');
         const hasSecondHalfStarted = events.some(e => e.eventType === 'SECOND_HALF_START');
@@ -393,17 +377,17 @@ export default function LivePage() {
                 <div className={styles.controlsSection}>
                     {!hasEnded && (
                         <div className={styles.matchControls}>
-                            {hasStarted && !isHalfTime && <button className={styles.controlButton} onClick={() => handleControlClick('HALF_TIME')} disabled={isSubmitting}>{isSubmitting ? 'Logging...' : <><PauseIcon/>Half-Time</>}</button>}
+                            {!isHalfTime && <button className={styles.controlButton} onClick={() => handleControlClick('HALF_TIME')} disabled={isSubmitting}>{isSubmitting ? 'Logging...' : <><PauseIcon/>Half-Time</>}</button>}
                             {isHalfTime && !hasSecondHalfStarted && <button className={styles.controlButton} onClick={() => handleControlClick('SECOND_HALF_START')} disabled={isSubmitting}>{isSubmitting ? 'Starting...' : <><PlayIcon/>Start 2nd Half</>}</button>}
-                            {hasStarted && <button className={styles.controlButton} onClick={() => handleControlClick('MATCH_END')} disabled={isSubmitting}>{isSubmitting ? 'Finishing...' : <><StopIcon/>Finish Match</>}</button>}
+                            {!hasEnded && <button className={styles.controlButton} onClick={() => handleControlClick('MATCH_END')} disabled={isSubmitting}>{isSubmitting ? 'Finishing...' : <><StopIcon/>Finish Match</>}</button>}
                         </div>
                     )}
                      <div className={styles.eventGrid}>
-                         <button className={styles.eventButton} onClick={() => handleEventClick('Goal')} disabled={!hasStarted || hasEnded}><GoalIcon /><span>Goal</span></button>
-                         <button className={styles.eventButton} onClick={() => handleEventClick('Yellow Card')} disabled={!hasStarted || hasEnded}><YellowCardIcon /><span>Yellow Card</span></button>
-                         <button className={styles.eventButton} onClick={() => handleEventClick('Red Card')} disabled={!hasStarted || hasEnded}><RedCardIcon /><span>Red Card</span></button>
-                         <button className={styles.eventButton} onClick={() => handleEventClick('Substitution')} disabled={!hasStarted || hasEnded}><SubIcon /><span>Substitution</span></button>
-                    </div>
+                          <button className={styles.eventButton} onClick={() => handleEventClick('Goal')} disabled={hasEnded}><GoalIcon /><span>Goal</span></button>
+                          <button className={styles.eventButton} onClick={() => handleEventClick('Yellow Card')} disabled={hasEnded}><YellowCardIcon /><span>Yellow Card</span></button>
+                          <button className={styles.eventButton} onClick={() => handleEventClick('Red Card')} disabled={hasEnded}><RedCardIcon /><span>Red Card</span></button>
+                          <button className={styles.eventButton} onClick={() => handleEventClick('Substitution')} disabled={hasEnded}><SubIcon /><span>Substitution</span></button>
+                     </div>
                 </div>
 
                 <div className={styles.detailsContainer}>
