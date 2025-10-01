@@ -7,6 +7,9 @@
  */
 import { NextResponse } from 'next/server';
 
+// FIX: This line forces the route to be rendered dynamically.
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
     try {
         // --- Security Check ---
