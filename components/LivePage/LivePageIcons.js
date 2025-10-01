@@ -1,8 +1,8 @@
 /*
  * ==========================================================
- * COMPONENT: LiveTabIcons
- * PAGE: Match Hub
- * FILE: /components/MatchHubPage/LiveTab/LiveTabIcons.js
+ * COMPONENT: LivePageIcons
+ * PAGE: Live
+ * FILE: /components/LivePage/LivePageIcons.js
  * ==========================================================
  */
 
