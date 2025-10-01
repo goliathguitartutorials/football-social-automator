@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './LivePage.module.css';
 import { OverviewIcon, SquadIcon, GoalIcon, YellowCardIcon, RedCardIcon, SubIcon, PlayIcon, PauseIcon, StopIcon } from '@/components/LivePage/LivePageIcons';
+import { useMatchTimer } from './hooks/useMatchTimer'; // REFACTORED: Import the new hook
 import CountdownTimer from './CountdownTimer';
 import EventForm from './EventForm/EventForm';
 import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
@@ -26,12 +27,11 @@ export default function LivePage() {
     const [prepopulatedMinute, setPrepopulatedMinute] = useState('');
     const [events, setEvents] = useState([]);
     const [score, setScore] = useState({ home: 0, away: 0 });
-    const [elapsedTimeDisplay, setElapsedTimeDisplay] = useState("00:00");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [apiError, setApiError] = useState('');
     
-    // REFACTORED: Removed dedicated matchStartTime state. It will now be derived.
-    const [secondHalfStartTime, setSecondHalfStartTime] = useState(null);
+    // REFACTORED: All timer logic is now handled by the custom hook.
+    const { minute: currentMinute, display: elapsedTimeDisplay } = useMatchTimer(liveMatch, events);
 
     const reconstructStateFromEvents = useCallback((eventList) => {
         if (!Array.isArray(eventList)) {
@@ -40,9 +40,6 @@ export default function LivePage() {
         }
         const sortedEvents = eventList.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setEvents(sortedEvents);
-
-        const secondHalfEvent = sortedEvents.find(e => e.eventType === 'SECOND_HALF_START');
-        if (secondHalfEvent && secondHalfEvent.timestamp) setSecondHalfStartTime(new Date(secondHalfEvent.timestamp));
 
         const newHomeScore = sortedEvents.filter(e => e.eventType === 'Goal' && e.team === 'home').length;
         const newAwayScore = sortedEvents.filter(e => e.eventType === 'Goal' && e.team === 'away').length;
@@ -153,7 +150,6 @@ export default function LivePage() {
                     const result = await response.json();
                     const existingEvents = result.data || result || [];
                     
-                    // REFACTORED: Set state together to prevent race conditions.
                     setLiveMatch(processedMatch);
                     reconstructStateFromEvents(existingEvents);
                     
@@ -184,52 +180,8 @@ export default function LivePage() {
 
     }, [appData.matches, authKey, reconstructStateFromEvents, liveMatch, handleArchiveMatch]);
 
-    const calculateElapsedTime = useCallback(() => {
-        // --- REFACTORED LOGIC ---
-        // 1. A match must be live to calculate time.
-        if (!liveMatch) return { minute: 0, display: "00:00" };
-
-        // 2. Determine the definitive start time. Default to schedule.
-        const startEvent = events.find(e => e.eventType === 'MATCH_START');
-        const matchStartTime = startEvent ? new Date(startEvent.timestamp) : new Date(`${liveMatch.matchDate}T${liveMatch.matchTime}`);
-        
-        const hasEnded = events.some(e => e.eventType === 'MATCH_END');
-        if (hasEnded) return { minute: 90, display: "Finished" };
-        
-        const isHalfTime = events.some(e => e.eventType === 'HALF_TIME') && !events.some(e => e.eventType === 'SECOND_HALF_START');
-        if(isHalfTime) return { minute: 45, display: "HT" };
-
-        const now = new Date();
-        let totalSeconds;
-
-        if (secondHalfStartTime && now >= secondHalfStartTime) {
-            const firstHalfDurationSeconds = 45 * 60;
-            const secondHalfSeconds = (now - secondHalfStartTime) / 1000;
-            totalSeconds = firstHalfDurationSeconds + secondHalfSeconds;
-        } else {
-            totalSeconds = (now - matchStartTime) / 1000;
-        }
-        
-        if (totalSeconds < 0) return { minute: 0, display: "00:00" };
-
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = Math.floor(totalSeconds % 60);
-        
-        const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        return { minute: minutes, display };
-    }, [liveMatch, events, secondHalfStartTime]);
-    
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const { display } = calculateElapsedTime();
-            setElapsedTimeDisplay(display);
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [calculateElapsedTime]);
-
     const handleEventClick = (eventType) => {
-        const { minute } = calculateElapsedTime();
-        setPrepopulatedMinute(String(minute));
+        setPrepopulatedMinute(String(currentMinute));
         setSelectedEventType(eventType);
         setView('logEvent');
         setApiError('');
@@ -240,8 +192,7 @@ export default function LivePage() {
         setIsSubmitting(true);
         setApiError('');
         try {
-            const { minute } = calculateElapsedTime();
-            await handleEventSubmit({ eventType, minute, ...extraData });
+            await handleEventSubmit({ eventType, minute: currentMinute, ...extraData });
         } catch (error) {
             setApiError(error.message);
         } finally {
@@ -260,9 +211,6 @@ export default function LivePage() {
 
         const eventTimestamp = (eventData.startTime) ? new Date(eventData.startTime) : new Date();
         const eventId = `event_${eventTimestamp.getTime()}`;
-        
-        // REFACTORED: No longer need to set matchStartTime here.
-        if (eventData.eventType === 'SECOND_HALF_START') setSecondHalfStartTime(eventTimestamp);
         
         const apiPayload = {
             eventId, matchId: liveMatch.matchId, eventType: eventData.eventType,
