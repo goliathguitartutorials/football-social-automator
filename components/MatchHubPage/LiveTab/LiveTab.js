@@ -112,7 +112,7 @@ export default function LiveTab() {
 
             // Auto-archive matches that have finished
             appData.matches.forEach(match => {
-                const matchKickOffTime = new Date(`${match.matchDate}T${match.matchTime}`);
+                const matchKickOffTime = new Date(`${match.matchDate}T${match.matchTime}:00Z`);
                 const matchEndTime = new Date(matchKickOffTime.getTime() + liveMatchWindowMs);
                 if (now > matchEndTime && match.status !== 'archived') {
                     handleArchiveMatch({
@@ -124,7 +124,7 @@ export default function LiveTab() {
             });
             
             const foundLiveMatch = appData.matches.find(match => {
-                const matchScheduledTime = new Date(`${match.matchDate}T${match.matchTime}`);
+                const matchScheduledTime = new Date(`${match.matchDate}T${match.matchTime}:00Z`);
                 const matchEndTime = new Date(matchScheduledTime.getTime() + liveMatchWindowMs);
                 return now >= matchScheduledTime && now <= matchEndTime && match.status !== 'archived';
             });
@@ -170,8 +170,8 @@ export default function LiveTab() {
                     sessionStorage.removeItem('liveMatchState');
                 }
                 const upcomingMatches = appData.matches
-                    .filter(match => new Date(`${match.matchDate}T${match.matchTime}`) > now && match.status !== 'archived')
-                    .sort((a, b) => new Date(`${a.matchDate}T${a.matchTime}`) - new Date(`${b.matchDate}T${b.matchTime}`));
+                    .filter(match => new Date(`${match.matchDate}T${match.matchTime}:00Z`) > now && match.status !== 'archived')
+                    .sort((a, b) => new Date(`${a.matchDate}T${a.matchTime}:00Z`) - new Date(`${b.matchDate}T${b.matchTime}:00Z`));
                 setNextMatch(upcomingMatches[0] || null);
             }
         };
@@ -325,7 +325,7 @@ export default function LiveTab() {
                     <div className={styles.preGameButtons}>
                         <button 
                             className={styles.controlButton} 
-                            onClick={() => handleControlClick('MATCH_START', { startTime: `${liveMatch.matchDate}T${liveMatch.matchTime}` })}
+                            onClick={() => handleControlClick('MATCH_START', { startTime: `${liveMatch.matchDate}T${liveMatch.matchTime}:00Z` })}
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? 'Starting...' : 'Start on Schedule'}
@@ -433,7 +433,7 @@ export default function LiveTab() {
     }
     
     if (nextMatch) {
-        const targetDate = `${nextMatch.matchDate}T${nextMatch.matchTime}`;
+        const targetDate = `${nextMatch.matchDate}T${nextMatch.matchTime}:00Z`;
         return (
             <div className={styles.placeholder}>
                 <h3>Next Match</h3>
