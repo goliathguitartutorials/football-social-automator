@@ -5,8 +5,9 @@
  * FILE: /components/MatchHubPage/FixturesTab/FixturesTab.js
  ==========================================================
  */
+
 import { useMemo } from 'react';
-import { EditIcon, AddIcon } from '../MatchHubIcons';
+import { AddIcon } from '../MatchHubIcons';
 import styles from './FixturesTab.module.css';
 
 const FixtureListItem = ({ match, onEditClick }) => {
@@ -20,7 +21,6 @@ const FixtureListItem = ({ match, onEditClick }) => {
 
     const teamType = match.team === 'first-team' ? 'First Team' : 'Development';
 
-    // MODIFIED: The entire item is now a button that triggers the edit action.
     return (
         <button onClick={() => onEditClick(match)} className={`${styles.fixtureListItem} ${styles[match.team]}`}>
             <div className={styles.timeInfo}>
@@ -38,7 +38,6 @@ const FixtureListItem = ({ match, onEditClick }) => {
                     <span className={`${styles.teamBadge} ${styles[match.team]}`}>{teamType}</span>
                 </div>
             </div>
-            {/* REMOVED: The actions div with the edit button has been removed. */}
         </button>
     );
 };
@@ -46,10 +45,14 @@ const FixtureListItem = ({ match, onEditClick }) => {
 export default function FixturesTab({ matches, onEditClick, onAddNewMatch }) {
     const groupedMatches = useMemo(() => {
         if (!matches) return {};
+        
+        const now = new Date();
+        const upcoming = matches.filter(match => {
+            const matchDateTime = new Date(`${match.matchDate}T${match.matchTime}`);
+            return match.status !== 'archived' && matchDateTime > now;
+        });
 
-        const unarchived = matches.filter(match => match.status !== 'archived');
-
-        return unarchived.reduce((acc, match) => {
+        return upcoming.reduce((acc, match) => {
             const date = new Date(`${match.matchDate}T00:00:00Z`);
             const dateKey = date.toISOString().split('T')[0];
             if (!acc[dateKey]) {
@@ -66,7 +69,8 @@ export default function FixturesTab({ matches, onEditClick, onAddNewMatch }) {
         return (
             <div className={styles.container}>
                 <div className={styles.fixturesHeader}>
-                    <h2>Upcoming Fixtures</h2>
+                    {/* The h2 title has been removed */}
+                    <div className={styles.headerPlaceholder}></div> {/* Added for alignment */}
                     <button onClick={onAddNewMatch} className={styles.addMatchButton}>
                         <AddIcon /> <span>Add New Match</span>
                     </button>
@@ -82,7 +86,8 @@ export default function FixturesTab({ matches, onEditClick, onAddNewMatch }) {
     return (
         <div className={styles.container}>
             <div className={styles.fixturesHeader}>
-                <h2>Upcoming Fixtures</h2>
+                {/* The h2 title has been removed */}
+                <div className={styles.headerPlaceholder}></div> {/* Added for alignment */}
                 <button onClick={onAddNewMatch} className={styles.addMatchButton}>
                     <AddIcon /> <span>Add New Match</span>
                 </button>
