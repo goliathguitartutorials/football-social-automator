@@ -102,7 +102,6 @@ export default function LivePage() {
                     const result = await response.json();
                     let existingEvents = Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
                     
-                    // FIX: Filter out any empty objects returned by the API
                     existingEvents = existingEvents.filter(event => event && Object.keys(event).length > 0);
                     
                     setLiveMatch(processedMatch);
@@ -182,20 +181,20 @@ export default function LivePage() {
             });
             if (!response.ok) throw new Error((await response.json()).error || 'Failed to log event.');
             
-            const newEventResult = await response.json();
-            const newEvent = newEventResult.data;
+            // FIX: Correctly handle the response from the n8n webhook
+            const newEventResponse = await response.json();
+            const newEvent = Array.isArray(newEventResponse) ? newEventResponse[0] : newEventResponse.data || newEventResponse;
 
-            // Add the new event to the existing events list
-            const updatedEvents = [...events, newEvent];
-            
-            reconstructStateFromEvents(updatedEvents);
-            
-            if (updatedEvents.some(e => e.eventType === 'MATCH_END')) {
-                sessionStorage.removeItem('liveMatchState');
-            } else {
-                sessionStorage.setItem('liveMatchState', JSON.stringify({ match: liveMatch, events: updatedEvents }));
+            if (newEvent && newEvent.eventId) {
+                const updatedEvents = [...events, newEvent];
+                reconstructStateFromEvents(updatedEvents);
+                 if (updatedEvents.some(e => e.eventType === 'MATCH_END')) {
+                    sessionStorage.removeItem('liveMatchState');
+                } else {
+                    sessionStorage.setItem('liveMatchState', JSON.stringify({ match: liveMatch, events: updatedEvents }));
+                }
             }
-
+            
             handleFormCancel();
         } catch (error) {
             setApiError(error.message);
