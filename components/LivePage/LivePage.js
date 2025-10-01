@@ -19,6 +19,7 @@ export default function LivePage() {
 
     useEffect(() => {
         const findMatches = () => {
+            // Ensure we have match data to work with from the context
             if (!appData.matches || appData.matches.length === 0) {
                 setLiveMatch(null);
                 setNextMatch(null);
@@ -26,9 +27,9 @@ export default function LivePage() {
             }
 
             const now = new Date();
-            const liveMatchWindowMs = 120 * 60 * 1000;
+            const liveMatchWindowMs = 120 * 60 * 1000; // 120 minutes
 
-            // 1. Find if a match is currently in its live window
+            // 1. Find if a match is currently within its live window
             const currentLiveMatch = appData.matches.find(match => {
                 if (match.status === 'archived') return false;
                 const matchScheduledTime = new Date(`${match.matchDate}T${match.matchTime}`);
@@ -43,7 +44,7 @@ export default function LivePage() {
                 setLiveMatch({ ...currentLiveMatch, homeTeamName, awayTeamName });
                 setNextMatch(null);
             } else {
-                // 2. If no live match, find the next upcoming match
+                // 2. If no live match, find the very next upcoming match
                 const upcomingMatches = appData.matches
                     .filter(match => {
                         if (match.status === 'archived') return false;
@@ -57,16 +58,17 @@ export default function LivePage() {
             }
         };
 
-        // Run once on load and then set an interval to check every 30 seconds
+        // Run the check once immediately, then set an interval to re-check every 30 seconds
         findMatches();
         const intervalId = setInterval(findMatches, 30000);
 
+        // Clean up the interval when the component is unmounted
         return () => clearInterval(intervalId);
 
     }, [appData.matches]);
 
 
-    // STATE 1: Match is in progress
+    // RENDER STATE 1: A match is currently in progress
     if (liveMatch) {
         return (
             <div className={styles.dashboardContainer}>
@@ -78,14 +80,11 @@ export default function LivePage() {
                     </div>
                     <span className={styles.teamName}>{liveMatch.awayTeamName}</span>
                 </div>
-                <div className={styles.placeholder}>
-                    <p>Match is currently live. Event logging is temporarily disabled.</p>
-                </div>
             </div>
         );
     }
 
-    // STATE 2: No live match, but an upcoming match exists
+    // RENDER STATE 2: No live match, but an upcoming match exists
     if (nextMatch) {
         const targetDate = `${nextMatch.matchDate}T${nextMatch.matchTime}`;
         const homeTeam = nextMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : nextMatch.opponent;
@@ -99,11 +98,11 @@ export default function LivePage() {
         );
     }
 
-    // STATE 3: No live match and no upcoming matches
+    // RENDER STATE 3: No live or upcoming matches found
     return (
         <div className={styles.placeholder}>
             <h3>No Match Currently In Progress</h3>
-            <p>When a match is live, this page will activate.</p>
+            <p>Check the schedule for upcoming matches.</p>
         </div>
     );
 }
