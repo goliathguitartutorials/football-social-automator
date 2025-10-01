@@ -68,22 +68,64 @@ export default function LiveTab() {
         }
     }, [reconstructStateFromEvents]);
 
+    const handleArchiveMatch = useCallback(async (matchToArchive) => {
+        if (isSubmitting || !matchToArchive) return;
+        setIsSubmitting(true);
+        setApiError('');
+        try {
+            const response = await fetch('/api/manage-match', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
+                body: JSON.stringify({ 
+                    action: 'archive_match', 
+                    matchData: { 
+                        matchId: matchToArchive.matchId,
+                        homeScore: matchToArchive.homeScore || 0,
+                        awayScore: matchToArchive.awayScore || 0
+                    } 
+                })
+            });
+            if (!response.ok) throw new Error((await response.json()).error || 'Failed to archive match.');
+            
+            if (liveMatch && liveMatch.matchId === matchToArchive.matchId) {
+                sessionStorage.removeItem('liveMatchState');
+                setLiveMatch(null);
+            }
+            await refreshAppData();
+    
+        } catch(error) {
+            setApiError(error.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }, [authKey, refreshAppData, isSubmitting, liveMatch]);
 
     useEffect(() => {
         const findAndLoadMatch = async () => {
             const now = new Date();
-            const liveMatchWindowMs = 200 * 60 * 1000;
+            const liveMatchWindowMs = 105 * 60 * 1000;
             if (!appData.matches || appData.matches.length === 0) {
-                 setLiveMatch(null);
-                 setNextMatch(null);
-                 return;
+                setLiveMatch(null);
+                setNextMatch(null);
+                return;
             }
 
+            // Auto-archive matches that have finished
+            appData.matches.forEach(match => {
+                const matchKickOffTime = new Date(`${match.matchDate}T${match.matchTime}`);
+                const matchEndTime = new Date(matchKickOffTime.getTime() + liveMatchWindowMs);
+                if (now > matchEndTime && match.status !== 'archived') {
+                    handleArchiveMatch({
+                        matchId: match.matchId,
+                        homeScore: match.homeScore,
+                        awayScore: match.awayScore
+                    });
+                }
+            });
+
             const foundLiveMatch = appData.matches.find(match => {
-                const matchScheduledTime = new Date(`${match.matchDate} ${match.matchTime}`);
-                const matchEndTime = new Date(matchScheduledTime.getTime() + liveMatchWindowMs);
-                // MODIFIED: Check against status column instead of isArchived
-                return now >= matchScheduledTime && now <= matchEndTime && match.status !== 'archived';
+                const matchScheduledTime = new Date(`${match.matchDate}T${match.matchTime}`);
+                return now >= matchScheduledTime && match.status !== 'archived';
             });
 
             if (foundLiveMatch) {
@@ -103,7 +145,6 @@ export default function LiveTab() {
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
                         body: JSON.stringify({ action: 'get_match_events', matchData: { matchId: foundLiveMatch.matchId } })
                     });
-
                     if (!response.ok) {
                         const err = await response.json();
                         throw new Error(err.error || 'Failed to fetch existing match events.');
@@ -124,14 +165,14 @@ export default function LiveTab() {
             } else {
                 setLiveMatch(null);
                 sessionStorage.removeItem('liveMatchState');
-                const upcomingMatches = appData.matches.filter(match => {
-                    return new Date(`${match.matchDate} ${match.matchTime}`) > now && match.status !== 'archived';
-                });
+                const upcomingMatches = appData.matches
+                    .filter(match => new Date(`${match.matchDate}T${match.matchTime}`) > now && match.status !== 'archived')
+                    .sort((a, b) => new Date(`${a.matchDate}T${a.matchTime}`) - new Date(`${b.matchDate}T${b.matchTime}`));
                 setNextMatch(upcomingMatches[0] || null);
             }
         };
         findAndLoadMatch();
-    }, [appData.matches, authKey, reconstructStateFromEvents, liveMatch]);
+    }, [appData.matches, authKey, reconstructStateFromEvents, liveMatch, handleArchiveMatch]);
 
     const calculateElapsedTime = useCallback(() => {
         if (!matchStartTime) return { minute: 0, display: "Not Started" };
@@ -251,36 +292,12 @@ export default function LiveTab() {
         }
     };
 
-    // MODIFIED: This is now fully functional
-    const handleArchiveMatch = async () => {
-        if (isSubmitting) return;
-        setIsSubmitting(true);
-        setApiError('');
-        try {
-            const response = await fetch('/api/manage-match', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
-                // MODIFIED: Payload now includes final score
-                body: JSON.stringify({ 
-                    action: 'archive_match', 
-                    matchData: { 
-                        matchId: liveMatch.matchId,
-                        homeScore: score.home,
-                        awayScore: score.away
-                    } 
-                })
-            });
-             if (!response.ok) throw new Error((await response.json()).error || 'Failed to archive match.');
-
-             sessionStorage.removeItem('liveMatchState');
-             setLiveMatch(null);
-             await refreshAppData();
-
-        } catch(error) {
-            setApiError(error.message);
-        } finally {
-            setIsSubmitting(false);
-        }
+    const manuallyArchiveMatch = () => {
+        handleArchiveMatch({
+            matchId: liveMatch.matchId,
+            homeScore: score.home,
+            awayScore: score.away,
+        });
     };
     
     const renderContent = () => {
@@ -296,7 +313,7 @@ export default function LiveTab() {
                     <div className={styles.preGameButtons}>
                         <button 
                             className={styles.controlButton} 
-                            onClick={() => handleControlClick('MATCH_START', { startTime: `${liveMatch.matchDate} ${liveMatch.matchTime}` })}
+                            onClick={() => handleControlClick('MATCH_START', { startTime: `${liveMatch.matchDate}T${liveMatch.matchTime}` })}
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? 'Starting...' : 'Start on Schedule'}
@@ -317,7 +334,6 @@ export default function LiveTab() {
         const hasSecondHalfStarted = events.some(e => e.eventType === 'SECOND_HALF_START');
         const hasEnded = events.some(e => e.eventType === 'MATCH_END');
 
-        // MODIFIED: Upgraded "Match Finished" screen
         if (hasEnded) {
             return (
                 <>
@@ -334,7 +350,7 @@ export default function LiveTab() {
                         <div className={styles.preGameButtons}>
                             <button 
                                 className={styles.controlButton} 
-                                onClick={handleArchiveMatch}
+                                onClick={manuallyArchiveMatch}
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? 'Archiving...' : 'Archive Match'}
@@ -405,7 +421,7 @@ export default function LiveTab() {
     }
     
     if (nextMatch) {
-        const targetDate = `${nextMatch.matchDate} ${nextMatch.matchTime}`;
+        const targetDate = `${nextMatch.matchDate}T${nextMatch.matchTime}`;
         return (
             <div className={styles.placeholder}>
                 <h3>Next Match</h3>
