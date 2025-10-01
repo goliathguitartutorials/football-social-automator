@@ -1,24 +1,35 @@
 /*
  * ==========================================================
- * COMPONENT: LivePage (Baseline for Debugging)
+ * COMPONENT: LivePage (Debugging Step 2: Fetch Events)
  * PAGE: Live
  * FILE: /components/LivePage/LivePage.js
  * ==========================================================
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import styles from './LivePage.module.css';
 import CountdownTimer from './CountdownTimer';
 
 export default function LivePage() {
-    const { appData } = useAppContext();
+    const { appData, authKey } = useAppContext();
     const [liveMatch, setLiveMatch] = useState(null);
     const [nextMatch, setNextMatch] = useState(null);
+    
+    // STEP 2: Re-introduce the 'events' state
+    const [events, setEvents] = useState([]);
+
+    // STEP 2: Re-introduce a simple function to set events state
+    const reconstructStateFromEvents = useCallback((eventList) => {
+        const safeEvents = Array.isArray(eventList) ? eventList : [];
+        const sortedEvents = safeEvents.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        setEvents(sortedEvents);
+    }, []);
+
 
     useEffect(() => {
-        const findMatches = () => {
+        const findAndLoadMatch = async () => {
             if (!appData.matches || appData.matches.length === 0) {
                 setLiveMatch(null);
                 setNextMatch(null);
@@ -28,19 +39,47 @@ export default function LivePage() {
             const now = new Date();
             const liveMatchWindowMs = 120 * 60 * 1000;
 
-            const currentLiveMatch = appData.matches.find(match => {
+            const foundLiveMatch = appData.matches.find(match => {
                 const matchScheduledTime = new Date(`${match.matchDate}T${match.matchTime}`);
                 const matchEndTime = new Date(matchScheduledTime.getTime() + liveMatchWindowMs);
                 return now >= matchScheduledTime && now <= matchEndTime;
             });
 
-            if (currentLiveMatch) {
-                const homeTeamName = currentLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : currentLiveMatch.opponent;
-                const awayTeamName = currentLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : currentLiveMatch.opponent;
-                
-                setLiveMatch({ ...currentLiveMatch, homeTeamName, awayTeamName });
-                setNextMatch(null);
+            if (foundLiveMatch) {
+                // Prevent re-fetching if the match is already loaded
+                if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
+
+                const homeTeamName = foundLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
+                const awayTeamName = foundLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
+                const processedMatch = { ...foundLiveMatch, homeTeamName, awayTeamName };
+
+                setLiveMatch(processedMatch);
+
+                // STEP 2: Re-introduce the API call to fetch events
+                try {
+                    console.log(`DIAGNOSTIC: Fetching events for matchId: ${foundLiveMatch.matchId}`);
+                    const response = await fetch('/api/manage-match', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
+                        body: JSON.stringify({ action: 'get_match_events', matchData: { matchId: foundLiveMatch.matchId } })
+                    });
+                    
+                    if (!response.ok) throw new Error('API call for events failed.');
+                    
+                    const result = await response.json();
+                    const existingEvents = Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
+                    
+                    console.log("DIAGNOSTIC: Fetched events from API ->", existingEvents);
+                    reconstructStateFromEvents(existingEvents);
+                    
+                } catch (error) {
+                    console.error("DIAGNOSTIC: Error fetching events:", error);
+                    reconstructStateFromEvents([]); // Set to empty array on error
+                }
+
             } else {
+                if(liveMatch) setLiveMatch(null); // Clear live match if window has passed
+                
                 const upcomingMatches = appData.matches
                     .filter(match => {
                         const matchScheduledTime = new Date(`${match.matchDate}T${match.matchTime}`);
@@ -48,17 +87,15 @@ export default function LivePage() {
                     })
                     .sort((a, b) => new Date(`${a.matchDate}T${a.matchTime}`) - new Date(`${b.matchDate}T${b.matchTime}`));
 
-                setLiveMatch(null);
                 setNextMatch(upcomingMatches[0] || null);
             }
         };
 
-        findMatches();
-        const intervalId = setInterval(findMatches, 30000);
-
+        findAndLoadMatch();
+        const intervalId = setInterval(findAndLoadMatch, 30000);
         return () => clearInterval(intervalId);
 
-    }, [appData.matches]);
+    }, [appData.matches, authKey, liveMatch, reconstructStateFromEvents]);
 
 
     if (liveMatch) {
