@@ -25,6 +25,41 @@
     margin: 0;
 }
 
+/* MODIFIED: Added styles for the header and banner */
+.contentHeader {
+    margin-bottom: 2rem;
+}
+
+.bannerContainer {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 1;
+    overflow: hidden;
+    background-color: var(--background-secondary);
+    border-radius: 8px;
+    box-shadow: inset 0 0 15px 5px rgba(17, 24, 39, 0.6);
+}
+
+.bannerContainer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(17, 24, 39, 0.1) 0%, rgba(17, 24, 39, 0.3) 100%);
+    border-radius: inherit;
+}
+
+.bannerImage {
+    object-fit: cover;
+    transition: opacity 0.4s ease-in-out;
+}
+
+.middleMid { object-position: 50% 50%; }
+/* END MODIFIED STYLES */
+
 .contentArea {
     background-color: var(--surface-dark);
     border-radius: 8px;
