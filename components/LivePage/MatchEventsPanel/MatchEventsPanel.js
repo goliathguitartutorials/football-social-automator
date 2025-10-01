@@ -1,8 +1,8 @@
 /*
  * ==========================================================
  * COMPONENT: MatchEventsPanel
- * PAGE: Match Hub
- * FILE: /components/MatchHubPage/LiveTab/MatchEventsPanel/MatchEventsPanel.js
+ * PAGE: Live
+ * FILE: /components/LivePage/MatchEventsPanel/MatchEventsPanel.js
  * ==========================================================
  */
 import styles from './MatchEventsPanel.module.css';
