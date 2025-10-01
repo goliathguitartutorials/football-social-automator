@@ -1,8 +1,8 @@
 /*
  * ==========================================================
- * COMPONENT: LiveTab
- * PAGE: Match Hub
- * FILE: /components/MatchHubPage/LiveTab/LiveTab.module.css
+ * COMPONENT: Live Page
+ * PAGE: Live Page
+ * FILE: /components/LivePage/LivePage.module.css
  * ==========================================================
  */
 .dashboardContainer { width: 100%; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
