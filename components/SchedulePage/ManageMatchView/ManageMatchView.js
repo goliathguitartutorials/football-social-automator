@@ -7,6 +7,7 @@
  */
 'use client';
 
+import Image from 'next/image'; // MODIFIED: Import the Image component
 import styles from './ManageMatchView.module.css';
 import AddMatchForm from './AddMatchForm/AddMatchForm';
 import { ArrowLeftIcon } from '../CreatePostView/CreatePostViewIcons';
@@ -22,6 +23,19 @@ export default function ManageMatchView({ initialData, onComplete, onCancel }) {
                     <ArrowLeftIcon /> Back to Calendar
                 </button>
             </div>
+
+            {/* MODIFIED: Added the contentHeader and banner container */}
+            <header className={styles.contentHeader}>
+                <div className={styles.bannerContainer}>
+                    <Image
+                        src="/match-banner.png" // Assumes the image is in the /public/ directory
+                        alt="Match Scheduling Banner"
+                        fill
+                        priority
+                        className={`${styles.bannerImage} ${styles.middleMid}`}
+                    />
+                </div>
+            </header>
 
             <div className={styles.contentArea}>
                 <div className={styles.formWrapper}>
