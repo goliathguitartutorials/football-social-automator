@@ -7,27 +7,58 @@
  */
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import styles from './ArchiveTab.module.css';
-import { EditIcon, FootballIcon, ArchiveIcon } from '../MatchHubIcons';
+import { ArchiveIcon } from '../MatchHubIcons';
+
+const ArchiveListItem = ({ match }) => {
+    const teamType = match.team === 'first-team' ? 'First Team' : 'Development';
+    const homeTeam = match.homeOrAway === 'Home' ? 'Y Glannau' : match.opponent;
+    const awayTeam = match.homeOrAway === 'Away' ? 'Y Glannau' : match.opponent;
+    const homeScore = match.homeScore ?? '0';
+    const awayScore = match.awayScore ?? '0';
+
+    return (
+        <div className={`${styles.archiveListItem} ${styles[match.team]}`}>
+            <div className={styles.scoreInfo}>
+                <p>{homeScore} - {awayScore}</p>
+            </div>
+            <div className={styles.matchDetails}>
+                <h4 className={styles.teams}>
+                    {homeTeam}
+                    <span>vs</span>
+                    {awayTeam}
+                </h4>
+                <div className={styles.meta}>
+                    <span>🏆 {match.competition}</span>
+                    <span>📍 {match.venue}</span>
+                    <span className={`${styles.teamBadge} ${styles[match.team]}`}>{teamType}</span>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default function ArchiveTab({ matches }) {
-    const [selectedMatch, setSelectedMatch] = useState(null);
+    const groupedMatches = useMemo(() => {
+        if (!matches) return {};
 
-    const archivedMatches = useMemo(() => {
-        if (!matches) return [];
-        // FIXED: Changed 'Archived' to 'archived' to match the database value.
-        return matches
-            .filter(match => match.status === 'archived')
-            .sort((a, b) => new Date(b.matchDate) - new Date(a.matchDate)); // Most recent first
+        const archived = matches.filter(match => match.status === 'archived');
+
+        return archived.reduce((acc, match) => {
+            const date = new Date(`${match.matchDate}T00:00:00Z`);
+            const dateKey = date.toISOString().split('T')[0];
+            if (!acc[dateKey]) {
+                acc[dateKey] = [];
+            }
+            acc[dateKey].push(match);
+            return acc;
+        }, {});
     }, [matches]);
 
-    const handleEditClick = (match) => {
-        // This will be implemented in the next step.
-        alert(`Editing for ${match.opponent} is not yet implemented.`);
-    };
+    const sortedDateKeys = Object.keys(groupedMatches).sort((a, b) => new Date(b) - new Date(a));
 
-    if (archivedMatches.length === 0) {
+    if (sortedDateKeys.length === 0) {
         return (
             <div className={styles.placeholder}>
                 <ArchiveIcon />
@@ -36,37 +67,31 @@ export default function ArchiveTab({ matches }) {
             </div>
         );
     }
-    
+
     return (
         <div className={styles.container}>
-            <h2 className={styles.header}>Archived Matches</h2>
-            <ul className={styles.matchList}>
-                {archivedMatches.map(match => {
-                    const homeTeam = match.homeOrAway === 'Home' ? 'CPD Y Glannau' : match.opponent;
-                    const awayTeam = match.homeOrAway === 'Away' ? 'CPD Y Glannau' : match.opponent;
-                    const homeScore = match.homeScore || 0;
-                    const awayScore = match.awayScore || 0;
+            {/* The h2 title has been removed */}
+            {sortedDateKeys.map(dateKey => {
+                const date = new Date(`${dateKey}T00:00:00Z`);
+                const displayDate = date.toLocaleDateString('en-GB', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                });
+                const matchesForDay = groupedMatches[dateKey];
 
-                    return (
-                        <li key={match.matchId} className={styles.matchItem}>
-                            <div className={styles.matchInfo}>
-                                <span className={styles.matchDate}>{new Date(match.matchDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                                <div className={styles.matchTeams}>
-                                    <FootballIcon />
-                                    <span>{homeTeam} vs {awayTeam}</span>
-                                </div>
-                            </div>
-                            <div className={styles.matchResult}>
-                                <span className={styles.finalScore}>{homeScore} - {awayScore}</span>
-                                <button className={styles.editButton} onClick={() => handleEditClick(match)}>
-                                    <EditIcon />
-                                    <span>Edit</span>
-                                </button>
-                            </div>
-                        </li>
-                    );
-                })}
-            </ul>
+                return (
+                    <div key={dateKey} className={styles.dayGroup}>
+                        <h3>{displayDate}</h3>
+                        <div className={styles.matchList}>
+                            {matchesForDay.map(match => (
+                                <ArchiveListItem
+                                    key={match.matchId}
+                                    match={match}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 }
