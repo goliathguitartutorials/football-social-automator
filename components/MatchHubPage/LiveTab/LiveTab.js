@@ -33,6 +33,8 @@ export default function LiveTab() {
     const [matchStartTime, setMatchStartTime] = useState(null);
     const [secondHalfStartTime, setSecondHalfStartTime] = useState(null);
 
+    console.log("--- [DEBUG] Component Re-rendered. Current liveMatch state:", liveMatch);
+
     const reconstructStateFromEvents = useCallback((eventList) => {
         if (!Array.isArray(eventList)) {
             setEvents([]);
@@ -102,6 +104,7 @@ export default function LiveTab() {
 
     useEffect(() => {
         const findAndLoadMatch = async () => {
+            console.log("--- [DEBUG] Running findAndLoadMatch ---");
             const now = new Date();
             const liveMatchWindowMs = 120 * 60 * 1000;
             if (!appData.matches || appData.matches.length === 0) {
@@ -110,16 +113,12 @@ export default function LiveTab() {
                 return;
             }
 
-            // **FIX 3: Stabilize auto-archiving to prevent race conditions.**
-            // Find the first match that needs to be archived.
             const matchToArchive = appData.matches.find(match => {
                 const matchKickOffTime = new Date(`${match.matchDate}T${match.matchTime}`);
                 const matchEndTime = new Date(matchKickOffTime.getTime() + liveMatchWindowMs);
                 return now > matchEndTime && match.status !== 'archived';
             });
 
-            // If a match needs archiving, handle it and stop further execution.
-            // The component will re-render with fresh data and run this logic again cleanly.
             if (matchToArchive) {
                 handleArchiveMatch({
                     matchId: matchToArchive.matchId,
@@ -129,18 +128,21 @@ export default function LiveTab() {
                 return; 
             }
             
-            // **FIX 1: Reverted incorrect UTC timezone fix.**
             const foundLiveMatch = appData.matches.find(match => {
                 const matchScheduledTime = new Date(`${match.matchDate}T${match.matchTime}`);
                 const matchEndTime = new Date(matchScheduledTime.getTime() + liveMatchWindowMs);
                 return now >= matchScheduledTime && now <= matchEndTime && match.status !== 'archived';
             });
 
-            if (foundLiveMatch) {
-                // If the found match is already our live match, do nothing.
-                if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
+            console.log("[DEBUG] Value of foundLiveMatch:", foundLiveMatch);
 
-                setApiError('');
+            if (foundLiveMatch) {
+                console.log("[DEBUG] Found a live match. ID:", foundLiveMatch.matchId);
+                if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) {
+                    console.log("[DEBUG] Match is already set as live. Doing nothing.");
+                    return;
+                }
+
                 const homeTeamName = foundLiveMatch.homeOrAway === 'Home' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
                 const awayTeamName = foundLiveMatch.homeOrAway === 'Away' ? 'CPD Y Glannau' : foundLiveMatch.opponent;
                 const processedMatch = {
@@ -149,30 +151,43 @@ export default function LiveTab() {
                 };
 
                 try {
+                    console.log("[DEBUG] Attempting to fetch events for match ID:", foundLiveMatch.matchId);
                     const response = await fetch('/api/manage-match', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authKey}` },
                         body: JSON.stringify({ action: 'get_match_events', matchData: { matchId: foundLiveMatch.matchId } })
                     });
+                    
+                    console.log("[DEBUG] API Response Status:", response.status);
+
                     if (!response.ok) {
                         const err = await response.json();
+                        console.error("[DEBUG] API Error on get_match_events:", err);
                         throw new Error(err.error || 'Failed to fetch existing match events.');
                     }
                     
                     const result = await response.json();
+                    console.log("[DEBUG] Raw API Result from response.json():", result);
+
                     const existingEvents = result.data || result || [];
+                    console.log("[DEBUG] Parsed existingEvents:", existingEvents);
                     
+                    console.log("[DEBUG] PREPARING TO SET LIVE MATCH STATE NOW.");
                     setLiveMatch(processedMatch);
                     reconstructStateFromEvents(existingEvents);
+                    console.log("[DEBUG] SET LIVE MATCH STATE HAS BEEN CALLED.");
                     
                     sessionStorage.setItem('liveMatchState', JSON.stringify({ match: processedMatch, events: existingEvents }));
                     
-                } catch (error)                    {
+                } catch (error) {
+                    console.error("[DEBUG] Error caught in findAndLoadMatch try...catch block:", error);
                     setApiError(error.message);
                 }
 
             } else {
-                if(liveMatch) { // If there was a live match but now there isn't
+                console.log("[DEBUG] No live match found.");
+                if(liveMatch) {
+                    console.log("[DEBUG] Clearing existing live match from state.");
                     setLiveMatch(null);
                     sessionStorage.removeItem('liveMatchState');
                 }
@@ -185,10 +200,9 @@ export default function LiveTab() {
 
         findAndLoadMatch(); 
         
-        // **FIX 2: Only poll for new matches if there isn't one already active.**
         if (!liveMatch) {
             const intervalId = setInterval(findAndLoadMatch, 30000); 
-            return () => clearInterval(intervalId); // Cleanup on component unmount
+            return () => clearInterval(intervalId);
         }
 
     }, [appData.matches, authKey, reconstructStateFromEvents, liveMatch, handleArchiveMatch]);
