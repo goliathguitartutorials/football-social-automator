@@ -17,9 +17,6 @@ import MatchEventsPanel from './MatchEventsPanel/MatchEventsPanel';
 import SquadPanel from './SquadPanel/SquadPanel';
 
 export default function LivePage() {
-    // --- DIAGNOSTIC LOGGING: Log component mount ---
-    console.log('[DIAGNOSTIC] LivePage component mounted.');
-
     const { appData, authKey, refreshAppData } = useAppContext();
     const [liveMatch, setLiveMatch] = useState(null);
     const [nextMatch, setNextMatch] = useState(null);
@@ -38,20 +35,18 @@ export default function LivePage() {
     const [hasKickOffEvent, setHasKickOffEvent] = useState(false);
 
     const reconstructStateFromEvents = useCallback((eventList) => {
-        if (!Array.isArray(eventList)) {
+        if (!Array.isArray(eventList) || eventList.length === 0) {
             setEvents([]);
+            setScore({ home: 0, away: 0 });
+            setHasKickOffEvent(false);
+            setSecondHalfStartTime(null);
             return;
         }
         const sortedEvents = eventList.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setEvents(sortedEvents);
 
         const startEvent = sortedEvents.find(e => e.eventType === 'MATCH_START');
-        if (startEvent && startEvent.timestamp) {
-            setMatchStartTime(new Date(startEvent.timestamp));
-            setHasKickOffEvent(true);
-        } else {
-            setHasKickOffEvent(false);
-        }
+        setHasKickOffEvent(!!startEvent);
 
         const secondHalfEvent = sortedEvents.find(e => e.eventType === 'SECOND_HALF_START');
         if (secondHalfEvent && secondHalfEvent.timestamp) setSecondHalfStartTime(new Date(secondHalfEvent.timestamp));
@@ -65,13 +60,11 @@ export default function LivePage() {
         try {
             const savedState = sessionStorage.getItem('liveMatchState');
             if (savedState) {
-                const { match, events: savedEvents } = JSON.parse(savedState);
-                if (match && Array.isArray(savedEvents)) {
+                const { match, events: savedEvents, startTime } = JSON.parse(savedState);
+                if (match && Array.isArray(savedEvents) && startTime) {
                     setLiveMatch(match);
+                    setMatchStartTime(new Date(startTime));
                     reconstructStateFromEvents(savedEvents);
-                    if (!savedEvents.some(e => e.eventType === 'MATCH_START')) {
-                        setMatchStartTime(new Date(`${match.matchDate}T${match.matchTime}`));
-                    }
                 }
             }
         } catch (error) {
@@ -116,10 +109,6 @@ export default function LivePage() {
         const findAndLoadMatch = async () => {
             const now = new Date();
             const liveMatchWindowMs = 120 * 60 * 1000;
-            
-            // --- DIAGNOSTIC LOGGING: Check the source data for matches ---
-            console.log('[DIAGNOSTIC] Running findAndLoadMatch. appData.matches:', appData.matches);
-
             if (!appData.matches || appData.matches.length === 0) {
                 setLiveMatch(null);
                 setNextMatch(null);
@@ -147,9 +136,6 @@ export default function LivePage() {
                 return now >= matchScheduledTime && now <= matchEndTime && match.status !== 'archived';
             });
 
-            // --- DIAGNOSTIC LOGGING: Check if a live match was found ---
-            console.log('[DIAGNOSTIC] foundLiveMatch object:', foundLiveMatch);
-
             if (foundLiveMatch) {
                 if (liveMatch && foundLiveMatch.matchId === liveMatch.matchId) return;
 
@@ -159,9 +145,6 @@ export default function LivePage() {
                     ...foundLiveMatch, homeTeamName, awayTeamName,
                     squadList: foundLiveMatch.squad ? foundLiveMatch.squad.split(',').map(name => name.trim()) : []
                 };
-
-                // --- DIAGNOSTIC LOGGING: Check the processed match object before setting state ---
-                console.log('[DIAGNOSTIC] Processed match to be set as liveMatch:', processedMatch);
 
                 try {
                     const response = await fetch('/api/manage-match', {
@@ -178,19 +161,25 @@ export default function LivePage() {
                     const result = await response.json();
                     const existingEvents = result.data || result || [];
                     
+                    // --- REVISED LOGIC ---
+                    // 1. Set the assumed start time first from the schedule.
+                    let startTime = new Date(`${processedMatch.matchDate}T${processedMatch.matchTime}`);
+
+                    // 2. Check if a more accurate `MATCH_START` event exists.
+                    const startEvent = existingEvents.find(e => e.eventType === 'MATCH_START');
+                    if (startEvent && startEvent.timestamp) {
+                        // 3. If it exists, overwrite the assumed time with the official one.
+                        startTime = new Date(startEvent.timestamp);
+                    }
+
+                    // 4. Update state together to ensure consistency.
                     setLiveMatch(processedMatch);
+                    setMatchStartTime(startTime);
                     reconstructStateFromEvents(existingEvents);
                     
-                    const hasStartEvent = existingEvents.some(e => e.eventType === 'MATCH_START');
-                    if (!hasStartEvent) {
-                        setMatchStartTime(new Date(`${processedMatch.matchDate}T${processedMatch.matchTime}`));
-                    }
-                    
-                    sessionStorage.setItem('liveMatchState', JSON.stringify({ match: processedMatch, events: existingEvents }));
+                    sessionStorage.setItem('liveMatchState', JSON.stringify({ match: processedMatch, events: existingEvents, startTime: startTime.toISOString() }));
                     
                 } catch (error) {
-                    // --- DIAGNOSTIC LOGGING: Log any errors during the fetch process ---
-                    console.error('[DIAGNOSTIC] Error in findAndLoadMatch:', error);
                     setApiError(error.message);
                 }
 
@@ -313,12 +302,18 @@ export default function LivePage() {
             
             const result = await refetchResponse.json();
             const freshEvents = result.data || result || [];
+            
+            // Re-evaluate start time in case a MATCH_START event was just added
+            const startEvent = freshEvents.find(e => e.eventType === 'MATCH_START');
+            const newStartTime = startEvent ? new Date(startEvent.timestamp) : new Date(`${liveMatch.matchDate}T${liveMatch.matchTime}`);
+
+            setMatchStartTime(newStartTime);
             reconstructStateFromEvents(freshEvents);
             
             if (freshEvents.some(e => e.eventType === 'MATCH_END')) {
                 sessionStorage.removeItem('liveMatchState');
             } else {
-                sessionStorage.setItem('liveMatchState', JSON.stringify({ match: liveMatch, events: freshEvents }));
+                sessionStorage.setItem('liveMatchState', JSON.stringify({ match: liveMatch, events: freshEvents, startTime: newStartTime.toISOString() }));
             }
 
             handleFormCancel();
@@ -337,9 +332,6 @@ export default function LivePage() {
         });
     };
     
-    // --- DIAGNOSTIC LOGGING: Check the state right before rendering ---
-    console.log('[DIAGNOSTIC] State before render:', { liveMatch, nextMatch, view, apiError });
-
     const renderContent = () => {
         if (!liveMatch) return null;
 
