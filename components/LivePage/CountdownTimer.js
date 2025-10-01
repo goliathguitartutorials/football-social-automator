@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from './LiveTab.module.css';
+import styles from './LivePage.module.css';
 
 export default function CountdownTimer({ targetDate }) {
     const calculateTimeLeft = () => {
